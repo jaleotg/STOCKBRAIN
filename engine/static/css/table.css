@@ -1,0 +1,528 @@
+/* ============================================================
+   TABLE WRAPPER
+============================================================ */
+
+.sb-table-wrapper {
+    margin-top: 20px;
+    max-height: calc(100vh - 220px);
+    overflow-x: auto;
+    overflow-y: auto;
+    white-space: nowrap;
+    scrollbar-width: auto;
+}
+
+.sb-table-wrapper::-webkit-scrollbar {
+    height: 12px;
+}
+.sb-table-wrapper::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+.sb-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: #b0b0b0;
+    border-radius: 6px;
+    border: 2px solid #f0f0f0;
+}
+
+/* Dark scrollbars */
+.sb-dark .sb-table-wrapper::-webkit-scrollbar-track {
+    background: #444;
+}
+.sb-dark .sb-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-color: #444;
+}
+
+/* ============================================================
+   TABLE BASE
+============================================================ */
+
+.sb-table {
+    width: max-content;
+    border-collapse: separate;   /* ważne dla sticky kolumn */
+    border-spacing: 0;
+    background-color: #fff;
+}
+
+.sb-table th,
+.sb-table td {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+    color: #333;
+}
+
+/* striped + hover */
+.sb-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+.sb-table tbody tr:hover {
+    background-color: #e9f1f5;
+}
+
+/* dark mode table */
+.sb-dark .sb-table {
+    background-color: #2a2a2a;
+}
+.sb-dark .sb-table td {
+    border-color: #555;
+    color: #ddd;
+}
+.sb-dark .sb-table tbody tr:nth-child(even) {
+    background-color: #242424;
+}
+.sb-dark .sb-table tbody tr:hover {
+    background-color: #333;
+}
+
+/* ============================================================
+   STICKY HEADER
+============================================================ */
+
+.sb-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background-color: #f5f5f5;
+    border-bottom: 2px solid #d0d0d0;
+    text-align: center;
+}
+
+.sb-dark .sb-table thead th {
+    background-color: #3a3a3a;
+    border-bottom-color: #555;
+    color: #ddd;
+}
+
+/* ============================================================
+   FROZEN LEFT COLUMNS (Rck / Sh / Box)
+============================================================ */
+
+/* wspólne: sticky + pełne tło */
+.sb-table th.col-rck,
+.sb-table th.col-sh,
+.sb-table th.col-box,
+.sb-table td.col-rck,
+.sb-table td.col-sh,
+.sb-table td.col-box {
+    position: sticky;
+    background-color: #fff;
+}
+
+.sb-dark .sb-table th.col-rck,
+.sb-dark .sb-table th.col-sh,
+.sb-dark .sb-table th.col-box,
+.sb-dark .sb-table td.col-rck,
+.sb-dark .sb-table td.col-sh,
+.sb-dark .sb-table td.col-box {
+    background-color: #2a2a2a;
+}
+
+/* stałe szerokości w px – brak zgniatania */
+.sb-table th.col-rck,
+.sb-table td.col-rck {
+    min-width: 50px;
+    max-width: 50px;
+    width: 50px;
+    left: 0;
+}
+
+.sb-table th.col-sh,
+.sb-table td.col-sh {
+    min-width: 50px;
+    max-width: 50px;
+    width: 50px;
+    left: 50px;  /* Rck */
+}
+
+.sb-table th.col-box,
+.sb-table td.col-box {
+    min-width: 90px;
+    max-width: 90px;
+    width: 90px;
+    left: 100px; /* Rck + Sh */
+}
+
+/* nagłówki zamrożone – najwyżej, z poziomą linią */
+.sb-table thead th.col-rck,
+.sb-table thead th.col-sh,
+.sb-table thead th.col-box {
+    top: 0;
+    z-index: 5;
+    border-bottom: 2px solid #d0d0d0;
+}
+.sb-dark .sb-table thead th.col-rck,
+.sb-dark .sb-table thead th.col-sh,
+.sb-dark .sb-table thead th.col-box {
+    border-bottom-color: #555;
+}
+
+/* body zamrożone – nad zwykłymi komórkami */
+.sb-table tbody td.col-rck,
+.sb-table tbody td.col-sh,
+.sb-table tbody td.col-box {
+    z-index: 4;
+}
+
+/* pionowa linia po prawej stronie Box */
+.sb-table th.col-box,
+.sb-table td.col-box {
+    border-right: 1px solid #d0d0d0;
+}
+.sb-dark .sb-table th.col-box,
+.sb-dark .sb-table td.col-box {
+    border-right: 1px solid #555;
+}
+
+/* centrowanie frozen kolumn */
+.sb-table th.col-rck,
+.sb-table td.col-rck,
+.sb-table th.col-sh,
+.sb-table td.col-sh,
+.sb-table th.col-box,
+.sb-table td.col-box {
+    text-align: center;
+}
+
+/* ============================================================
+   MULTILINE + LOLLYPOP
+============================================================ */
+
+.sb-multiline {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    line-clamp: 5; /* standard */
+    white-space: normal;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+/* Lolly pop indicator when truncated */
+.sb-table td.sb-clamped::after {
+    content: " 🍭";
+    white-space: nowrap;
+}
+
+/* ============================================================
+   COLUMN WIDTH RULES
+============================================================ */
+
+/* Name (max 20 chars) */
+.sb-table td.col-name {
+    max-width: 20ch;
+}
+
+/* Part Description (max 50 chars) – preview */
+.sb-table td.col-partdesc {
+    max-width: 50ch;
+}
+
+/* Medium 20ch fields */
+.sb-table td.col-partnum,
+.sb-table td.col-dcm,
+.sb-table td.col-oemname,
+.sb-table td.col-oemnum,
+.sb-table td.col-vendor,
+.sb-table td.col-sourceloc {
+    max-width: 20ch;
+}
+
+/* Numeric-ish */
+.sb-table td.col-instock {
+    max-width: 10ch;
+    text-align: center;
+}
+.sb-table td.col-price {
+    max-width: 10ch;
+    text-align: center;
+}
+.sb-table td.col-qtyreorder {
+    max-width: 12ch;
+    text-align: center;
+}
+
+.sb-table td.col-reorderlevel,
+.sb-table td.col-rt,
+.sb-table td.col-disc,
+.sb-table td.col-reorder {
+    text-align: center;
+}
+
+/* ============================================================
+   INLINE EDIT INPUT
+============================================================ */
+
+.sb-inline-input {
+    width: 100%;
+    font: inherit;
+    padding: 2px 4px;
+    box-sizing: border-box;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+}
+
+.sb-dark .sb-inline-input {
+    background-color: #3a3a3a;
+    color: #eee;
+    border-color: #666;
+}
+
+/* ============================================================
+   DROPDOWNS (Units + Group)
+============================================================ */
+
+.unit-select,
+.group-select {
+    font: inherit;
+    max-width: 100%;
+    padding: 2px 26px 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+
+    appearance: none;
+    background-image: url("data:image/svg+xml,\
+        <svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'>\
+            <polygon points='0,0 10,0 5,6' fill='%23666'/>\
+        </svg>");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 10px) 50%;
+    background-size: 10px 6px;
+}
+
+.unit-select:hover,
+.group-select:hover {
+    border-color: #999;
+}
+
+.unit-select:focus,
+.group-select:focus {
+    border-color: #417690;
+    box-shadow: 0 0 0 2px rgba(65,118,144,0.2);
+}
+
+/* dark mode dropdowns */
+.sb-dark .unit-select,
+.sb-dark .group-select {
+    background-color: #3a3a3a;
+    color: #eee;
+    border-color: #555;
+    background-image: url("data:image/svg+xml,\
+        <svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'>\
+            <polygon points='0,0 10,0 5,6' fill='%23ccc'/>\
+        </svg>");
+}
+
+/* ============================================================
+   DESCRIPTION (preview + lupka)
+============================================================ */
+
+.sb-desc-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    position: relative;
+}
+
+.sb-desc-preview {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 🔍 button */
+.sb-desc-edit-btn {
+    border: none;
+    background: #e5e5e5;
+    color: #333;
+    border-radius: 4px;
+    font-size: 14px;
+    padding: 2px 5px;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s;
+}
+
+.sb-desc-edit-btn:hover {
+    background: #d0d0d0;
+}
+
+.sb-dark .sb-desc-edit-btn {
+    background: #444;
+    color: #eee;
+}
+.sb-dark .sb-desc-edit-btn:hover {
+    background: #555;
+}
+
+/* ============================================================
+   PAGINATION
+============================================================ */
+
+.sb-pagination {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    font-size: 14px;
+    user-select: none;
+}
+
+.sb-page-link {
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    color: #333;
+    cursor: pointer;
+    background-color: #f7f7f7;
+}
+
+.sb-page-link:hover {
+    background-color: #e5e5e5;
+}
+
+.sb-page-current {
+    background-color: #2ecc71 !important;
+    color: #fff !important;
+    border-color: #27ae60 !important;
+    font-weight: 600;
+}
+
+.sb-page-disabled {
+    opacity: 0.4;
+    cursor: default;
+    border-color: transparent;
+}
+
+.sb-page-ellipsis {
+    padding: 4px 6px;
+}
+
+/* dark pagination */
+.sb-dark .sb-page-link {
+    color: #ddd;
+    background-color: #3a3a3a;
+    border-color: #555;
+}
+.sb-dark .sb-page-link:hover {
+    background-color: #555;
+}
+.sb-dark .sb-page-current {
+    background-color: #27ae60 !important;
+    color: #fff !important;
+    border-color: #1e8c4a !important;
+}
+
+/* ============================================================
+   QUILL MODAL
+============================================================ */
+
+.sb-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 5000;
+}
+
+.sb-modal-dialog {
+    background: #fff;
+    width: 800px;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode */
+.sb-dark .sb-modal-dialog {
+    background: #2a2a2a;
+    color: #ddd;
+}
+
+/* HEADER */
+.sb-modal-header {
+    padding: 12px 16px;
+    background: #417690;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sb-modal-header button.sb-modal-close {
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+/* BODY */
+.sb-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+}
+
+/* Quill editor area height */
+#sb-quill-editor {
+    height: 300px;
+    background: #fff;
+}
+.sb-dark #sb-quill-editor {
+    background: #1d1d1d;
+    color: #eee;
+}
+
+/* FOOTER */
+.sb-modal-footer {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f0f0f0;
+}
+.sb-dark .sb-modal-footer {
+    background: #333;
+}
+
+/* FOOTER BUTTONS – spójne z main.css */
+.sb-btn {
+    padding: 5px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.sb-btn-primary {
+    background: #79aec8;
+    border-color: #79aec8;
+    color: #fff;
+}
+.sb-btn-primary:hover {
+    background: #609ab4;
+}
+
+.sb-btn-secondary {
+    background: #eee;
+    border-color: #ccc;
+    color: #333;
+}
+.sb-btn-secondary:hover {
+    background: #e0e0e0;
+}
+.sb-dark .sb-btn-secondary {
+    background: #555;
+    color: #ddd;
+    border-color: #666;
+}
+.sb-dark .sb-btn-secondary:hover {
+    background: #666;
+}

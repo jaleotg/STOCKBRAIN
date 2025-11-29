@@ -1,0 +1,111 @@
+/* =========================================
+   DARK MODE ROOT
+========================================= */
+
+.sb-dark {
+    background-color: #1d1d1d;
+    color: #ddd;
+}
+
+/* Header */
+.sb-dark .sb-header {
+    background-color: #2a2a2a;
+}
+
+.sb-dark .sb-link {
+    color: #9cd2f5;
+}
+
+/* Cards */
+.sb-dark .sb-card {
+    background-color: #2a2a2a;
+    border-color: #3a3a3a;
+    color: #ddd;
+}
+
+/* Inputs */
+.sb-dark .sb-input {
+    background-color: #3a3a3a;
+    border: 1px solid #555;
+    color: #eee;
+}
+
+.sb-dark .sb-input:focus {
+    border-color: #79aec8;
+    box-shadow: 0 0 0 2px rgba(121, 174, 200, 0.4);
+}
+
+/* Table in dark mode */
+.sb-dark .sb-table {
+    background-color: #2a2a2a;
+}
+
+.sb-dark .sb-table thead th {
+    background-color: #3a3a3a;
+    border-bottom: 2px solid #555;
+    color: #ddd;
+}
+
+.sb-dark .sb-table td {
+    background-color: #2a2a2a;
+    color: #ddd;
+}
+
+.sb-dark .sb-table tbody tr:nth-child(even) {
+    background-color: #242424;
+}
+
+.sb-dark .sb-table tbody tr:hover {
+    background-color: #333;
+}
+
+/* Scrollbars in dark */
+.sb-dark .sb-table-wrapper::-webkit-scrollbar-track {
+    background: #444;
+}
+
+.sb-dark .sb-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-color: #444;
+}
+
+/* Tags in dark */
+.sb-dark .sb-tag-warning {
+    background-color: #5c4a0e;
+    color: #ffe9a3;
+}
+
+.sb-dark .sb-tag-muted {
+    background-color: #555;
+    color: #ccc;
+}
+
+.sb-dark .sb-tag-check {
+    background-color: #5c4a0e;
+    color: #ffe9a3;
+}
+/* Units dropdown in dark mode */
+.sb-dark .unit-select {
+    background-color: #3a3a3a;
+    border-color: #555;
+    color: #eee;
+
+    background-image:
+        linear-gradient(45deg, #ccc 50%, transparent 50%),
+        linear-gradient(135deg, #ccc 50%, transparent 50%),
+        linear-gradient(to right, #666, #666);
+}
+
+.sb-dark .unit-select:focus {
+    border-color: #79aec8;
+    box-shadow: 0 0 0 2px rgba(121, 174, 200, 0.4);
+}
+.sb-dark .sb-table th.col-rck,
+.sb-dark .sb-table th.col-sh,
+.sb-dark .sb-table th.col-box,
+.sb-dark .sb-table td.col-rck,
+.sb-dark .sb-table td.col-sh,
+.sb-dark .sb-table td.col-box {
+    background-color: #2a2a2a;
+}
+

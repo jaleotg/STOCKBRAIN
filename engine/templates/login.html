@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Login | STOCKBRAIN{% endblock %}
+
+{% block content %}
+<div class="sb-card sb-card-narrow">
+    <h1 class="sb-title">Log in</h1>
+
+    {% if error %}
+        <div class="sb-alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="sb-form-group">
+            <label class="sb-label">Username</label>
+            <input type="text" name="username" required
+                   class="sb-input"
+                   value="{{ username|default:'' }}">
+        </div>
+
+        <div class="sb-form-group">
+            <label class="sb-label">Password</label>
+            <input type="password" name="password" required class="sb-input">
+        </div>
+
+        <div class="sb-form-group sb-checkbox-row">
+            <input type="checkbox" name="remember_me"
+                   id="remember_me"
+                   {% if remember_me %}checked{% endif %}
+                   class="sb-checkbox">
+            <label for="remember_me">Remember me on this site</label>
+        </div>
+
+        <button type="submit" class="sb-btn sb-btn-primary">
+            Log in
+        </button>
+    </form>
+</div>
+{% endblock %}

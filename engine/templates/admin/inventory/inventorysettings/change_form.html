@@ -1,0 +1,13 @@
+{% extends "admin/change_form.html" %}
+
+{% block content %}
+<p class="help" style="margin: 0 0 10px 0;">
+    These settings control which inventory columns are visible in the frontend.
+    Columns listed in <strong>"Chosen restricted columns"</strong> will be
+    readable and editable only for users who belong to the
+    <strong>"purchase admin"</strong> group. All other columns configured here
+    remain visible for all users.
+</p>
+
+{{ block.super }}
+{% endblock %}

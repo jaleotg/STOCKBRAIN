@@ -1,0 +1,37 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<h1 style="margin-bottom: 20px;">Inventory Import / Export</h1>
+
+<div style="padding: 20px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 5px;">
+
+    <!-- IMPORT SECTION -->
+    <h2>Import from Excel</h2>
+
+    <form method="post" enctype="multipart/form-data" action="">
+        {% csrf_token %}
+
+        <p>Select an Excel file (.xls, .xlsx, .xlsm) with the Inventory data:</p>
+
+        <input type="file" name="file" accept=".xls,.xlsx,.xlsm" required
+               style="margin-bottom: 15px;">
+
+        <br>
+        <button type="submit" class="default">
+            Import
+        </button>
+    </form>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- EXPORT SECTION -->
+    <h2>Export</h2>
+    <p>{{ export_message }}</p>
+
+    <button type="button" class="button default"
+            onclick="alert('Export feature will be implemented in the future.');">
+        Export
+    </button>
+</div>
+
+{% endblock %}

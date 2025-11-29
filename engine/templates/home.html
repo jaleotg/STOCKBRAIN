@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inventory | STOCKBRAIN{% endblock %}
+
+{% block content %}
+
+<div class="sb-card">
+
+    <!-- ===================================== -->
+    <!--        TOP BAR: PAGE SIZE + PAGER     -->
+    <!-- ===================================== -->
+    <div class="sb-home-controls" style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:10px;">
+
+        <!-- PAGE SIZE DROPDOWN -->
+        <div class="sb-page-size-control">
+            <label for="page-size-select">
+                Rows per page:
+            </label>
+            <select id="page-size-select"
+                    class="sb-page-size-select"
+                    name="page_size">
+                {% for opt in page_size_choices %}
+                    {% if opt == "all" %}
+                        <option value="all"
+                                {% if page_size == "all" %}selected{% endif %}>
+                            All
+                        </option>
+                    {% else %}
+                        <option value="{{ opt }}"
+                                {% if page_size == opt %}selected{% endif %}>
+                            {{ opt }}
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- PAGER -->
+        {% if is_paginated %}
+            <nav class="sb-pagination"
+                 data-current-page="{{ current_page_number }}"
+                 data-page-size="{{ page_size }}">
+
+                {# FIRST << #}
+                <a href="?page=1{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                   class="sb-page-link sb-page-first"
+                   data-page="1">
+                    &laquo;
+                </a>
+
+                {# PREV < #}
+                {% if current_page_number > 1 %}
+                    <a href="?page={{ current_page_number|add:'-1' }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                       class="sb-page-link sb-page-prev"
+                       data-page="{{ current_page_number|add:'-1' }}">
+                        &lsaquo;
+                    </a>
+                {% else %}
+                    <span class="sb-page-link sb-page-disabled">&lsaquo;</span>
+                {% endif %}
+
+                {# NUMERYCZNE – SMART WINDOW #}
+
+                {# zawsze strona 1 #}
+                {% if current_page_number == 1 %}
+                    <span class="sb-page-link sb-page-current" data-page="1">1</span>
+                {% else %}
+                    <a href="?page=1{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                       class="sb-page-link"
+                       data-page="1">1</a>
+                {% endif %}
+
+                {# pierwsze "..." jeśli trzeba #}
+                {% if show_first_ellipsis %}
+                    <span class="sb-page-link sb-page-ellipsis">…</span>
+                {% endif %}
+
+                {# okno środkowe (max 5 stron) #}
+                {% for num in page_numbers %}
+                    {% if num > 1 and num < num_pages %}
+                        {% if num == current_page_number %}
+                            <span class="sb-page-link sb-page-current"
+                                  data-page="{{ num }}">
+                                {{ num }}
+                            </span>
+                        {% else %}
+                            <a href="?page={{ num }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                               class="sb-page-link"
+                               data-page="{{ num }}">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {# drugie "..." jeśli trzeba #}
+                {% if show_last_ellipsis %}
+                    <span class="sb-page-link sb-page-ellipsis">…</span>
+                {% endif %}
+
+                {# ostatnia strona, jeśli więcej niż 1 #}
+                {% if num_pages > 1 %}
+                    {% if current_page_number == num_pages %}
+                        <span class="sb-page-link sb-page-current"
+                              data-page="{{ num_pages }}">
+                            {{ num_pages }}
+                        </span>
+                    {% else %}
+                        <a href="?page={{ num_pages }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                           class="sb-page-link"
+                           data-page="{{ num_pages }}">
+                            {{ num_pages }}
+                        </a>
+                    {% endif %}
+                {% endif %}
+
+                {# NEXT > #}
+                {% if current_page_number < num_pages %}
+                    <a href="?page={{ current_page_number|add:'1' }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                       class="sb-page-link sb-page-next"
+                       data-page="{{ current_page_number|add:'1' }}">
+                        &rsaquo;
+                    </a>
+                {% else %}
+                    <span class="sb-page-link sb-page-disabled">&rsaquo;</span>
+                {% endif %}
+
+                {# LAST >> #}
+                <a href="?page={{ num_pages }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                   class="sb-page-link sb-page-last"
+                   data-page="{{ num_pages }}">
+                    &raquo;
+                </a>
+
+            </nav>
+        {% endif %}
+    </div>
+
+    <!-- ===================================== -->
+    <!--                TABLE                  -->
+    <!-- ===================================== -->
+
+    <div class="sb-table-wrapper">
+        <table class="sb-table">
+
+            <!-- HEADER -->
+            <thead>
+            <tr>
+                <th class="col-rck">Rck</th>
+                <th class="col-sh">Sh</th>
+                <th class="col-box">Box</th>
+
+                <th class="col-group">Group</th>
+                <th class="col-name">Name</th>
+                <th class="col-partdesc">Part Description</th>
+
+                <th class="col-partnum">Part Number</th>
+                <th class="col-dcm">DCM NUMBER</th>
+                <th class="col-oemname">OEM Name</th>
+                <th class="col-oemnum">OEM Number</th>
+                <th class="col-vendor">Vendor</th>
+                <th class="col-sourceloc">Source Location</th>
+
+                <th class="col-units">Units</th>
+                <th class="col-instock">In stock</th>
+                <th class="col-price">Price</th>
+
+                <th class="col-reorderlevel">
+                    <span>Reorder<br>level</span>
+                </th>
+
+                <th class="col-rt" title="Reorder Time in Days">
+                    RT Days 🍭
+                </th>
+
+                <th class="col-qtyreorder">
+                    <span>Quantity<br>Reorder</span>
+                </th>
+
+                <th class="col-disc">Disc.</th>
+                <th class="col-reorder">Reorder</th>
+            </tr>
+            </thead>
+
+            <!-- BODY -->
+            <tbody>
+            {% for item in items %}
+                <tr>
+
+                    <!-- FROZEN COLUMNS -->
+                    <td class="col-rck inline" data-field="rack" data-id="{{ item.id }}">
+                        {{ item.rack }}
+                    </td>
+
+                    <td class="col-sh inline" data-field="shelf" data-id="{{ item.id }}">
+                        {{ item.shelf }}
+                    </td>
+
+                    <td class="col-box inline" data-field="box" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.box }}">
+                            {{ item.box }}
+                        </span>
+                    </td>
+
+                    <!-- GROUP dropdown -->
+                    <td class="col-group">
+                        <form class="group-form" onsubmit="return false;">
+                            <select
+                                class="group-select"
+                                data-item-id="{{ item.id }}"
+                            >
+                                {% for g in groups %}
+                                    <option value="{{ g.id }}"
+                                            {% if item.group_id == g.id %}selected{% endif %}>
+                                        {{ g.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
+
+                    <!-- INLINE TEXT FIELDS (MULTILINE + TOOLTIP) -->
+                    <td class="col-name inline" data-field="name" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.name }}">
+                            {{ item.name }}
+                        </span>
+                    </td>
+
+                    {# DESCRIPTION: WYSIWYG PREVIEW + LUPKA #}
+                    <td class="col-partdesc" data-id="{{ item.id }}">
+                        <div class="sb-desc-container">
+                            <div class="sb-desc-preview sb-multiline"
+                                 title="{{ item.part_description|striptags }}">
+                                {{ item.part_description|safe }}
+                            </div>
+                            <button type="button"
+                                    class="sb-desc-edit-btn"
+                                    data-id="{{ item.id }}"
+                                    title="Edit description">
+                                🔍
+                            </button>
+                        </div>
+                    </td>
+
+                    <td class="col-partnum inline" data-field="part_number" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.part_number }}">
+                            {{ item.part_number }}
+                        </span>
+                    </td>
+
+                    <td class="col-dcm inline" data-field="dcm_number" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.dcm_number }}">
+                            {{ item.dcm_number }}
+                        </span>
+                    </td>
+
+                    <td class="col-oemname inline" data-field="oem_name" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.oem_name }}">
+                            {{ item.oem_name }}
+                        </span>
+                    </td>
+
+                    <td class="col-oemnum inline" data-field="oem_number" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.oem_number }}">
+                            {{ item.oem_number }}
+                        </span>
+                    </td>
+
+                    <td class="col-vendor inline" data-field="vendor" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.vendor }}">
+                            {{ item.vendor }}
+                        </span>
+                    </td>
+
+                    <td class="col-sourceloc inline" data-field="source_location" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.source_location }}">
+                            {{ item.source_location }}
+                        </span>
+                    </td>
+
+                    <!-- UNITS dropdown -->
+                    <td class="col-units">
+                        <form class="unit-form" onsubmit="return false;">
+                            <select
+                                class="unit-select"
+                                data-item-id="{{ item.id }}"
+                            >
+                                {% for u in units %}
+                                    <option value="{{ u.id }}"
+                                            {% if item.unit_id == u.id %}selected{% endif %}>
+                                        {{ u.code }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
+
+                    <!-- NUMERICAL INLINE -->
+                    <td class="col-instock inline" data-field="quantity_in_stock" data-id="{{ item.id }}">
+                        {{ item.quantity_in_stock }}
+                    </td>
+
+                    <td class="col-price inline" data-field="price" data-id="{{ item.id }}">
+                        {{ item.price }}
+                    </td>
+
+                    <td class="col-reorderlevel inline" data-field="reorder_level" data-id="{{ item.id }}">
+                        {{ item.reorder_level }}
+                    </td>
+
+                    <td class="col-rt inline" data-field="reorder_time_days" data-id="{{ item.id }}">
+                        {{ item.reorder_time_days }}
+                    </td>
+
+                    <td class="col-qtyreorder inline" data-field="quantity_in_reorder" data-id="{{ item.id }}">
+                        {{ item.quantity_in_reorder }}
+                    </td>
+
+                    <!-- DISC -->
+                    <td class="col-disc">
+                        {% if item.discontinued %}
+                            <span class="sb-tag sb-tag-check">✓</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- FOR REORDER -->
+                    <td class="col-reorder">
+                        {% if item.for_reorder %}
+                            <span class="sb-tag sb-tag-warning">YES</span>
+                        {% endif %}
+                    </td>
+
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="20">No inventory items yet.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,219 @@
+/* =========================================
+   GLOBAL LAYOUT
+========================================= */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: #e8e8e8;
+    color: #333;
+}
+
+.sb-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================
+   HEADER
+========================================= */
+
+.sb-header {
+    background-color: #417690;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sb-header-title {
+    letter-spacing: 0.04em;
+}
+
+.sb-header-right {
+    font-size: 14px;
+}
+
+/* Theme toggle button */
+.sb-theme-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin-right: 12px;
+    color: #fff;
+    transition: opacity 0.2s;
+}
+
+.sb-theme-btn:hover {
+    opacity: 0.7;
+}
+
+/* =========================================
+   MAIN CONTENT + CARDS
+========================================= */
+
+.sb-main {
+    padding: 20px;
+}
+
+.sb-card {
+    background-color: #fff;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.sb-card-narrow {
+    max-width: 400px;
+}
+
+.sb-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.sb-home-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* =========================================
+   FORMS
+========================================= */
+
+.sb-form-group {
+    margin-bottom: 15px;
+}
+
+.sb-label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.sb-input,
+.sb-checkbox {
+    font: inherit;
+}
+
+.sb-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.sb-input:focus {
+    outline: none;
+    border-color: #417690;
+    box-shadow: 0 0 0 2px rgba(65, 118, 144, 0.2);
+}
+
+.sb-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+}
+
+/* Buttons */
+
+.sb-btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.sb-btn-primary {
+    background-color: #79aec8;
+    border-color: #79aec8;
+    color: #fff;
+}
+
+.sb-btn-primary:hover {
+    background-color: #609ab4;
+    border-color: #609ab4;
+}
+
+.sb-btn-secondary {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+    color: #333;
+}
+
+.sb-btn-secondary:hover {
+    background-color: #e5e5e5;
+}
+
+/* Links */
+
+.sb-link {
+    color: #417690;
+    text-decoration: none;
+}
+
+.sb-link:hover {
+    text-decoration: underline;
+}
+
+/* Alert */
+
+.sb-alert-error {
+    color: #ba2121;
+    background-color: #fbeaea;
+    border: 1px solid #ba2121;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* Tags */
+
+.sb-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.sb-tag-warning {
+    background-color: #faf0d7;
+    color: #8b6b12;
+}
+
+.sb-tag-muted {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+/* Check mark tag (Disc.) */
+.sb-tag-check {
+    background-color: #faf0d7; /* same as warning */
+    color: #8b6b12;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
