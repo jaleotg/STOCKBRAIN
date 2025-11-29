@@ -146,30 +146,31 @@
 }
 
 
-/* stałe szerokości w px – brak zgniatania */
+/* stałe szerokości w znakach – wąskie R / S / B */
 .sb-table th.col-rck,
 .sb-table td.col-rck {
-    min-width: 50px;
-    max-width: 50px;
-    width: 50px;
+    min-width: 3ch;
+    max-width: 3ch;
+    width: 3ch;
     left: 0;
 }
 
 .sb-table th.col-sh,
 .sb-table td.col-sh {
-    min-width: 50px;
-    max-width: 50px;
-    width: 50px;
-    left: 50px;  /* Rck */
+    min-width: 3ch;
+    max-width: 3ch;
+    width: 3ch;
+    left: 3ch;  /* szerokość R */
 }
 
 .sb-table th.col-box,
 .sb-table td.col-box {
-    min-width: 90px;
-    max-width: 90px;
-    width: 90px;
-    left: 100px; /* Rck + Sh */
+    min-width: 7ch;
+    max-width: 7ch;
+    width: 7ch;
+    left: calc(3ch + 3ch); /* R + S */
 }
+
 
 /* nagłówki zamrożone – najwyżej, z poziomą linią */
 .sb-table thead th.col-rck,
@@ -767,4 +768,15 @@
 .col-note {
     text-align: center;
     width: 50px;
+}
+/* ============================================================
+   NARROW COLUMNS: R / S / B
+   ============================================================ */
+
+.col-rck, .col-sh, .col-box {
+    text-align: center !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    width: 1%;              /* forces minimal width */
+    white-space: nowrap;    /* prevent stretching */
 }
