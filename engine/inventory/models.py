@@ -122,27 +122,39 @@ class InventoryItem(models.Model):
 
 class InventoryColumn(models.Model):
     """
-    Represents a logical column from InventoryItem that can be restricted
-    to purchase admin only.
+    Represents a single logical column in the InventoryItem table.
 
-    We EXCLUDE from here:
-    - rack, shelf, box
-    - group_name, name, part_description, part_number
-    - units, quantity_in_stock
-    because they are always visible for everyone.
+    field_name         – technical name of the field in InventoryItem / UI
+    short_label        – short label used in the table header (e.g. 'R', 'S', 'B')
+    full_label         – full column name used in tooltips / lollipops
+    functional_description – explanation of what this column means and how it behaves
     """
 
     FIELD_CHOICES = [
-        ("dcm_number", "DCM NUMBER"),
+        ("rack", "Rack"),
+        ("shelf", "Shelf"),
+        ("box", "Box"),
+        ("group", "Group (FK)"),
+        ("name", "Name"),
+        ("part_description", "Part Description"),
+        ("part_number", "Part Number"),
+        ("dcm_number", "DCM Number"),
         ("oem_name", "OEM Name"),
         ("oem_number", "OEM Number"),
         ("vendor", "Vendor"),
         ("source_location", "Source Location"),
+        ("unit", "Unit (FK)"),
+        ("quantity_in_stock", "Quantity in Stock"),
         ("price", "Price"),
         ("reorder_level", "Reorder Level"),
         ("reorder_time_days", "Reorder Time in Days"),
         ("quantity_in_reorder", "Quantity in Reorder"),
-        ("discontinued", "Discontinued?"),
+        ("condition_status", "Condition Status"),
+        ("discontinued", "Discontinued"),
+        ("verify", "Verify / To Review"),
+        ("favorite", "User Favorite"),
+        ("note", "User Note"),
+        ("for_reorder", "For Reorder (computed)"),
     ]
 
     field_name = models.CharField(
@@ -151,7 +163,32 @@ class InventoryColumn(models.Model):
         choices=FIELD_CHOICES,
     )
 
+    short_label = models.CharField(
+        max_length=32,
+        blank=True,
+        help_text="Short label for table header (e.g. 'R', 'S', 'B', 'RT'). "
+                  "If empty, the default human-readable name from FIELD_CHOICES is used.",
+    )
+
+    full_label = models.CharField(
+        max_length=128,
+        blank=True,
+        help_text="Full column name for tooltips / lollipops. "
+                  "If empty, the default human-readable name from FIELD_CHOICES is used.",
+    )
+
+    functional_description = models.TextField(
+        blank=True,
+        help_text="Functional description for this column: what it means, "
+                  "how it is edited (inline / dropdown / modal) and what it affects.",
+    )
+
     def __str__(self) -> str:
+        # Prefer full_label if provided, then short_label, then verbose from FIELD_CHOICES
+        if self.full_label:
+            return self.full_label
+        if self.short_label:
+            return self.short_label
         return dict(self.FIELD_CHOICES).get(self.field_name, self.field_name)
 
 

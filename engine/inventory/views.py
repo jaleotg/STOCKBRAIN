@@ -11,7 +11,9 @@ from .models import (
     Unit,
     ItemGroup,
     InventoryUserMeta,
+    InventoryColumn,
     FAVORITE_COLOR_CHOICES,
+    InventorySettings,
 )
 
 
@@ -156,6 +158,23 @@ def home_view(request):
             show_first_ellipsis = start > 2
             show_last_ellipsis = end < (num_pages - 1)
 
+    # --- COLUMN VISIBILITY (purchase admin vs others) ---
+    user = request.user
+
+    # Czy użytkownik jest w grupie „purchase manager”
+    is_purchase_admin = user.groups.filter(name__iexact="purchase manager").exists()
+
+    # Wczytanie ustawień i listy kolumn ograniczonych
+    restricted_fields = set()
+    settings_obj = InventorySettings.objects.first()
+    if settings_obj:
+        restricted_fields = set(
+            settings_obj.restricted_columns.values_list("field_name", flat=True)
+        )
+
+    # Słownik definicji kolumn (pod tooltipy / pełne nazwy)
+    columns = {col.field_name: col for col in InventoryColumn.objects.all()}
+
     units = Unit.objects.all().order_by("code")
     groups = ItemGroup.objects.all().order_by("name")
 
@@ -176,6 +195,7 @@ def home_view(request):
         "condition_choices": condition_choices,
         "favorite_color_choices": FAVORITE_COLOR_CHOICES,
 
+        # Pagination
         "page_obj": page_obj,
         "is_paginated": is_paginated,
         "page_size": page_size,
@@ -183,10 +203,15 @@ def home_view(request):
         "current_page_number": current_page_number,
         "num_pages": num_pages,
 
-        # pagination helpers
+        # Pagination helpers
         "page_numbers": page_numbers,
         "show_first_ellipsis": show_first_ellipsis,
         "show_last_ellipsis": show_last_ellipsis,
+
+        # Column settings from admin
+        "columns": columns,                     # field_name → InventoryColumn
+        "restricted_fields": restricted_fields, # set pól tylko dla purchase admin
+        "is_purchase_admin": is_purchase_admin, # bool: czy user w grupie purchase
     }
 
     return render(request, "home.html", context)

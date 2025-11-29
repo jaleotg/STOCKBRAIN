@@ -1,10 +1,14 @@
 from django.contrib import admin, messages
 from django.shortcuts import redirect
-from .models import InventoryItem, InventoryColumn, InventorySettings
+
+from .models import (
+    InventoryItem,
+    InventoryColumn,
+    InventorySettings,
+    Unit,
+    ItemGroup,
+)
 from .importers import import_inventory_from_excel
-from .models import InventoryItem, InventoryColumn, InventorySettings, Unit, ItemGroup
-
-
 
 
 class InventoryImportExport(InventoryItem):
@@ -15,97 +19,145 @@ class InventoryImportExport(InventoryItem):
 
     class Meta:
         proxy = True
-        verbose_name = "Import/Export"
-        verbose_name_plural = "Import/Export"
+        verbose_name = "Inventory import / export"
+        verbose_name_plural = "Inventory import / export"
 
 
 @admin.register(InventoryImportExport)
 class InventoryImportExportAdmin(admin.ModelAdmin):
     """
-    Admin view for the Import/Export menu entry.
-
-    We use a custom change_list_template which will show:
-    - an upload field + Import button
-    - an Export button (currently not implemented)
+    Custom admin that renders a simple page with an upload form
+    (template: inventory_import_export.html) and calls the importer.
     """
-
-    change_list_template = "admin/inventory_import_export.html"
+    change_list_template = "inventory_import_export.html"
 
     def has_add_permission(self, request):
-        # We don't add instances of the proxy model.
         return False
 
     def has_delete_permission(self, request, obj=None):
-        # We don't delete instances of the proxy model.
         return False
 
     def changelist_view(self, request, extra_context=None):
-        """
-        Handles the Import form submit (POST with file)
-        and renders the Import/Export page.
-        """
-        if request.method == "POST" and request.FILES.get("file"):
-            excel_file = request.FILES["file"]
-
+        if request.method == "POST" and "excel_file" in request.FILES:
+            uploaded_file = request.FILES["excel_file"]
             try:
-                stats = import_inventory_from_excel(excel_file)
-                created = stats.get("created", 0)
-                skipped = stats.get("skipped", 0)
-                messages.success(
-                    request,
-                    f"Import completed. Created {created} items, skipped {skipped} rows without valid localization.",
-                )
+                # Your importer can return (created, updated) or just a count.
+                result = import_inventory_from_excel(uploaded_file)
+                if isinstance(result, tuple) and len(result) == 2:
+                    created, updated = result
+                    messages.success(
+                        request,
+                        f"Import finished. Created: {created}, updated: {updated} items.",
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f"Import finished. Processed {result} items.",
+                    )
             except Exception as exc:
                 messages.error(request, f"Import failed: {exc}")
-
-            # Always redirect after POST to avoid resubmission
-            return redirect(request.path)
-
-        extra_context = extra_context or {}
-        extra_context["export_message"] = "Export is not implemented yet."
-
         return super().changelist_view(request, extra_context=extra_context)
-@admin.register(InventorySettings)
-class InventorySettingsAdmin(admin.ModelAdmin):
+
+
+@admin.register(InventoryColumn)
+class InventoryColumnAdmin(admin.ModelAdmin):
     """
-    Admin menu 'Settings'.
+    Editable dictionary of all logical columns used in the front-end table.
 
-    We do NOT show the changelist with a table.
-    When user clicks 'Settings' in the sidebar, we immediately redirect
-    to the edit form of the single InventorySettings instance.
-
-    The field 'restricted_columns' is a many-to-many dual list
-    (available / chosen).
+    - field_name: technical key linked to InventoryItem / UI
+    - short_label: short label in the table header (R, S, B, RT, etc.)
+    - full_label: full column name (for tooltips / lollipops)
+    - functional_description: explanation of behaviour (editing, effects, etc.)
     """
+    list_display = (
+        "field_name",
+        "short_label",
+        "full_label",
+        "functional_description_short",
+    )
+    list_editable = (
+        "short_label",
+        "full_label",
+    )
+    search_fields = (
+        "field_name",
+        "short_label",
+        "full_label",
+        "functional_description",
+    )
+    ordering = ("field_name",)
+    list_per_page = 50
 
-    filter_horizontal = ("restricted_columns",)
+    # Disable bulk actions (including bulk delete)
+    actions = None
 
     def has_add_permission(self, request):
         """
-        We want exactly ONE settings row.
-        If it exists, do not allow creating another.
+        Columns are created automatically by the application code.
+        We do not allow manual creation from the admin UI.
         """
-        if InventorySettings.objects.exists():
-            return False
-        return super().has_add_permission(request)
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """
+        Deleting column definitions is dangerous, because the front-end
+        and permissions logic rely on them. We disable delete in admin.
+        """
+        return False
+
+    @staticmethod
+    def functional_description_short(obj):
+        """
+        Shorten long descriptions so the list view stays readable.
+        """
+        text = (obj.functional_description or "").strip()
+        if len(text) <= 80:
+            return text
+        return text[:77] + "..."
+    functional_description_short.short_description = "Functional description"
 
     def changelist_view(self, request, extra_context=None):
         """
-        Instead of showing the list 'Select Settings to change',
-        we redirect straight to the single settings object's change view.
-        Also, we ensure that:
-        - exactly one InventorySettings instance exists
-        - InventoryColumn objects exist for all FIELD_CHOICES
+        Ensure there is one InventoryColumn row for each field defined
+        in InventoryColumn.FIELD_CHOICES. This keeps the dictionary in sync
+        even if new fields are added in code.
         """
+        existing = set(InventoryColumn.objects.values_list("field_name", flat=True))
+        for field_name, _label in InventoryColumn.FIELD_CHOICES:
+            if field_name not in existing:
+                InventoryColumn.objects.create(field_name=field_name)
+        return super().changelist_view(request, extra_context=extra_context)
 
-        # Ensure there is exactly one settings instance
+
+@admin.register(InventorySettings)
+class InventorySettingsAdmin(admin.ModelAdmin):
+    """
+    Singleton-like settings object that holds which columns
+    are restricted to purchase admin.
+
+    - restricted_columns: ManyToMany to InventoryColumn
+      (columns visible ONLY for purchase admin).
+      All remaining InventoryColumns are visible for everyone.
+    """
+    filter_horizontal = ("restricted_columns",)
+
+    def has_add_permission(self, request):
+        # Only one settings row is allowed.
+        return InventorySettings.objects.count() == 0
+
+    def changelist_view(self, request, extra_context=None):
+        """
+        When user clicks on 'Settings' in admin sidebar, always redirect
+        to the single existing instance (or create it if missing),
+        and make sure InventoryColumn has entries for all known fields.
+        """
         qs = InventorySettings.objects.all()
         if qs.exists():
             settings_obj = qs.first()
         else:
             settings_obj = InventorySettings.objects.create()
 
-        # Ensure InventoryColumn objects for all FIELD_CHOICES
+        # Ensure InventoryColumn has one row per field from FIELD_CHOICES
         existing = set(InventoryColumn.objects.values_list("field_name", flat=True))
         for field_name, _label in InventoryColumn.FIELD_CHOICES:
             if field_name not in existing:
@@ -114,10 +166,13 @@ class InventorySettingsAdmin(admin.ModelAdmin):
         # Redirect to that single instance's change page
         # request.path is usually '/admin/inventory/inventorysettings/'
         return redirect(f"{request.path}{settings_obj.pk}/change/")
+
+
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     list_display = ("code",)
     search_fields = ("code",)
+
 
 @admin.register(ItemGroup)
 class ItemGroupAdmin(admin.ModelAdmin):

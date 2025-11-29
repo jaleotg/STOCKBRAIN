@@ -121,45 +121,216 @@
         <table class="sb-table">
             <thead>
             <tr>
-                <th class="col-rck" style="text-align:center;">R</th>
-                <th class="col-sh"  style="text-align:center;">S</th>
-                <th class="col-box" style="text-align:center;">B</th>
+                {# R #}
+                {% with col=columns.rack %}
+                    <th class="col-rck"
+                        style="text-align:center;"
+                        title="{{ col.full_label|default:'Rack' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'R' }}
+                    </th>
+                {% endwith %}
 
-                <th class="col-group">Group</th>
-                <th class="col-name">Name</th>
-                <th class="col-partdesc">Part Description</th>
+                {# S #}
+                {% with col=columns.shelf %}
+                    <th class="col-sh"
+                        style="text-align:center;"
+                        title="{{ col.full_label|default:'Shelf' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'S' }}
+                    </th>
+                {% endwith %}
 
-                <th class="col-partnum">Part Number</th>
-                <th class="col-dcm">DCM NUMBER</th>
-                <th class="col-oemname">OEM Name</th>
-                <th class="col-oemnum">OEM Number</th>
-                <th class="col-vendor">Vendor</th>
-                <th class="col-sourceloc">Source Location</th>
+                {# B #}
+                {% with col=columns.box %}
+                    <th class="col-box"
+                        style="text-align:center;"
+                        title="{{ col.full_label|default:'Box' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'B' }}
+                    </th>
+                {% endwith %}
 
-                <th class="col-units">Units</th>
-                <th class="col-instock">In stock</th>
-                <th class="col-price">Price</th>
+                {# GROUP (nigdy nie ukrywamy) #}
+                {% with col=columns.group %}
+                    <th class="col-group"
+                        title="{{ col.full_label|default:'Group' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'Group' }}
+                    </th>
+                {% endwith %}
 
-                <th class="col-reorderlevel"><span>Reorder<br>level</span></th>
-                <th class="col-rt" title="Reorder Time in Days">RT Days 🍭</th>
-                <th class="col-qtyreorder"><span>Quantity<br>Reorder</span></th>
+                {# NAME #}
+                {% with col=columns.name %}
+                    <th class="col-name"
+                        title="{{ col.full_label|default:'Name' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'Name' }}
+                    </th>
+                {% endwith %}
 
-                <th class="col-condition">Condition</th>
-                <th class="col-disc">Disc.</th>
-                <th class="col-rev">REV.</th>
+                {# DESCRIPTION #}
+                {% with col=columns.part_description %}
+                    <th class="col-partdesc"
+                        title="{{ col.full_label|default:'Part Description' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'Part Description' }}
+                    </th>
+                {% endwith %}
 
-                <!-- USER FAVORITE -->
-                <th class="col-fav">Fav</th>
+                {# PART NUMBER #}
+                {% with col=columns.part_number %}
+                    <th class="col-partnum"
+                        title="{{ col.full_label|default:'Part Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'Part Number' }}
+                    </th>
+                {% endwith %}
 
-                <!-- USER NOTE -->
-                <th class="col-note">Note</th>
+                {# DCM #}
+                {% with col=columns.dcm_number %}
+                    <th class="col-dcm"
+                        title="{{ col.full_label|default:'DCM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'DCM NUMBER' }}
+                    </th>
+                {% endwith %}
 
-                <th class="col-reorder">Reorder</th>
+                {# OEM NAME #}
+                {% with col=columns.oem_name %}
+                    <th class="col-oemname"
+                        title="{{ col.full_label|default:'OEM Name' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'OEM Name' }}
+                    </th>
+                {% endwith %}
+
+                {# OEM NUMBER #}
+                {% with col=columns.oem_number %}
+                    <th class="col-oemnum"
+                        title="{{ col.full_label|default:'OEM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'OEM Number' }}
+                    </th>
+                {% endwith %}
+
+                {# VENDOR – może być restricted #}
+                {% with col=columns.vendor %}
+                    {% if is_purchase_admin or 'vendor' not in restricted_fields %}
+                        <th class="col-vendor"
+                            title="{{ col.full_label|default:'Vendor' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            {{ col.short_label|default:col.full_label|default:'Vendor' }}
+                        </th>
+                    {% endif %}
+                {% endwith %}
+
+                {# SOURCE LOCATION – może być restricted #}
+                {% with col=columns.source_location %}
+                    {% if is_purchase_admin or 'source_location' not in restricted_fields %}
+                        <th class="col-sourceloc"
+                            title="{{ col.full_label|default:'Source Location' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            {{ col.short_label|default:col.full_label|default:'Source Location' }}
+                        </th>
+                    {% endif %}
+                {% endwith %}
+
+                {# UNITS #}
+                {% with col=columns.unit %}
+                    <th class="col-units"
+                        title="{{ col.full_label|default:'Units' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'Units' }}
+                    </th>
+                {% endwith %}
+
+                {# IN STOCK – może być restricted #}
+                {% with col=columns.quantity_in_stock %}
+                    {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
+                        <th class="col-instock"
+                            title="{{ col.full_label|default:'In stock' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            {{ col.short_label|default:col.full_label|default:'In stock' }}
+                        </th>
+                    {% endif %}
+                {% endwith %}
+
+                {# PRICE – może być restricted #}
+                {% with col=columns.price %}
+                    {% if is_purchase_admin or 'price' not in restricted_fields %}
+                        <th class="col-price"
+                            title="{{ col.full_label|default:'Price' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            {{ col.short_label|default:col.full_label|default:'Price' }}
+                        </th>
+                    {% endif %}
+                {% endwith %}
+
+                {# REORDER LEVEL – może być restricted #}
+                {% with col=columns.reorder_level %}
+                    {% if is_purchase_admin or 'reorder_level' not in restricted_fields %}
+                        <th class="col-reorderlevel"
+                            title="{{ col.full_label|default:'Reorder level' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span>{{ col.short_label|default:col.full_label|default:'Reorder level' }}</span>
+                        </th>
+                    {% endif %}
+                {% endwith %}
+
+                {# RT DAYS #}
+                {% with col=columns.reorder_time_days %}
+                    <th class="col-rt"
+                        title="{{ col.full_label|default:'Reorder Time in Days' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'RT' }}
+                    </th>
+                {% endwith %}
+
+                {# QTY REORDER – może być restricted #}
+                {% with col=columns.quantity_in_reorder %}
+                    {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
+                        <th class="col-qtyreorder"
+                            title="{{ col.full_label|default:'Quantity Reorder' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span>{{ col.short_label|default:col.full_label|default:'Quantity Reorder' }}</span>
+                        </th>
+                    {% endif %}
+                {% endwith %}
+
+                {# CONDITION #}
+                {% with col=columns.condition_status %}
+                    <th class="col-condition"
+                        title="{{ col.full_label|default:'Condition status' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'Condition' }}
+                    </th>
+                {% endwith %}
+
+                {# DISC #}
+                {% with col=columns.discontinued %}
+                    <th class="col-disc"
+                        title="{{ col.full_label|default:'Discontinued' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'Disc.' }}
+                    </th>
+                {% endwith %}
+
+                {# REV #}
+                {% with col=columns.verify %}
+                    <th class="col-rev"
+                        title="{{ col.full_label|default:'To Review / Verify' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'REV.' }}
+                    </th>
+                {% endwith %}
+
+                {# FAVORITE #}
+                {% with col=columns.favorite %}
+                    <th class="col-fav"
+                        title="{{ col.full_label|default:'Favorite' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'Fav' }}
+                    </th>
+                {% endwith %}
+
+                {# USER NOTE #}
+                {% with col=columns.note %}
+                    <th class="col-note"
+                        title="{{ col.full_label|default:'User Note' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'Note' }}
+                    </th>
+                {% endwith %}
+
+                {# REORDER FLAG #}
+                {% with col=columns.for_reorder %}
+                    <th class="col-reorder"
+                        title="{{ col.full_label|default:'Reorder flag' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:'Reorder' }}
+                    </th>
+                {% endwith %}
             </tr>
             </thead>
 
             <tbody>
-
             {% for item in items %}
 
                 {% with usermeta=item.meta_for_user.0 %}
@@ -174,7 +345,6 @@
                     <!-- R/S/B -->
                     <td class="col-rck inline" data-field="rack" data-id="{{ item.id }}">{{ item.rack }}</td>
                     <td class="col-sh inline" data-field="shelf" data-id="{{ item.id }}">{{ item.shelf }}</td>
-
                     <td class="col-box inline" data-field="box" data-id="{{ item.id }}">
                         <span class="sb-multiline" title="{{ item.box }}">{{ item.box }}</span>
                     </td>
@@ -207,36 +377,45 @@
                             <button type="button"
                                     class="sb-desc-edit-btn"
                                     data-id="{{ item.id }}"
-                                    title="Edit description">
+                                    title="Open full editor for description">
                                 🔍
                             </button>
                         </div>
                     </td>
 
-                    <!-- OTHER TEXT FIELDS -->
+                    <!-- PART NUMBER -->
                     <td class="col-partnum inline" data-field="part_number" data-id="{{ item.id }}">
                         <span class="sb-multiline" title="{{ item.part_number }}">{{ item.part_number }}</span>
                     </td>
 
+                    <!-- DCM -->
                     <td class="col-dcm inline" data-field="dcm_number" data-id="{{ item.id }}">
                         <span class="sb-multiline" title="{{ item.dcm_number }}">{{ item.dcm_number }}</span>
                     </td>
 
+                    <!-- OEM NAME -->
                     <td class="col-oemname inline" data-field="oem_name" data-id="{{ item.id }}">
                         <span class="sb-multiline" title="{{ item.oem_name }}">{{ item.oem_name }}</span>
                     </td>
 
+                    <!-- OEM NUMBER -->
                     <td class="col-oemnum inline" data-field="oem_number" data-id="{{ item.id }}">
                         <span class="sb-multiline" title="{{ item.oem_number }}">{{ item.oem_number }}</span>
                     </td>
 
-                    <td class="col-vendor inline" data-field="vendor" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.vendor }}">{{ item.vendor }}</span>
-                    </td>
+                    <!-- VENDOR -->
+                    {% if is_purchase_admin or 'vendor' not in restricted_fields %}
+                        <td class="col-vendor inline" data-field="vendor" data-id="{{ item.id }}">
+                            <span class="sb-multiline" title="{{ item.vendor }}">{{ item.vendor }}</span>
+                        </td>
+                    {% endif %}
 
-                    <td class="col-sourceloc inline" data-field="source_location" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.source_location }}">{{ item.source_location }}</span>
-                    </td>
+                    <!-- SOURCE LOCATION -->
+                    {% if is_purchase_admin or 'source_location' not in restricted_fields %}
+                        <td class="col-sourceloc inline" data-field="source_location" data-id="{{ item.id }}">
+                            <span class="sb-multiline" title="{{ item.source_location }}">{{ item.source_location }}</span>
+                        </td>
+                    {% endif %}
 
                     <!-- UNITS -->
                     <td class="col-units">
@@ -249,26 +428,38 @@
                         </select>
                     </td>
 
-                    <!-- NUMERIC FIELDS -->
-                    <td class="col-instock inline" data-field="quantity_in_stock" data-id="{{ item.id }}">
-                        {{ item.quantity_in_stock }}
-                    </td>
+                    <!-- IN STOCK -->
+                    {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
+                        <td class="col-instock inline" data-field="quantity_in_stock" data-id="{{ item.id }}">
+                            {{ item.quantity_in_stock }}
+                        </td>
+                    {% endif %}
 
-                    <td class="col-price inline" data-field="price" data-id="{{ item.id }}">
-                        {{ item.price }}
-                    </td>
+                    <!-- PRICE -->
+                    {% if is_purchase_admin or 'price' not in restricted_fields %}
+                        <td class="col-price inline" data-field="price" data-id="{{ item.id }}">
+                            {{ item.price }}
+                        </td>
+                    {% endif %}
 
-                    <td class="col-reorderlevel inline" data-field="reorder_level" data-id="{{ item.id }}">
-                        {{ item.reorder_level }}
-                    </td>
+                    <!-- REORDER LEVEL -->
+                    {% if is_purchase_admin or 'reorder_level' not in restricted_fields %}
+                        <td class="col-reorderlevel inline" data-field="reorder_level" data-id="{{ item.id }}">
+                            {{ item.reorder_level }}
+                        </td>
+                    {% endif %}
 
+                    <!-- RT DAYS -->
                     <td class="col-rt inline" data-field="reorder_time_days" data-id="{{ item.id }}">
                         {{ item.reorder_time_days }}
                     </td>
 
-                    <td class="col-qtyreorder inline" data-field="quantity_in_reorder" data-id="{{ item.id }}">
-                        {{ item.quantity_in_reorder }}
-                    </td>
+                    <!-- QTY REORDER -->
+                    {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
+                        <td class="col-qtyreorder inline" data-field="quantity_in_reorder" data-id="{{ item.id }}">
+                            {{ item.quantity_in_reorder }}
+                        </td>
+                    {% endif %}
 
                     <!-- CONDITION DROPDOWN -->
                     <td class="col-condition">
@@ -298,20 +489,14 @@
                                {% if item.verify %}checked{% endif %}>
                     </td>
 
-                    <!-- FAVORITE STAR -->
+                    <!-- FAVORITE STAR (per-user) -->
                     {% with fav=item.meta_for_user.0.favorite_color|default:"NONE" %}
                         <td class="col-fav">
                             <span class="sb-favorite"
                                   data-item-id="{{ item.id }}"
                                   data-color="{{ fav }}">
-                                {% if fav == "RED" %}
-                                    ⭐
-                                {% elif fav == "GREEN" %}
-                                    ⭐
-                                {% elif fav == "YELLOW" %}
-                                    ⭐
-                                {% elif fav == "BLUE" %}
-                                    ⭐
+                                {% if fav == "RED" or fav == "GREEN" or fav == "YELLOW" or fav == "BLUE" %}
+                                    ★
                                 {% else %}
                                     ☆
                                 {% endif %}
@@ -319,7 +504,7 @@
                         </td>
                     {% endwith %}
 
-                    <!-- USER NOTE BUTTON + inline-ready data -->
+                    <!-- USER NOTE BUTTON (per-user) -->
                     {% with note=item.meta_for_user.0.note|default:"" %}
                         <td class="col-note"
                             data-item-id="{{ item.id }}"
@@ -328,13 +513,14 @@
                                     class="sb-note-btn{% if note %} sb-note-has-content{% endif %}"
                                     data-item-id="{{ item.id }}"
                                     data-note="{{ note|escape }}"
-                                    data-has-note="{% if note %}1{% else %}0{% endif %}">
+                                    data-has-note="{% if note %}1{% else %}0{% endif %}"
+                                    title="Open full editor for your private note">
                                 📝
                             </button>
                         </td>
                     {% endwith %}
 
-                    <!-- FOR REORDER -->
+                    <!-- REORDER FLAG -->
                     <td class="col-reorder">
                         {% if item.for_reorder %}
                             <span class="sb-tag sb-tag-warning">YES</span>
@@ -347,7 +533,6 @@
                     <td colspan="25">No inventory items yet.</td>
                 </tr>
             {% endfor %}
-
             </tbody>
         </table>
     </div>
