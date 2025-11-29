@@ -1,6 +1,17 @@
 from django.db import models
 
 
+# Condition status for each inventory item
+CONDITION_STATUS_CHOICES = [
+    ("NEW", "NEW"),
+    ("USED_OK", "USED / OK"),
+    ("USED_NOK", "USED / NOK"),
+    ("INCOMPLETE", "INCOMPLETE"),
+    ("UNKNOWN", "UNKNOWN"),
+    ("OTHER", "OTHER"),
+]
+
+
 class InventoryItem(models.Model):
     # Localization split into 3 columns
     rack = models.IntegerField()
@@ -26,15 +37,46 @@ class InventoryItem(models.Model):
     vendor = models.CharField("Vendor", max_length=100, blank=True)
     source_location = models.CharField("Source Location", max_length=100, blank=True)
     units = models.CharField("Units", max_length=50, blank=True)
-    unit = models.ForeignKey("Unit", null=True, blank=True, on_delete=models.SET_NULL, related_name="items",)
+    unit = models.ForeignKey(
+        "Unit",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="items",
+    )
 
     quantity_in_stock = models.IntegerField("Quantity in Stock", blank=True, null=True)
-    price = models.DecimalField("Price", max_digits=10, decimal_places=2,
-                                blank=True, null=True)
+    price = models.DecimalField(
+        "Price",
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+    )
     reorder_level = models.IntegerField("Reorder Level", blank=True, null=True)
-    reorder_time_days = models.IntegerField("Reorder Time in Days", blank=True, null=True)
-    quantity_in_reorder = models.IntegerField("Quantity in Reorder", blank=True, null=True)
+    reorder_time_days = models.IntegerField(
+        "Reorder Time in Days",
+        blank=True,
+        null=True,
+    )
+    quantity_in_reorder = models.IntegerField(
+        "Quantity in Reorder",
+        blank=True,
+        null=True,
+    )
     discontinued = models.BooleanField("Discontinued?", default=False)
+
+    # NEW: record needs verification flag
+    verify = models.BooleanField("Needs verification?", default=False)
+
+    # NEW: condition status field with fixed set of choices
+    condition_status = models.CharField(
+        "Condition Status",
+        max_length=20,
+        choices=CONDITION_STATUS_CHOICES,
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         ordering = ["rack", "shelf", "box"]
@@ -66,6 +108,8 @@ class InventoryItem(models.Model):
         if self.shelf:
             self.shelf = self.shelf.upper()
         super().save(*args, **kwargs)
+
+
 class InventoryColumn(models.Model):
     """
     Represents a logical column from InventoryItem that can be restricted
@@ -111,7 +155,10 @@ class InventorySettings(models.Model):
     restricted_columns = models.ManyToManyField(
         InventoryColumn,
         blank=True,
-        help_text="Columns visible only for purchase admin. Others are visible for everyone.",
+        help_text=(
+            "Columns visible only for purchase admin. "
+            "Others are visible for everyone."
+        ),
     )
 
     class Meta:
@@ -120,6 +167,7 @@ class InventorySettings(models.Model):
 
     def __str__(self) -> str:
         return "Inventory settings"
+
 
 class Unit(models.Model):
     code = models.CharField(max_length=20, unique=True)
@@ -130,7 +178,9 @@ class Unit(models.Model):
 
     def __str__(self) -> str:
         return self.code
-from django.db.models.signals import post_migrate
+
+
+from django.db.models.signals import post_migrate  # noqa: E402  (kept here on purpose)
 
 
 DEFAULT_UNITS = [
@@ -163,6 +213,7 @@ def create_default_units(sender, app_config, **kwargs):
 
 
 post_migrate.connect(create_default_units)
+
 
 class ItemGroup(models.Model):
     name = models.CharField(max_length=100, unique=True)
