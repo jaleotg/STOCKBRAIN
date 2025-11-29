@@ -46,6 +46,40 @@
     }
 
     /* ================================================
+       REORDER FLAG (frontend mirror of model.for_reorder)
+       quantity_in_stock <= reorder_level AND not discontinued
+    ================================================= */
+    function sbUpdateReorderFlag(itemId) {
+        if (!itemId) return;
+        const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+        if (!row) return;
+
+        const instockCell = row.querySelector(".col-instock");
+        const levelCell = row.querySelector(".col-reorderlevel");
+        const reorderCell = row.querySelector(".col-reorder");
+        const discCheckbox = row.querySelector(".disc-checkbox");
+
+        if (!instockCell || !levelCell || !reorderCell) return;
+
+        const q = parseInt(instockCell.textContent.trim(), 10);
+        const rl = parseInt(levelCell.textContent.trim(), 10);
+        const discontinued = !!(discCheckbox && discCheckbox.checked);
+
+        const validQ = !Number.isNaN(q);
+        const validRL = !Number.isNaN(rl);
+
+        const shouldReorder = validQ && validRL && q <= rl && !discontinued;
+
+        reorderCell.innerHTML = "";
+        if (shouldReorder) {
+            const span = document.createElement("span");
+            span.className = "sb-tag sb-tag-warning";
+            span.textContent = "YES";
+            reorderCell.appendChild(span);
+        }
+    }
+
+    /* ================================================
        DJANGO CSRF TOKEN
     ================================================= */
     function getCookie(name) {
@@ -214,6 +248,8 @@
                         } else {
                             row.classList.remove("sb-row-disc");
                         }
+                        // discontinued wpływa na for_reorder
+                        sbUpdateReorderFlag(itemId);
                     }
                 })
                 .catch(err => {
@@ -283,6 +319,7 @@
                 const idx = cycle.indexOf(current);
                 const nextColor = cycle[(idx + 1) % cycle.length];
 
+                // Optymistyczna aktualizacja UI
                 setStarAppearance(star, nextColor);
 
                 const fd = new FormData();
@@ -402,6 +439,10 @@
                                 td.innerText = originalText;
                             } else {
                                 td.innerText = newValue;
+                                // jeśli zmieniliśmy stock albo reorder level → przelicz Reorder
+                                if (field === "quantity_in_stock" || field === "reorder_level") {
+                                    sbUpdateReorderFlag(itemId);
+                                }
                                 markClampedCells();
                             }
                         })
