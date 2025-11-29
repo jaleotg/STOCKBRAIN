@@ -51,7 +51,7 @@ def home_view(request):
     Main inventory view:
     - pagination
     - page size selection
-    - dropdowns Units / Groups
+    - dropdowns Units / Groups / Condition
     """
     # --- PAGE SIZE (from GET or session) ---
     page_size_param = request.GET.get("page_size")
@@ -141,10 +141,21 @@ def home_view(request):
     units = Unit.objects.all().order_by("code")
     groups = ItemGroup.objects.all().order_by("name")
 
+    # Choices dla dropdownu CONDITION – bierzemy z definicji pola w modelu,
+    # żeby zawsze było spójnie z bazą.
+    try:
+        condition_field = InventoryItem._meta.get_field("condition_status")
+        condition_choices = list(condition_field.choices)
+    except Exception:
+        # Gdyby z jakiegoś powodu pole nie istniało (stara migracja itd.),
+        # nie wysypujemy widoku.
+        condition_choices = []
+
     context = {
         "items": items,
         "units": units,
         "groups": groups,
+        "condition_choices": condition_choices,
 
         "page_obj": page_obj,
         "is_paginated": is_paginated,
@@ -221,7 +232,7 @@ def update_group(request):
 
 
 # ============================================
-# AJAX: INLINE FIELD EDITING (TEXT / NUMBER)
+# AJAX: INLINE FIELD EDITING (TEXT / NUMBER / BOOL / CHOICE)
 # ============================================
 
 @login_required
@@ -246,7 +257,7 @@ def update_field(request):
     except InventoryItem.DoesNotExist:
         return JsonResponse({"ok": False, "error": "Item not found"}, status=404)
 
-    # Security: allow only real editable fields
+    # Security: allow only real editable fields (front inline / dropdowny)
     allowed_fields = {
         "name",
         "part_description",
@@ -264,25 +275,59 @@ def update_field(request):
         "box",
         "rack",
         "shelf",
+        "condition_status",   # CONDITION dropdown
+        "verify",             # REV checkbox
+        "discontinued",       # DISC checkbox
     }
 
     if field not in allowed_fields:
         return JsonResponse({"ok": False, "error": "Field not editable"}, status=400)
 
-    # Convert numbers if needed
+    # --- Typed conversion / validation ---
+
+    # Integers
     if field in ["quantity_in_stock", "reorder_level", "reorder_time_days", "quantity_in_reorder"]:
         try:
-            value = int(value)
+            value_converted = int(value)
         except (TypeError, ValueError):
             return JsonResponse({"ok": False, "error": "Invalid number"}, status=400)
 
-    if field == "price":
+    # Price (decimal/float)
+    elif field == "price":
         try:
-            value = float(value)
+            value_converted = float(value)
         except (TypeError, ValueError):
             return JsonResponse({"ok": False, "error": "Invalid price"}, status=400)
 
-    setattr(item, field, value)
+    # Booleans: verify / discontinued
+    elif field in ["verify", "discontinued"]:
+        text = (value or "").strip().lower()
+        if text in ["1", "true", "t", "yes", "y", "on"]:
+            value_converted = True
+        elif text in ["0", "false", "f", "no", "n", "off", ""]:
+            value_converted = False
+        else:
+            return JsonResponse({"ok": False, "error": "Invalid boolean"}, status=400)
+
+    # CONDITION STATUS (choice)
+    elif field == "condition_status":
+        # validate against model choices so we don't zapisujemy śmieci
+        try:
+            cond_field = InventoryItem._meta.get_field("condition_status")
+            valid_values = {choice_value for choice_value, _ in cond_field.choices}
+        except Exception:
+            valid_values = set()
+
+        if valid_values and value not in valid_values:
+            return JsonResponse({"ok": False, "error": "Invalid condition_status"}, status=400)
+
+        value_converted = value
+
+    # All other text fields
+    else:
+        value_converted = value
+
+    setattr(item, field, value_converted)
     item.save()
 
-    return JsonResponse({"ok": True, "value": value})
+    return JsonResponse({"ok": True, "value": value_converted})

@@ -73,6 +73,31 @@
 .sb-dark .sb-table tbody tr:hover {
     background-color: #333;
 }
+/* R/S/B zebra & hover – keep frozen columns in sync with row background */
+.sb-table tbody tr:nth-child(even) td.col-rck,
+.sb-table tbody tr:nth-child(even) td.col-sh,
+.sb-table tbody tr:nth-child(even) td.col-box {
+    background-color: #fafafa;
+}
+
+.sb-table tbody tr:hover td.col-rck,
+.sb-table tbody tr:hover td.col-sh,
+.sb-table tbody tr:hover td.col-box {
+    background-color: #e9f1f5;
+}
+
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-rck,
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-sh,
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-box {
+    background-color: #242424;
+}
+
+.sb-dark .sb-table tbody tr:hover td.col-rck,
+.sb-dark .sb-table tbody tr:hover td.col-sh,
+.sb-dark .sb-table tbody tr:hover td.col-box {
+    background-color: #333;
+}
+
 
 /* ============================================================
    STICKY HEADER
@@ -248,9 +273,13 @@
 .sb-table td.col-reorderlevel,
 .sb-table td.col-rt,
 .sb-table td.col-disc,
+.sb-table td.col-rev,
+.sb-table td.col-condition,
 .sb-table td.col-reorder {
     text-align: center;
 }
+
+
 
 /* ============================================================
    INLINE EDIT INPUT
@@ -276,7 +305,8 @@
 ============================================================ */
 
 .unit-select,
-.group-select {
+.group-select,
+.condition-select {
     font: inherit;
     max-width: 100%;
     padding: 2px 26px 2px 6px;
@@ -296,20 +326,24 @@
     background-size: 10px 6px;
 }
 
+
 .unit-select:hover,
-.group-select:hover {
+.group-select:hover,
+.condition-select:hover {
     border-color: #999;
 }
 
 .unit-select:focus,
-.group-select:focus {
+.group-select:focus,
+.condition-select:focus {
     border-color: #417690;
     box-shadow: 0 0 0 2px rgba(65,118,144,0.2);
 }
 
 /* dark mode dropdowns */
 .sb-dark .unit-select,
-.sb-dark .group-select {
+.sb-dark .group-select,
+.sb-dark .condition-select {
     background-color: #3a3a3a;
     color: #eee;
     border-color: #555;
@@ -318,6 +352,7 @@
             <polygon points='0,0 10,0 5,6' fill='%23ccc'/>\
         </svg>");
 }
+
 
 /* ============================================================
    DESCRIPTION (preview + lupka)
@@ -556,4 +591,102 @@
 .sb-dark .sb-table tbody tr:hover td.col-sh,
 .sb-dark .sb-table tbody tr:hover td.col-box {
     background-color: #333;
+}
+/* ============================================================
+   CONDITION / REV / DISC controls
+============================================================ */
+
+.rev-checkbox,
+.disc-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    transform: scale(1.1);
+}
+
+.condition-select {
+    font-size: 13px;
+    padding: 2px 4px;
+    max-width: 120px;
+}
+
+/* ============================================================
+   ROW HIGHLIGHTING: REV (verify) / DISC (discontinued)
+============================================================ */
+
+/* REV – row needs verification */
+.sb-row-verify {
+    background-color: #fff3b0 !important;
+}
+.sb-dark .sb-row-verify {
+    background-color: #7a6400 !important;
+}
+
+/* DISC – row discontinued, gray text */
+.sb-row-disc {
+    color: #999 !important;
+}
+.sb-dark .sb-row-disc {
+    color: #777 !important;
+}
+
+/* Both flags active */
+.sb-row-verify.sb-row-disc {
+    background-color: #fff3b0 !important;
+    color: #666 !important;
+}
+.sb-dark .sb-row-verify.sb-row-disc {
+    background-color: #7a6400 !important;
+    color: #999 !important;
+}
+/* ============================================================
+   ROW HIGHLIGHTING: REV (verify) / DISC (discontinued)
+   – działa również na zamrożone R/S/B
+============================================================ */
+
+/* REV – rząd do weryfikacji (żółte tło) */
+.sb-table tr.sb-row-verify {
+    background-color: #fff3b0 !important;
+}
+.sb-dark .sb-table tr.sb-row-verify {
+    background-color: #7a6400 !important;
+}
+
+/* REV + frozen R/S/B – wymuszenie żółtego tła na sticky komórkach */
+.sb-table tr.sb-row-verify td.col-rck,
+.sb-table tr.sb-row-verify td.col-sh,
+.sb-table tr.sb-row-verify td.col-box {
+    background-color: #fff3b0 !important;
+}
+.sb-dark .sb-table tr.sb-row-verify td.col-rck,
+.sb-dark .sb-table tr.sb-row-verify td.col-sh,
+.sb-dark .sb-table tr.sb-row-verify td.col-box {
+    background-color: #7a6400 !important;
+}
+
+/* DISC – wyszarzony tekst całego wiersza */
+.sb-table tr.sb-row-disc td {
+    color: #999 !important;
+}
+.sb-dark .sb-table tr.sb-row-disc td {
+    color: #777 !important;
+}
+
+/* REV + DISC naraz */
+.sb-table tr.sb-row-verify.sb-row-disc td {
+    background-color: #fff3b0 !important;
+    color: #666 !important;
+}
+.sb-dark .sb-table tr.sb-row-verify.sb-row-disc td {
+    background-color: #7a6400 !important;
+    color: #999 !important;
+}
+
+/* Checkboxy – delikatne powiększenie, bez ruszania kolorów tabeli */
+.rev-checkbox,
+.disc-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    transform: scale(1.1);
 }

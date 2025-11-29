@@ -178,7 +178,9 @@
                     <span>Quantity<br>Reorder</span>
                 </th>
 
+                <th class="col-condition">Condition</th>
                 <th class="col-disc">Disc.</th>
+                <th class="col-rev">REV.</th>
                 <th class="col-reorder">Reorder</th>
             </tr>
             </thead>
@@ -186,7 +188,8 @@
             <!-- BODY -->
             <tbody>
             {% for item in items %}
-                <tr>
+                <tr class="sb-row{% if item.verify %} sb-row-verify{% endif %}{% if item.discontinued %} sb-row-disc{% endif %}"
+                    data-item-id="{{ item.id }}">
 
                     <!-- FROZEN COLUMNS -->
                     <td class="col-rck inline" data-field="rack" data-id="{{ item.id }}">
@@ -317,11 +320,35 @@
                         {{ item.quantity_in_reorder }}
                     </td>
 
-                    <!-- DISC -->
+                    <!-- CONDITION STATUS DROPDOWN -->
+                    <td class="col-condition">
+                        <select class="condition-select" data-item-id="{{ item.id }}">
+                            <option value="">
+                                ---
+                            </option>
+                            {% for value, label in condition_choices %}
+                                <option value="{{ value }}"
+                                        {% if item.condition_status == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+
+                    <!-- DISC CHECKBOX -->
                     <td class="col-disc">
-                        {% if item.discontinued %}
-                            <span class="sb-tag sb-tag-check">✓</span>
-                        {% endif %}
+                        <input type="checkbox"
+                               class="disc-checkbox"
+                               data-item-id="{{ item.id }}"
+                               {% if item.discontinued %}checked{% endif %}>
+                    </td>
+
+                    <!-- VERIFY / REV CHECKBOX -->
+                    <td class="col-rev">
+                        <input type="checkbox"
+                               class="rev-checkbox"
+                               data-item-id="{{ item.id }}"
+                               {% if item.verify %}checked{% endif %}>
                     </td>
 
                     <!-- FOR REORDER -->
@@ -334,7 +361,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="20">No inventory items yet.</td>
+                    <td colspan="22">No inventory items yet.</td>
                 </tr>
             {% endfor %}
             </tbody>
