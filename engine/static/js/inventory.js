@@ -11,17 +11,17 @@
     } catch (e) {}
 
     function syncBodyDarkClass() {
-        if (document.documentElement.classList.contains("sb-dark"))
+        if (document.documentElement.classList.contains("sb-dark")) {
             document.body.classList.add("sb-dark");
-        else
+        } else {
             document.body.classList.remove("sb-dark");
+        }
     }
 
     /* ================================================
-       LOLLYPOP DETECTION FOR MULTILINE FIELDS
+       MULTILINE CLAMP INDICATOR (LOLLYPOP)
     ================================================= */
     function markClampedCells() {
-        // clear previous
         document.querySelectorAll("td.sb-clamped").forEach(td => {
             td.classList.remove("sb-clamped");
         });
@@ -132,7 +132,6 @@
 
     /* ================================================
        AJAX: CONDITION STATUS DROPDOWN
-       (NEW)
     ================================================= */
     function sbInitConditionDropdowns() {
         const selects = document.querySelectorAll(".condition-select");
@@ -171,7 +170,6 @@
 
     /* ================================================
        AJAX: REV. + DISC CHECKBOXES
-       (NEW)
     ================================================= */
     function sbInitRevDiscCheckboxes() {
         const revCheckboxes = document.querySelectorAll(".rev-checkbox");
@@ -197,8 +195,6 @@
                 .then(data => {
                     if (!data.ok) {
                         console.error(`Update ${fieldName} failed`, data.error);
-                        // optional: rollback checkbox state
-                        // checkbox.checked = !checkbox.checked;
                         return;
                     }
 
@@ -222,8 +218,6 @@
                 })
                 .catch(err => {
                     console.error(`Update ${fieldName} error`, err);
-                    // optional: rollback
-                    // checkbox.checked = !checkbox.checked;
                 });
         }
 
@@ -233,6 +227,122 @@
 
         discCheckboxes.forEach(cb => {
             cb.addEventListener("change", () => updateBooleanField(cb, "discontinued"));
+        });
+    }
+
+    /* ================================================
+       AJAX: PER-USER FAVORITE STAR
+    ================================================= */
+    function sbInitFavorites() {
+        const stars = document.querySelectorAll(".sb-favorite");
+        if (!stars.length) return;
+
+        const cycle = ["NONE", "RED", "GREEN", "YELLOW", "BLUE"];
+
+        function setStarAppearance(el, color) {
+            el.dataset.color = color;
+
+            el.classList.remove(
+                "sb-fav-red",
+                "sb-fav-green",
+                "sb-fav-yellow",
+                "sb-fav-blue",
+                "sb-fav-none"
+            );
+
+            let symbol = "☆";
+            let cls = "sb-fav-none";
+
+            if (color === "RED") {
+                symbol = "★";
+                cls = "sb-fav-red";
+            } else if (color === "GREEN") {
+                symbol = "★";
+                cls = "sb-fav-green";
+            } else if (color === "YELLOW") {
+                symbol = "★";
+                cls = "sb-fav-yellow";
+            } else if (color === "BLUE") {
+                symbol = "★";
+                cls = "sb-fav-blue";
+            }
+
+            el.textContent = symbol;
+            el.classList.add(cls);
+        }
+
+        stars.forEach(star => {
+            const initialColor = (star.dataset.color || "NONE").toUpperCase();
+            setStarAppearance(star, initialColor);
+
+            star.addEventListener("click", () => {
+                const itemId = star.dataset.itemId;
+                if (!itemId) return;
+
+                const current = (star.dataset.color || "NONE").toUpperCase();
+                const idx = cycle.indexOf(current);
+                const nextColor = cycle[(idx + 1) % cycle.length];
+
+                setStarAppearance(star, nextColor);
+
+                const fd = new FormData();
+                fd.append("item_id", itemId);
+                fd.append("color", nextColor);
+
+                fetch("/api/update-favorite/", {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    body: fd,
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.ok) {
+                            console.error("Favorite update failed:", data.error);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Favorite update error:", err);
+                    });
+            });
+        });
+    }
+
+    /* ================================================
+       AJAX: PER-USER NOTE (Quill modal)
+    ================================================= */
+    function decodeHtmlEntities(str) {
+        if (!str) return "";
+        const textarea = document.createElement("textarea");
+        textarea.innerHTML = str;
+        return textarea.value;
+    }
+
+    function sbInitNoteButtons() {
+        const buttons = document.querySelectorAll(".sb-note-btn");
+        if (!buttons.length) return;
+
+        buttons.forEach(btn => {
+            // 1) ustaw stan wizualny na starcie na podstawie data-has-note
+            const hasNoteAttr = btn.dataset.hasNote;
+            if (hasNoteAttr === "1") {
+                btn.classList.add("sb-note-has-content");
+            } else {
+                btn.classList.remove("sb-note-has-content");
+            }
+
+            // 2) klik — otwarcie modala
+            btn.addEventListener("click", () => {
+                if (typeof window.sbOpenQuillEditor !== "function") {
+                    console.error("Quill editor not ready yet");
+                    return;
+                }
+
+                const itemId = btn.dataset.itemId;
+                const raw = btn.dataset.note || "";
+                const html = decodeHtmlEntities(raw);
+
+                window.sbOpenQuillEditor("note", itemId, html, btn);
+            });
         });
     }
 
@@ -291,7 +401,6 @@
                                 td.innerText = originalText;
                             } else {
                                 td.innerText = newValue;
-                                // po zmianie można ponownie sprawdzić clamp
                                 markClampedCells();
                             }
                         })
@@ -317,7 +426,7 @@
     }
 
     /* ================================================
-       QUILL MODAL (DESCRIPTION EDIT)
+       QUILL MODAL (DESCRIPTION + USER NOTE)
     ================================================= */
     function sbInitQuillModal() {
         const modal = document.getElementById("sb-quill-modal");
@@ -346,7 +455,9 @@
 
         const state = {
             currentItemId: null,
+            mode: "description",
             currentCell: null,
+            noteButton: null,
             modal,
         };
 
@@ -354,11 +465,21 @@
             modal.style.display = "none";
             state.currentItemId = null;
             state.currentCell = null;
+            state.noteButton = null;
+            state.mode = "description";
         }
 
-        function openModal(itemId, html, cell) {
-            state.currentItemId = itemId;
-            state.currentCell = cell;
+        function openModal(mode, itemId, html, targetElement) {
+            state.mode = mode || "description";
+            state.currentItemId = itemId || null;
+            state.currentCell = null;
+            state.noteButton = null;
+
+            if (state.mode === "description") {
+                state.currentCell = targetElement;
+            } else if (state.mode === "note") {
+                state.noteButton = targetElement;
+            }
 
             quill.root.innerHTML = html || "";
             modal.style.display = "flex";
@@ -377,48 +498,88 @@
 
         if (saveBtn) {
             saveBtn.addEventListener("click", function () {
-                if (!state.currentItemId || !state.currentCell) {
+                if (!state.currentItemId) {
                     hideModal();
                     return;
                 }
 
                 const html = quill.root.innerHTML.trim();
 
-                const fd = new FormData();
-                fd.append("item_id", state.currentItemId);
-                fd.append("field", "part_description");
-                fd.append("value", html);
+                // DESCRIPTION MODE
+                if (state.mode === "description") {
+                    const cell = state.currentCell;
+                    const fd = new FormData();
+                    fd.append("item_id", state.currentItemId);
+                    fd.append("field", "part_description");
+                    fd.append("value", html);
 
-                fetch("/api/update-field/", {
-                    method: "POST",
-                    headers: { "X-CSRFToken": csrftoken },
-                    body: fd,
-                })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.ok) {
-                            console.error("Quill save failed:", data.error);
-                        } else {
-                            const preview = state.currentCell.querySelector(".sb-desc-preview");
-                            if (preview) {
-                                preview.innerHTML = html;
-                            }
-                            markClampedCells();
-                        }
-                        hideModal();
+                    fetch("/api/update-field/", {
+                        method: "POST",
+                        headers: { "X-CSRFToken": csrftoken },
+                        body: fd,
                     })
-                    .catch(err => {
-                        console.error("Quill save error:", err);
-                        hideModal();
-                    });
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) {
+                                console.error("Quill save (description) failed:", data.error);
+                            } else if (cell) {
+                                const preview = cell.querySelector(".sb-desc-preview");
+                                if (preview) {
+                                    preview.innerHTML = html;
+                                }
+                                markClampedCells();
+                            }
+                            hideModal();
+                        })
+                        .catch(err => {
+                            console.error("Quill save (description) error:", err);
+                            hideModal();
+                        });
+                }
+
+                // NOTE MODE
+                else if (state.mode === "note") {
+                    const btn = state.noteButton;
+                    const fd = new FormData();
+                    fd.append("item_id", state.currentItemId);
+                    fd.append("note", html);
+
+                    fetch("/api/update-note/", {
+                        method: "POST",
+                        headers: { "X-CSRFToken": csrftoken },
+                        body: fd,
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) {
+                                console.error("Quill save (note) failed:", data.error);
+                            } else if (btn) {
+                                btn.dataset.note = html;
+
+                                const plain = html.replace(/<[^>]*>/g, "").trim();
+                                btn.dataset.hasNote = plain.length > 0 ? "1" : "0";
+
+                                if (plain.length > 0) {
+                                    btn.classList.add("sb-note-has-content");
+                                } else {
+                                    btn.classList.remove("sb-note-has-content");
+                                }
+                            }
+                            hideModal();
+                        })
+                        .catch(err => {
+                            console.error("Quill save (note) error:", err);
+                            hideModal();
+                        });
+                }
             });
         }
     }
 
-    // podpinanie „lupki” w komórkach description
+    // DESCRIPTION triggers (🔍)
     function sbInitQuillTriggers() {
         const btns = document.querySelectorAll(".sb-desc-edit-btn");
-        if (!btns.length || !window.sbOpenQuillEditor) return;
+        if (!btns.length || typeof window.sbOpenQuillEditor !== "function") return;
 
         btns.forEach(btn => {
             btn.addEventListener("click", function () {
@@ -426,7 +587,8 @@
                 const cell = btn.closest("td");
                 const preview = cell ? cell.querySelector(".sb-desc-preview") : null;
                 const html = preview ? preview.innerHTML : "";
-                window.sbOpenQuillEditor(itemId, html, cell);
+
+                window.sbOpenQuillEditor("description", itemId, html, cell);
             });
         });
     }
@@ -471,15 +633,17 @@
                     newWrapper.scrollTop = scrollState.top;
                 }
 
-                // Re-init on new content
                 markClampedCells();
                 sbInitUnitDropdowns();
                 sbInitGroupDropdowns();
                 sbInitConditionDropdowns();
                 sbInitRevDiscCheckboxes();
+                sbInitFavorites();
                 sbInitInlineEditing();
                 sbInitPagination();
+                sbInitQuillModal();
                 sbInitQuillTriggers();
+                sbInitNoteButtons();
             })
             .catch(err => {
                 console.error("Pagination AJAX error:", err);
@@ -488,7 +652,6 @@
     }
 
     function sbInitPagination() {
-        // PAGE SIZE DROPDOWN
         const sizeSelect = document.getElementById("page-size-select");
         if (sizeSelect) {
             sizeSelect.addEventListener("change", function () {
@@ -502,7 +665,6 @@
             });
         }
 
-        // PAGER LINKS
         const pagerLinks = document.querySelectorAll(".sb-pagination .sb-page-link[data-page]");
         pagerLinks.forEach(link => {
             link.addEventListener("click", function (e) {
@@ -545,9 +707,11 @@
         sbInitGroupDropdowns();
         sbInitConditionDropdowns();
         sbInitRevDiscCheckboxes();
+        sbInitFavorites();
         sbInitInlineEditing();
         sbInitPagination();
         sbInitQuillModal();
         sbInitQuillTriggers();
+        sbInitNoteButtons();
     });
 })();

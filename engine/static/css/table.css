@@ -690,3 +690,81 @@
     cursor: pointer;
     transform: scale(1.1);
 }
+/* ============================================================
+   FAVORITE STAR (per-user)
+============================================================ */
+
+.col-fav .sb-favorite {
+    font-size: 26px;      /* ★ bigger */
+    cursor: pointer;
+    line-height: 1;
+    display: inline-block;
+    width: 30px;
+    text-align: center;
+    user-select: none;
+}
+
+/* Colors */
+.sb-fav-red {
+    color: #ff3b30;       /* iOS red */
+}
+.sb-fav-green {
+    color: #34c759;       /* iOS green */
+}
+.sb-fav-yellow {
+    color: #ffcc00;       /* iOS yellow */
+}
+.sb-fav-blue {
+    color: #007aff;       /* iOS blue */
+}
+.sb-fav-none {
+    color: #aaa;
+}
+
+/* Hover */
+.col-fav .sb-favorite:hover {
+    transform: scale(1.25);
+}
+
+/* ============================================================
+   USER NOTE BUTTON
+============================================================ */
+
+.col-note .sb-note-btn {
+    font-size: 20px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+.col-note .sb-note-btn:hover {
+    transform: scale(1.25);
+}
+
+/* If note exists, make it very visible */
+.col-note .sb-note-btn.sb-note-has-content {
+    color: #ffffff;
+    background-color: #417690;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.sb-dark .col-note .sb-note-btn.sb-note-has-content {
+    color: #ffffff;
+    background-color: #2c4f60;
+}
+
+
+/* ============================================================
+   TABLE COLUMN LAYOUT FOR NEW FIELDS
+============================================================ */
+
+.col-fav,
+.col-note {
+    text-align: center;
+    width: 50px;
+}

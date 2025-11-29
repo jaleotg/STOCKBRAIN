@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 # Condition status for each inventory item
@@ -9,6 +10,15 @@ CONDITION_STATUS_CHOICES = [
     ("INCOMPLETE", "INCOMPLETE"),
     ("UNKNOWN", "UNKNOWN"),
     ("OTHER", "OTHER"),
+]
+
+# Favorite colors for per-user meta (star states)
+FAVORITE_COLOR_CHOICES = [
+    ("NONE", "None"),
+    ("RED", "Red"),
+    ("GREEN", "Green"),
+    ("YELLOW", "Yellow"),
+    ("BLUE", "Blue"),
 ]
 
 
@@ -66,10 +76,10 @@ class InventoryItem(models.Model):
     )
     discontinued = models.BooleanField("Discontinued?", default=False)
 
-    # NEW: record needs verification flag
+    # Record needs verification flag
     verify = models.BooleanField("Needs verification?", default=False)
 
-    # NEW: condition status field with fixed set of choices
+    # Condition status field with fixed set of choices
     condition_status = models.CharField(
         "Condition Status",
         max_length=20,
@@ -224,3 +234,42 @@ class ItemGroup(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class InventoryUserMeta(models.Model):
+    """
+    Per-user metadata for a given inventory item:
+    - favorite_color: per-user star color
+    - note: per-user rich text note (HTML)
+    Both are visible only to that user on the frontend.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="inventory_meta",
+    )
+    item = models.ForeignKey(
+        InventoryItem,
+        on_delete=models.CASCADE,
+        related_name="user_meta",
+    )
+
+    favorite_color = models.CharField(
+        max_length=10,
+        choices=FAVORITE_COLOR_CHOICES,
+        default="NONE",
+    )
+
+    note = models.TextField(
+        "User note",
+        blank=True,
+    )
+
+    class Meta:
+        unique_together = ("user", "item")
+        verbose_name = "Inventory user meta"
+        verbose_name_plural = "Inventory user meta"
+
+    def __str__(self) -> str:
+        return f"{self.user} – {self.item} ({self.favorite_color})"

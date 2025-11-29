@@ -42,27 +42,21 @@
                  data-current-page="{{ current_page_number }}"
                  data-page-size="{{ page_size }}">
 
-                {# FIRST << #}
+                <!-- FIRST << -->
                 <a href="?page=1{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
                    class="sb-page-link sb-page-first"
-                   data-page="1">
-                    &laquo;
-                </a>
+                   data-page="1">&laquo;</a>
 
-                {# PREV < #}
+                <!-- PREV < -->
                 {% if current_page_number > 1 %}
                     <a href="?page={{ current_page_number|add:'-1' }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
                        class="sb-page-link sb-page-prev"
-                       data-page="{{ current_page_number|add:'-1' }}">
-                        &lsaquo;
-                    </a>
+                       data-page="{{ current_page_number|add:'-1' }}">&lsaquo;</a>
                 {% else %}
                     <span class="sb-page-link sb-page-disabled">&lsaquo;</span>
                 {% endif %}
 
-                {# NUMERYCZNE – SMART WINDOW #}
-
-                {# zawsze strona 1 #}
+                <!-- ALWAYS SHOW 1 -->
                 {% if current_page_number == 1 %}
                     <span class="sb-page-link sb-page-current" data-page="1">1</span>
                 {% else %}
@@ -71,68 +65,50 @@
                        data-page="1">1</a>
                 {% endif %}
 
-                {# pierwsze "..." jeśli trzeba #}
                 {% if show_first_ellipsis %}
                     <span class="sb-page-link sb-page-ellipsis">…</span>
                 {% endif %}
 
-                {# okno środkowe (max 5 stron) #}
+                <!-- SMART NUMBERS -->
                 {% for num in page_numbers %}
                     {% if num > 1 and num < num_pages %}
                         {% if num == current_page_number %}
-                            <span class="sb-page-link sb-page-current"
-                                  data-page="{{ num }}">
-                                {{ num }}
-                            </span>
+                            <span class="sb-page-link sb-page-current" data-page="{{ num }}">{{ num }}</span>
                         {% else %}
                             <a href="?page={{ num }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
                                class="sb-page-link"
-                               data-page="{{ num }}">
-                                {{ num }}
-                            </a>
+                               data-page="{{ num }}">{{ num }}</a>
                         {% endif %}
                     {% endif %}
                 {% endfor %}
 
-                {# drugie "..." jeśli trzeba #}
                 {% if show_last_ellipsis %}
                     <span class="sb-page-link sb-page-ellipsis">…</span>
                 {% endif %}
 
-                {# ostatnia strona, jeśli więcej niż 1 #}
                 {% if num_pages > 1 %}
                     {% if current_page_number == num_pages %}
-                        <span class="sb-page-link sb-page-current"
-                              data-page="{{ num_pages }}">
-                            {{ num_pages }}
-                        </span>
+                        <span class="sb-page-link sb-page-current" data-page="{{ num_pages }}">{{ num_pages }}</span>
                     {% else %}
                         <a href="?page={{ num_pages }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
                            class="sb-page-link"
-                           data-page="{{ num_pages }}">
-                            {{ num_pages }}
-                        </a>
+                           data-page="{{ num_pages }}">{{ num_pages }}</a>
                     {% endif %}
                 {% endif %}
 
-                {# NEXT > #}
+                <!-- NEXT > -->
                 {% if current_page_number < num_pages %}
                     <a href="?page={{ current_page_number|add:'1' }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
                        class="sb-page-link sb-page-next"
-                       data-page="{{ current_page_number|add:'1' }}">
-                        &rsaquo;
-                    </a>
+                       data-page="{{ current_page_number|add:'1' }}">&rsaquo;</a>
                 {% else %}
                     <span class="sb-page-link sb-page-disabled">&rsaquo;</span>
                 {% endif %}
 
-                {# LAST >> #}
+                <!-- LAST >> -->
                 <a href="?page={{ num_pages }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
                    class="sb-page-link sb-page-last"
-                   data-page="{{ num_pages }}">
-                    &raquo;
-                </a>
-
+                   data-page="{{ num_pages }}">&raquo;</a>
             </nav>
         {% endif %}
     </div>
@@ -143,8 +119,6 @@
 
     <div class="sb-table-wrapper">
         <table class="sb-table">
-
-            <!-- HEADER -->
             <thead>
             <tr>
                 <th class="col-rck">Rck</th>
@@ -166,75 +140,65 @@
                 <th class="col-instock">In stock</th>
                 <th class="col-price">Price</th>
 
-                <th class="col-reorderlevel">
-                    <span>Reorder<br>level</span>
-                </th>
-
-                <th class="col-rt" title="Reorder Time in Days">
-                    RT Days 🍭
-                </th>
-
-                <th class="col-qtyreorder">
-                    <span>Quantity<br>Reorder</span>
-                </th>
+                <th class="col-reorderlevel"><span>Reorder<br>level</span></th>
+                <th class="col-rt" title="Reorder Time in Days">RT Days 🍭</th>
+                <th class="col-qtyreorder"><span>Quantity<br>Reorder</span></th>
 
                 <th class="col-condition">Condition</th>
                 <th class="col-disc">Disc.</th>
                 <th class="col-rev">REV.</th>
+
+                <!-- USER FAVORITE -->
+                <th class="col-fav">Fav</th>
+
+                <!-- USER NOTE -->
+                <th class="col-note">Note</th>
+
                 <th class="col-reorder">Reorder</th>
             </tr>
             </thead>
 
-            <!-- BODY -->
             <tbody>
+
             {% for item in items %}
-                <tr class="sb-row{% if item.verify %} sb-row-verify{% endif %}{% if item.discontinued %} sb-row-disc{% endif %}"
-                    data-item-id="{{ item.id }}">
 
-                    <!-- FROZEN COLUMNS -->
-                    <td class="col-rck inline" data-field="rack" data-id="{{ item.id }}">
-                        {{ item.rack }}
-                    </td>
+                {% with usermeta=item.meta_for_user.0 %}
+                    <tr class="sb-row
+                               {% if item.verify %} sb-row-verify{% endif %}
+                               {% if item.discontinued %} sb-row-disc{% endif %}"
+                        data-item-id="{{ item.id }}"
+                        data-fav="{{ usermeta.favorite_color|default:'NONE' }}"
+                        data-note="{{ usermeta.note|default:''|escape }}">
+                {% endwith %}
 
-                    <td class="col-sh inline" data-field="shelf" data-id="{{ item.id }}">
-                        {{ item.shelf }}
-                    </td>
+                    <!-- R/S/B -->
+                    <td class="col-rck inline" data-field="rack" data-id="{{ item.id }}">{{ item.rack }}</td>
+                    <td class="col-sh inline" data-field="shelf" data-id="{{ item.id }}">{{ item.shelf }}</td>
 
                     <td class="col-box inline" data-field="box" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.box }}">
-                            {{ item.box }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.box }}">{{ item.box }}</span>
                     </td>
 
-                    <!-- GROUP dropdown -->
+                    <!-- GROUP -->
                     <td class="col-group">
-                        <form class="group-form" onsubmit="return false;">
-                            <select
-                                class="group-select"
-                                data-item-id="{{ item.id }}"
-                            >
-                                {% for g in groups %}
-                                    <option value="{{ g.id }}"
-                                            {% if item.group_id == g.id %}selected{% endif %}>
-                                        {{ g.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </form>
+                        <select class="group-select" data-item-id="{{ item.id }}">
+                            {% for g in groups %}
+                                <option value="{{ g.id }}" {% if item.group_id == g.id %}selected{% endif %}>
+                                    {{ g.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </td>
 
-                    <!-- INLINE TEXT FIELDS (MULTILINE + TOOLTIP) -->
+                    <!-- NAME -->
                     <td class="col-name inline" data-field="name" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.name }}">
-                            {{ item.name }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.name }}">{{ item.name }}</span>
                     </td>
 
-                    {# DESCRIPTION: WYSIWYG PREVIEW + LUPKA #}
+                    <!-- DESCRIPTION -->
                     <td class="col-partdesc" data-id="{{ item.id }}">
                         <div class="sb-desc-container">
-                            <div class="sb-desc-preview sb-multiline"
-                                 title="{{ item.part_description|striptags }}">
+                            <div class="sb-desc-preview sb-multiline" title="{{ item.part_description|striptags }}">
                                 {{ item.part_description|safe }}
                             </div>
                             <button type="button"
@@ -246,60 +210,43 @@
                         </div>
                     </td>
 
+                    <!-- OTHER TEXT FIELDS -->
                     <td class="col-partnum inline" data-field="part_number" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.part_number }}">
-                            {{ item.part_number }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.part_number }}">{{ item.part_number }}</span>
                     </td>
 
                     <td class="col-dcm inline" data-field="dcm_number" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.dcm_number }}">
-                            {{ item.dcm_number }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.dcm_number }}">{{ item.dcm_number }}</span>
                     </td>
 
                     <td class="col-oemname inline" data-field="oem_name" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.oem_name }}">
-                            {{ item.oem_name }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.oem_name }}">{{ item.oem_name }}</span>
                     </td>
 
                     <td class="col-oemnum inline" data-field="oem_number" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.oem_number }}">
-                            {{ item.oem_number }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.oem_number }}">{{ item.oem_number }}</span>
                     </td>
 
                     <td class="col-vendor inline" data-field="vendor" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.vendor }}">
-                            {{ item.vendor }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.vendor }}">{{ item.vendor }}</span>
                     </td>
 
                     <td class="col-sourceloc inline" data-field="source_location" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.source_location }}">
-                            {{ item.source_location }}
-                        </span>
+                        <span class="sb-multiline" title="{{ item.source_location }}">{{ item.source_location }}</span>
                     </td>
 
-                    <!-- UNITS dropdown -->
+                    <!-- UNITS -->
                     <td class="col-units">
-                        <form class="unit-form" onsubmit="return false;">
-                            <select
-                                class="unit-select"
-                                data-item-id="{{ item.id }}"
-                            >
-                                {% for u in units %}
-                                    <option value="{{ u.id }}"
-                                            {% if item.unit_id == u.id %}selected{% endif %}>
-                                        {{ u.code }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </form>
+                        <select class="unit-select" data-item-id="{{ item.id }}">
+                            {% for u in units %}
+                                <option value="{{ u.id }}" {% if item.unit_id == u.id %}selected{% endif %}>
+                                    {{ u.code }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </td>
 
-                    <!-- NUMERICAL INLINE -->
+                    <!-- NUMERIC FIELDS -->
                     <td class="col-instock inline" data-field="quantity_in_stock" data-id="{{ item.id }}">
                         {{ item.quantity_in_stock }}
                     </td>
@@ -320,15 +267,12 @@
                         {{ item.quantity_in_reorder }}
                     </td>
 
-                    <!-- CONDITION STATUS DROPDOWN -->
+                    <!-- CONDITION DROPDOWN -->
                     <td class="col-condition">
                         <select class="condition-select" data-item-id="{{ item.id }}">
-                            <option value="">
-                                ---
-                            </option>
+                            <option value="">---</option>
                             {% for value, label in condition_choices %}
-                                <option value="{{ value }}"
-                                        {% if item.condition_status == value %}selected{% endif %}>
+                                <option value="{{ value }}" {% if item.condition_status == value %}selected{% endif %}>
                                     {{ label }}
                                 </option>
                             {% endfor %}
@@ -343,13 +287,47 @@
                                {% if item.discontinued %}checked{% endif %}>
                     </td>
 
-                    <!-- VERIFY / REV CHECKBOX -->
+                    <!-- REV CHECKBOX -->
                     <td class="col-rev">
                         <input type="checkbox"
                                class="rev-checkbox"
                                data-item-id="{{ item.id }}"
                                {% if item.verify %}checked{% endif %}>
                     </td>
+
+                    <!-- FAVORITE STAR -->
+                    {% with fav=item.meta_for_user.0.favorite_color|default:"NONE" %}
+                        <td class="col-fav">
+                            <span class="sb-favorite"
+                                  data-item-id="{{ item.id }}"
+                                  data-color="{{ fav }}">
+                                {% if fav == "RED" %}
+                                    ⭐
+                                {% elif fav == "GREEN" %}
+                                    ⭐
+                                {% elif fav == "YELLOW" %}
+                                    ⭐
+                                {% elif fav == "BLUE" %}
+                                    ⭐
+                                {% else %}
+                                    ☆
+                                {% endif %}
+                            </span>
+                        </td>
+                    {% endwith %}
+
+                    <!-- USER NOTE BUTTON -->
+                    {% with note=item.meta_for_user.0.note|default:"" %}
+                        <td class="col-note">
+                            <button type="button"
+                                    class="sb-note-btn{% if note %} sb-note-has-content{% endif %}"
+                                    data-item-id="{{ item.id }}"
+                                    data-note="{{ note|escape }}"
+                                    data-has-note="{% if note %}1{% else %}0{% endif %}">
+                                📝
+                            </button>
+                        </td>
+                    {% endwith %}
 
                     <!-- FOR REORDER -->
                     <td class="col-reorder">
@@ -361,11 +339,11 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="22">No inventory items yet.</td>
+                    <td colspan="25">No inventory items yet.</td>
                 </tr>
             {% endfor %}
-            </tbody>
 
+            </tbody>
         </table>
     </div>
 </div>

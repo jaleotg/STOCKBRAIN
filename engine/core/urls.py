@@ -7,6 +7,8 @@ from inventory.views import (
     update_unit,
     update_group,
     update_field,
+    update_favorite,
+    update_note,
 )
 
 urlpatterns = [
@@ -20,8 +22,12 @@ urlpatterns = [
     path("", home_view, name="home"),
     path("home/", home_view, name="home_alias"),
 
-    # AJAX API endpoints
+    # AJAX API endpoints (InventoryItem)
     path("api/update-unit/", update_unit, name="update_unit"),
     path("api/update-group/", update_group, name="update_group"),
     path("api/update-field/", update_field, name="update_field"),
+
+    # AJAX API endpoints (per-user meta: favorites + notes)
+    path("api/update-favorite/", update_favorite, name="update_favorite"),
+    path("api/update-note/", update_note, name="update_note"),
 ]

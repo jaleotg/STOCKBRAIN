@@ -4,8 +4,15 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Prefetch
 
-from .models import InventoryItem, Unit, ItemGroup
+from .models import (
+    InventoryItem,
+    Unit,
+    ItemGroup,
+    InventoryUserMeta,
+    FAVORITE_COLOR_CHOICES,
+)
 
 
 # Do wyboru ilości rekordów na stronę
@@ -42,7 +49,7 @@ def logout_view(request):
 
 
 # ============================================
-# HOME (TABLE + PAGINATION + DROPDOWNS)
+# HOME (TABLE + PAGINATION + DROPDOWNS + USER META)
 # ============================================
 
 @login_required
@@ -52,6 +59,7 @@ def home_view(request):
     - pagination
     - page size selection
     - dropdowns Units / Groups / Condition
+    - per-user meta: favorite_color + note (loaded via prefetch)
     """
     # --- PAGE SIZE (from GET or session) ---
     page_size_param = request.GET.get("page_size")
@@ -81,8 +89,18 @@ def home_view(request):
             except (TypeError, ValueError):
                 page_size = 50
 
-    # --- QUERYSET ---
-    queryset = InventoryItem.objects.all().order_by("rack", "shelf", "box", "name")
+    # --- QUERYSET with per-user meta prefetch ---
+    queryset = (
+        InventoryItem.objects.all()
+        .prefetch_related(
+            Prefetch(
+                "user_meta",
+                queryset=InventoryUserMeta.objects.filter(user=request.user),
+                to_attr="meta_for_user",
+            )
+        )
+        .order_by("rack", "shelf", "box", "name")
+    )
 
     # --- PAGINATION ---
     page_obj = None
@@ -156,6 +174,7 @@ def home_view(request):
         "units": units,
         "groups": groups,
         "condition_choices": condition_choices,
+        "favorite_color_choices": FAVORITE_COLOR_CHOICES,
 
         "page_obj": page_obj,
         "is_paginated": is_paginated,
@@ -164,7 +183,7 @@ def home_view(request):
         "current_page_number": current_page_number,
         "num_pages": num_pages,
 
-        # new pagination helpers
+        # pagination helpers
         "page_numbers": page_numbers,
         "show_first_ellipsis": show_first_ellipsis,
         "show_last_ellipsis": show_last_ellipsis,
@@ -239,7 +258,7 @@ def update_group(request):
 @require_POST
 def update_field(request):
     """
-    Universal inline editing endpoint.
+    Universal inline editing endpoint for InventoryItem.
     Expects:
         item_id
         field
@@ -318,10 +337,11 @@ def update_field(request):
         except Exception:
             valid_values = set()
 
-        if valid_values and value not in valid_values:
+        if valid_values and value not in valid_values and value != "":
             return JsonResponse({"ok": False, "error": "Invalid condition_status"}, status=400)
 
-        value_converted = value
+        # empty string -> None
+        value_converted = value or None
 
     # All other text fields
     else:
@@ -331,3 +351,81 @@ def update_field(request):
     item.save()
 
     return JsonResponse({"ok": True, "value": value_converted})
+
+
+# ============================================
+# AJAX: PER-USER FAVORITE COLOR (STAR)
+# ============================================
+
+@login_required
+@require_POST
+def update_favorite(request):
+    """
+    Update per-user favorite color for a given inventory item.
+    Expects:
+        item_id
+        color  (one of FAVORITE_COLOR_CHOICES values, e.g. RED/GREEN/YELLOW/BLUE/NONE)
+    """
+    item_id = request.POST.get("item_id")
+    color = (request.POST.get("color") or "NONE").upper()
+
+    if not item_id:
+        return JsonResponse({"ok": False, "error": "Missing item_id"}, status=400)
+
+    valid_colors = {c for c, _ in FAVORITE_COLOR_CHOICES}
+    if color not in valid_colors:
+        return JsonResponse({"ok": False, "error": "Invalid color"}, status=400)
+
+    try:
+        item = InventoryItem.objects.get(pk=item_id)
+    except InventoryItem.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Item not found"}, status=404)
+
+    meta, created = InventoryUserMeta.objects.get_or_create(
+        user=request.user,
+        item=item,
+        defaults={"favorite_color": color, "note": ""},
+    )
+
+    if not created:
+        meta.favorite_color = color
+        meta.save()
+
+    return JsonResponse({"ok": True, "color": meta.favorite_color})
+
+
+# ============================================
+# AJAX: PER-USER NOTE
+# ============================================
+
+@login_required
+@require_POST
+def update_note(request):
+    """
+    Update per-user note (HTML) for a given inventory item.
+    Expects:
+        item_id
+        note (HTML/string)
+    """
+    item_id = request.POST.get("item_id")
+    note = request.POST.get("note") or ""
+
+    if not item_id:
+        return JsonResponse({"ok": False, "error": "Missing item_id"}, status=400)
+
+    try:
+        item = InventoryItem.objects.get(pk=item_id)
+    except InventoryItem.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Item not found"}, status=404)
+
+    meta, created = InventoryUserMeta.objects.get_or_create(
+        user=request.user,
+        item=item,
+        defaults={"favorite_color": "NONE", "note": note},
+    )
+
+    if not created:
+        meta.note = note
+        meta.save()
+
+    return JsonResponse({"ok": True})
