@@ -195,10 +195,13 @@
                         <span class="sb-multiline" title="{{ item.name }}">{{ item.name }}</span>
                     </td>
 
-                    <!-- DESCRIPTION -->
-                    <td class="col-partdesc" data-id="{{ item.id }}">
+                    <!-- DESCRIPTION (HTML preview + Quill + inline-ready) -->
+                    <td class="col-partdesc"
+                        data-id="{{ item.id }}"
+                        data-field="part_description">
                         <div class="sb-desc-container">
-                            <div class="sb-desc-preview sb-multiline" title="{{ item.part_description|striptags }}">
+                            <div class="sb-desc-preview sb-multiline"
+                                 title="{{ item.part_description|striptags }}">
                                 {{ item.part_description|safe }}
                             </div>
                             <button type="button"
@@ -316,9 +319,11 @@
                         </td>
                     {% endwith %}
 
-                    <!-- USER NOTE BUTTON -->
+                    <!-- USER NOTE BUTTON + inline-ready data -->
                     {% with note=item.meta_for_user.0.note|default:"" %}
-                        <td class="col-note">
+                        <td class="col-note"
+                            data-item-id="{{ item.id }}"
+                            data-field="note">
                             <button type="button"
                                     class="sb-note-btn{% if note %} sb-note-has-content{% endif %}"
                                     data-item-id="{{ item.id }}"

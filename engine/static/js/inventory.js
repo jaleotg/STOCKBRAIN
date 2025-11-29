@@ -283,7 +283,6 @@
                 const idx = cycle.indexOf(current);
                 const nextColor = cycle[(idx + 1) % cycle.length];
 
-                // Optymistyczna aktualizacja UI
                 setStarAppearance(star, nextColor);
 
                 const fd = new FormData();
@@ -309,7 +308,7 @@
     }
 
     /* ================================================
-       AJAX: PER-USER NOTE (Quill modal)
+       UTILS: decode HTML entities (for note/desc text)
     ================================================= */
     function decodeHtmlEntities(str) {
         if (!str) return "";
@@ -318,12 +317,14 @@
         return textarea.value;
     }
 
+    /* ================================================
+       NOTE BUTTONS (CLICK → QUILL)
+    ================================================= */
     function sbInitNoteButtons() {
         const buttons = document.querySelectorAll(".sb-note-btn");
         if (!buttons.length) return;
 
         buttons.forEach(btn => {
-            // 1) ustaw stan wizualny na starcie na podstawie data-has-note
             const hasNoteAttr = btn.dataset.hasNote;
             if (hasNoteAttr === "1") {
                 btn.classList.add("sb-note-has-content");
@@ -331,7 +332,6 @@
                 btn.classList.remove("sb-note-has-content");
             }
 
-            // 2) klik — otwarcie modala
             btn.addEventListener("click", () => {
                 if (typeof window.sbOpenQuillEditor !== "function") {
                     console.error("Quill editor not ready yet");
@@ -348,7 +348,7 @@
     }
 
     /* ================================================
-       INLINE TEXT EDITING
+       INLINE TEXT EDITING (dla td.inline)
     ================================================= */
     function sbInitInlineEditing() {
         const cells = document.querySelectorAll("td.inline");
@@ -427,7 +427,217 @@
     }
 
     /* ================================================
+       INLINE EDITING: DESCRIPTION + USER NOTE
+       (bez Quilla, jak w Excelu)
+    ================================================= */
+    function sbInitInlineDescNoteEditing() {
+        /* --------- DESCRIPTION (col-partdesc) ---------- */
+        const descCells = document.querySelectorAll("td.col-partdesc");
+        descCells.forEach(td => {
+            td.addEventListener("dblclick", function (e) {
+                // jeśli klik na przycisk 🔍, nie włączaj inline
+                if (e.target.closest(".sb-desc-edit-btn")) {
+                    return;
+                }
+
+                const itemId = td.dataset.id;
+                const field = td.dataset.field || "part_description";
+                if (!itemId) return;
+
+                if (td.querySelector("textarea.sb-inline-textarea-desc")) {
+                    return;
+                }
+
+                const container = td.querySelector(".sb-desc-container");
+                const preview = container ? container.querySelector(".sb-desc-preview") : null;
+                if (!container || !preview) return;
+
+                // HTML -> plain text
+                const tmp = document.createElement("div");
+                tmp.innerHTML = preview.innerHTML;
+                const originalText = tmp.textContent.trim();
+
+                const textarea = document.createElement("textarea");
+                textarea.className = "sb-inline-textarea sb-inline-textarea-desc";
+                textarea.value = originalText;
+                textarea.rows = 4;
+
+                container.style.display = "none";
+                td.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                const finish = (save) => {
+                    const newText = textarea.value.trim();
+
+                    if (!save || newText === originalText) {
+                        td.removeChild(textarea);
+                        container.style.display = "";
+                        return;
+                    }
+
+                    const fd = new FormData();
+                    fd.append("item_id", itemId);
+                    fd.append("field", field);
+                    fd.append("value", newText);
+
+                    fetch("/api/update-field/", {
+                        method: "POST",
+                        headers: { "X-CSRFToken": csrftoken },
+                        body: fd,
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) {
+                                console.error("Inline description update failed:", data.error);
+                                td.removeChild(textarea);
+                                container.style.display = "";
+                            } else {
+                                const htmlNew = newText.replace(/\n/g, "<br>");
+                                preview.innerHTML = htmlNew;
+                                preview.setAttribute("title", newText);
+                                td.removeChild(textarea);
+                                container.style.display = "";
+                                markClampedCells();
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Inline description update error:", err);
+                            td.removeChild(textarea);
+                            container.style.display = "";
+                        });
+                };
+
+                textarea.addEventListener("keydown", function (e2) {
+                    if (e2.key === "Enter" && (e2.ctrlKey || e2.metaKey)) {
+                        // Ctrl+Enter = nowa linia
+                        const pos = textarea.selectionStart;
+                        const val = textarea.value;
+                        textarea.value = val.slice(0, pos) + "\n" + val.slice(pos);
+                        textarea.selectionStart = textarea.selectionEnd = pos + 1;
+                        e2.preventDefault();
+                    } else if (e2.key === "Enter") {
+                        e2.preventDefault();
+                        finish(true);
+                    } else if (e2.key === "Escape") {
+                        e2.preventDefault();
+                        finish(false);
+                    }
+                });
+
+                textarea.addEventListener("blur", function () {
+                    finish(true);
+                });
+            });
+        });
+
+        /* ------------- USER NOTE (col-note) ------------- */
+        const noteCells = document.querySelectorAll("td.col-note");
+        noteCells.forEach(td => {
+            td.addEventListener("dblclick", function (e) {
+                // jeśli klik na przycisk 📝, nie włączaj inline — to otwiera Quilla
+                if (e.target.closest(".sb-note-btn")) {
+                    return;
+                }
+
+                const itemId = td.dataset.itemId;
+                if (!itemId) return;
+
+                if (td.querySelector("textarea.sb-inline-textarea-note")) {
+                    return;
+                }
+
+                const btn = td.querySelector(".sb-note-btn");
+                if (!btn) return;
+
+                const raw = btn.dataset.note || "";
+                const html = decodeHtmlEntities(raw);
+                const tmp = document.createElement("div");
+                tmp.innerHTML = html;
+                const originalText = tmp.textContent.trim();
+
+                const textarea = document.createElement("textarea");
+                textarea.className = "sb-inline-textarea sb-inline-textarea-note";
+                textarea.value = originalText;
+                textarea.rows = 3;
+
+                btn.style.display = "none";
+                td.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                const finishNote = (save) => {
+                    const newText = textarea.value.trim();
+
+                    if (!save || newText === originalText) {
+                        td.removeChild(textarea);
+                        btn.style.display = "";
+                        return;
+                    }
+
+                    const fd = new FormData();
+                    fd.append("item_id", itemId);
+                    fd.append("note", newText);
+
+                    fetch("/api/update-note/", {
+                        method: "POST",
+                        headers: { "X-CSRFToken": csrftoken },
+                        body: fd,
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) {
+                                console.error("Inline note update failed:", data.error);
+                                td.removeChild(textarea);
+                                btn.style.display = "";
+                            } else {
+                                btn.dataset.note = newText;
+
+                                const plain = newText.trim();
+                                btn.dataset.hasNote = plain.length > 0 ? "1" : "0";
+                                if (plain.length > 0) {
+                                    btn.classList.add("sb-note-has-content");
+                                } else {
+                                    btn.classList.remove("sb-note-has-content");
+                                }
+
+                                td.removeChild(textarea);
+                                btn.style.display = "";
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Inline note update error:", err);
+                            td.removeChild(textarea);
+                            btn.style.display = "";
+                        });
+                };
+
+                textarea.addEventListener("keydown", function (e2) {
+                    if (e2.key === "Enter" && (e2.ctrlKey || e2.metaKey)) {
+                        const pos = textarea.selectionStart;
+                        const val = textarea.value;
+                        textarea.value = val.slice(0, pos) + "\n" + val.slice(pos);
+                        textarea.selectionStart = textarea.selectionEnd = pos + 1;
+                        e2.preventDefault();
+                    } else if (e2.key === "Enter") {
+                        e2.preventDefault();
+                        finishNote(true);
+                    } else if (e2.key === "Escape") {
+                        e2.preventDefault();
+                        finishNote(false);
+                    }
+                });
+
+                textarea.addEventListener("blur", function () {
+                    finishNote(true);
+                });
+            });
+        });
+    }
+
+    /* ================================================
        QUILL MODAL (DESCRIPTION + USER NOTE)
+       (Tylko z przycisków 🔍 i 📝)
     ================================================= */
     function sbInitQuillModal() {
         const modal = document.getElementById("sb-quill-modal");
@@ -441,7 +651,6 @@
 
         if (!dialog || !editorNode) return;
 
-        // nagłówki:
         const titleDesc = document.getElementById("sb-modal-title-description");
         const titleNote = document.getElementById("sb-modal-title-note");
 
@@ -546,6 +755,9 @@
                                 const preview = cell.querySelector(".sb-desc-preview");
                                 if (preview) {
                                     preview.innerHTML = html;
+                                    const tmp = document.createElement("div");
+                                    tmp.innerHTML = html;
+                                    preview.setAttribute("title", tmp.textContent.trim());
                                 }
                                 markClampedCells();
                             }
@@ -576,9 +788,11 @@
                             } else if (btn) {
                                 btn.dataset.note = html;
 
-                                const plain = html.replace(/<[^>]*>/g, "").trim();
-                                btn.dataset.hasNote = plain.length > 0 ? "1" : "0";
+                                const tmp = document.createElement("div");
+                                tmp.innerHTML = html;
+                                const plain = tmp.textContent.trim();
 
+                                btn.dataset.hasNote = plain.length > 0 ? "1" : "0";
                                 if (plain.length > 0) {
                                     btn.classList.add("sb-note-has-content");
                                 } else {
@@ -596,7 +810,9 @@
         }
     }
 
-    // DESCRIPTION triggers (🔍)
+    /* ================================================
+       QUILL TRIGGERS (tylko przyciski 🔍)
+    ================================================= */
     function sbInitQuillTriggers() {
         const btns = document.querySelectorAll(".sb-desc-edit-btn");
         if (!btns.length || typeof window.sbOpenQuillEditor !== "function") return;
@@ -660,6 +876,7 @@
                 sbInitRevDiscCheckboxes();
                 sbInitFavorites();
                 sbInitInlineEditing();
+                sbInitInlineDescNoteEditing();
                 sbInitPagination();
                 sbInitQuillModal();
                 sbInitQuillTriggers();
@@ -729,6 +946,7 @@
         sbInitRevDiscCheckboxes();
         sbInitFavorites();
         sbInitInlineEditing();
+        sbInitInlineDescNoteEditing();
         sbInitPagination();
         sbInitQuillModal();
         sbInitQuillTriggers();
