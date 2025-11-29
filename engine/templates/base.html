@@ -6,15 +6,14 @@
     <title>{% block title %}STOCKBRAIN{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Main CSS -->
+    <!-- Main CSS (imports layout.css, table.css, theme-dark.css) -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 
     <!-- Quill WYSIWYG -->
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="{% static 'js/inventory.js' %}"></script>
-
 </head>
+
 <body>
 <div class="sb-page">
 
@@ -25,7 +24,7 @@
             <button
                 type="button"
                 class="sb-theme-btn"
-                onclick="window.sbToggleTheme()"
+                onclick="window.sbToggleTheme && window.sbToggleTheme()"
                 title="Toggle dark mode"
             >
                 🌙
@@ -45,23 +44,47 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- QUILL MODAL -->
+    <!-- ==========================================
+         QUILL MODAL (DESCRIPTION + USER NOTE)
+         ========================================== -->
     <div id="sb-quill-modal" class="sb-modal" style="display:none;">
         <div class="sb-modal-dialog">
+
             <div class="sb-modal-header">
-                <h2>Description editor</h2>
+                <h2 class="sb-modal-title">
+                    <!-- Description header (default visible) -->
+                    <span id="sb-modal-title-description" data-mode="description">
+                        Edit description for this item
+                    </span>
+                    <!-- User note header (hidden by default, JS pokaże przy trybie 'note') -->
+                    <span id="sb-modal-title-note"
+                          data-mode="note"
+                          style="display:none;">
+                        {{ request.user.username }}: Enter your private notes here. These notes are visible only to you.
+                    </span>
+                </h2>
                 <button type="button" class="sb-modal-close">✕</button>
             </div>
+
             <div class="sb-modal-body">
-                <div id="sb-quill-editor"></div>
+                <div id="sb-quill-editor" class="sb-quill-editor"></div>
             </div>
+
             <div class="sb-modal-footer">
-                <button type="button" class="sb-btn sb-btn-secondary sb-modal-cancel">Cancel</button>
-                <button type="button" class="sb-btn sb-btn-primary sb-modal-save">Save</button>
+                <button type="button" class="sb-btn sb-btn-secondary sb-modal-cancel">
+                    Cancel
+                </button>
+                <button type="button" class="sb-btn sb-btn-primary sb-modal-save">
+                    Save
+                </button>
             </div>
+
         </div>
     </div>
 
 </div>
+
+<!-- Główny JS projektu -->
+<script src="{% static 'js/inventory.js' %}"></script>
 </body>
 </html>

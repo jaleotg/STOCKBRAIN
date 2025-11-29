@@ -283,6 +283,7 @@
                 const idx = cycle.indexOf(current);
                 const nextColor = cycle[(idx + 1) % cycle.length];
 
+                // Optymistyczna aktualizacja UI
                 setStarAppearance(star, nextColor);
 
                 const fd = new FormData();
@@ -440,6 +441,10 @@
 
         if (!dialog || !editorNode) return;
 
+        // nagłówki:
+        const titleDesc = document.getElementById("sb-modal-title-description");
+        const titleNote = document.getElementById("sb-modal-title-note");
+
         const quill = new Quill(editorNode, {
             theme: "snow",
             modules: {
@@ -455,11 +460,23 @@
 
         const state = {
             currentItemId: null,
-            mode: "description",
+            mode: "description", // "description" | "note"
             currentCell: null,
             noteButton: null,
             modal,
         };
+
+        function updateModalTitle(mode) {
+            if (!titleDesc || !titleNote) return;
+
+            if (mode === "note") {
+                titleDesc.style.display = "none";
+                titleNote.style.display = "";
+            } else {
+                titleDesc.style.display = "";
+                titleNote.style.display = "none";
+            }
+        }
 
         function hideModal() {
             modal.style.display = "none";
@@ -467,6 +484,7 @@
             state.currentCell = null;
             state.noteButton = null;
             state.mode = "description";
+            updateModalTitle("description");
         }
 
         function openModal(mode, itemId, html, targetElement) {
@@ -480,6 +498,8 @@
             } else if (state.mode === "note") {
                 state.noteButton = targetElement;
             }
+
+            updateModalTitle(state.mode);
 
             quill.root.innerHTML = html || "";
             modal.style.display = "flex";
