@@ -47,9 +47,12 @@
 }
 
 .sb-dark .sb-table td {
-    background-color: #2a2a2a;
+    /* nie ustawiamy własnego backgroundu,
+       żeby zebra i hover z tr były widoczne */
+    background-color: transparent;
     color: #ddd;
 }
+
 
 .sb-dark .sb-table tbody tr:nth-child(even) {
     background-color: #242424;
@@ -100,9 +103,6 @@
     border-color: #79aec8;
     box-shadow: 0 0 0 2px rgba(121, 174, 200, 0.4);
 }
-.sb-dark .sb-table th.col-rck,
-.sb-dark .sb-table th.col-sh,
-.sb-dark .sb-table th.col-box,
 .sb-dark .sb-table td.col-rck,
 .sb-dark .sb-table td.col-sh,
 .sb-dark .sb-table td.col-box {

@@ -97,7 +97,7 @@
    FROZEN LEFT COLUMNS (Rck / Sh / Box)
 ============================================================ */
 
-/* wspólne: sticky + pełne tło */
+/* wspólne: sticky */
 .sb-table th.col-rck,
 .sb-table th.col-sh,
 .sb-table th.col-box,
@@ -105,17 +105,21 @@
 .sb-table td.col-sh,
 .sb-table td.col-box {
     position: sticky;
+}
+
+/* tło tylko dla komórek body – nagłówki dziedziczą z thead */
+.sb-table td.col-rck,
+.sb-table td.col-sh,
+.sb-table td.col-box {
     background-color: #fff;
 }
 
-.sb-dark .sb-table th.col-rck,
-.sb-dark .sb-table th.col-sh,
-.sb-dark .sb-table th.col-box,
 .sb-dark .sb-table td.col-rck,
 .sb-dark .sb-table td.col-sh,
 .sb-dark .sb-table td.col-box {
     background-color: #2a2a2a;
 }
+
 
 /* stałe szerokości w px – brak zgniatania */
 .sb-table th.col-rck,
@@ -525,4 +529,31 @@
 }
 .sb-dark .sb-btn-secondary:hover {
     background: #666;
+}
+/* R/S/B – kolor co drugiego wiersza jak w Django admin */
+.sb-table tbody tr:nth-child(even) td.col-rck,
+.sb-table tbody tr:nth-child(even) td.col-sh,
+.sb-table tbody tr:nth-child(even) td.col-box {
+    background-color: #fafafa;
+}
+
+/* R/S/B – hover wiersza jak reszta */
+.sb-table tbody tr:hover td.col-rck,
+.sb-table tbody tr:hover td.col-sh,
+.sb-table tbody tr:hover td.col-box {
+    background-color: #e9f1f5;
+}
+
+/* DARK MODE – zebra */
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-rck,
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-sh,
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-box {
+    background-color: #242424;
+}
+
+/* DARK MODE – hover */
+.sb-dark .sb-table tbody tr:hover td.col-rck,
+.sb-dark .sb-table tbody tr:hover td.col-sh,
+.sb-dark .sb-table tbody tr:hover td.col-box {
+    background-color: #333;
 }
