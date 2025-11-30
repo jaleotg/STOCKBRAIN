@@ -780,3 +780,58 @@
     width: 1%;              /* forces minimal width */
     white-space: nowrap;    /* prevent stretching */
 }
+/* ============================================================
+   SORTING ARROWS + LOADING SPINNER
+============================================================ */
+
+.sb-table thead .sb-sortable-header {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.sb-table thead .sb-sortable-header .sb-header-label {
+    margin-right: 4px;
+}
+
+.sb-table thead .sb-sort-arrow {
+    display: inline-block;
+    min-width: 1.2em;
+    text-align: center;
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+/* aktywna kolumna – zielona strzałka */
+.sb-table thead .sb-sort-arrow--active {
+    opacity: 1;
+    color: #2ecc71; /* przyjemna zieleń, widoczna w day i night mode */
+}
+
+/* gdy sortowanie jest w toku – blokujemy klikanie kolejnych nagłówków */
+.sb-table.sb-table-sorting thead .sb-sortable-header {
+    pointer-events: none;
+}
+
+/* zamiana strzałki na spinner w klikniętym nagłówku */
+.sb-table thead .sb-sortable-header.sb-sort-loading .sb-sort-arrow {
+    font-size: 0; /* ukrywamy znak (▲/▼/⇅) */
+    position: relative;
+}
+
+.sb-table thead .sb-sortable-header.sb-sort-loading .sb-sort-arrow::after {
+    content: "";
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-top-color: transparent; /* wycięty kawałek koła */
+    animation: sb-spin 0.6s linear infinite;
+}
+
+@keyframes sb-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

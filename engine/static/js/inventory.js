@@ -912,6 +912,54 @@
             });
         });
     }
+                /* ================================================
+               SORTING (R, S, NAME, GROUP) + LOADING SPINNER
+            ================================================= */
+
+            function sbInitSorting() {
+                const table = document.querySelector(".sb-table");
+                if (!table) return;
+
+                const currentSort = table.dataset.currentSort || "rack";
+                const currentDir = table.dataset.currentDir || "asc";
+
+                const headers = table.querySelectorAll("thead .sb-sortable-header");
+                if (!headers.length) return;
+
+                headers.forEach(th => {
+                    const field = th.dataset.sortField;
+                    if (!field) return;
+
+                    th.addEventListener("click", function (e) {
+                        e.preventDefault();
+
+                        // Dodajemy klasę "loading" do tabeli i klikniętego nagłówka
+                        table.classList.add("sb-table-sorting");
+                        headers.forEach(h => h.classList.remove("sb-sort-loading"));
+                        th.classList.add("sb-sort-loading");
+
+                        let nextDir = "asc";
+                        if (field === currentSort) {
+                            nextDir = currentDir === "asc" ? "desc" : "asc";
+                        }
+
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("sort", field);
+                        url.searchParams.set("dir", nextDir);
+
+                        // Przy zmianie sortowania wracamy na stronę 1
+                        url.searchParams.set("page", 1);
+
+                        const ps = document.getElementById("page-size-select");
+                        if (ps) {
+                            url.searchParams.set("page_size", ps.value);
+                        }
+
+                        sbLoadInventory(url.toString());
+                    });
+                });
+            }
+
 
     /* ================================================
        AJAX PAGINATION + PAGE SIZE
@@ -962,6 +1010,7 @@
                 sbInitRevDiscCheckboxes();
                 sbInitFavorites();
                 sbInitInlineEditing();
+                sbInitSorting();
                 sbInitInlineDescNoteEditing();
                 sbInitPagination();
                 sbInitQuillModal();
@@ -1032,6 +1081,7 @@
         sbInitRevDiscCheckboxes();
         sbInitFavorites();
         sbInitInlineEditing();
+        sbInitSorting();
         sbInitInlineDescNoteEditing();
         sbInitPagination();
         sbInitQuillModal();

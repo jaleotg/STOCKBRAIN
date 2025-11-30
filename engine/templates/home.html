@@ -124,28 +124,50 @@
     <!-- ===================================== -->
 
     <div class="sb-table-wrapper">
-        <table class="sb-table">
+        <table class="sb-table"
+               data-current-sort="{{ sort_field }}"
+               data-current-dir="{{ sort_dir }}">
             <thead>
             <tr>
-                {# R #}
+                {# R (sortowalne) #}
                 {% with col=columns.rack %}
-                    <th class="col-rck"
+                    <th class="col-rck sb-sortable-header"
                         style="text-align:center;"
+                        data-sort-field="rack"
                         title="{{ col.full_label|default:'Rack' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'R' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:'R' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'rack' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'rack' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
-                {# S #}
+                {# S (sortowalne) #}
                 {% with col=columns.shelf %}
-                    <th class="col-sh"
+                    <th class="col-sh sb-sortable-header"
                         style="text-align:center;"
+                        data-sort-field="shelf"
                         title="{{ col.full_label|default:'Shelf' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'S' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:'S' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'shelf' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'shelf' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
-                {# B #}
+                {# B (bez sortowania) #}
                 {% with col=columns.box %}
                     <th class="col-box"
                         style="text-align:center;"
@@ -154,19 +176,39 @@
                     </th>
                 {% endwith %}
 
-                {# GROUP (nigdy nie ukrywamy) #}
+                {# GROUP (nigdy nie ukrywamy, sortowalne) #}
                 {% with col=columns.group %}
-                    <th class="col-group"
+                    <th class="col-group sb-sortable-header"
+                        data-sort-field="group"
                         title="{{ col.full_label|default:'Group' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'Group' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'Group' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'group' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'group' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
-                {# NAME #}
+                {# NAME (sortowalne) #}
                 {% with col=columns.name %}
-                    <th class="col-name"
+                    <th class="col-name sb-sortable-header"
+                        data-sort-field="name"
                         title="{{ col.full_label|default:'Name' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'Name' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'Name' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'name' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'name' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 

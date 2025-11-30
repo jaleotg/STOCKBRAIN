@@ -72,7 +72,7 @@ def logout_view(request):
 
 
 # ============================================
-# HOME (TABLE + PAGINATION + DROPDOWNS + USER META)
+# HOME (TABLE + PAGINATION + DROPDOWNS + USER META + SORTING)
 # ============================================
 
 @login_required
@@ -84,6 +84,7 @@ def home_view(request):
     - dropdowns Units / Groups / Condition
     - per-user meta: favorite_color + note (loaded via prefetch)
     - role awareness: editor / purchase_manager / read-only
+    - server-side sorting by R / S / Name / Group
     """
     # --- PAGE SIZE (from GET or session) ---
     page_size_param = request.GET.get("page_size")
@@ -113,7 +114,56 @@ def home_view(request):
             except (TypeError, ValueError):
                 page_size = 50
 
-    # --- QUERYSET with per-user meta prefetch ---
+    # --- SORTING (R, S, Name, Group) ---
+    sort_field = request.GET.get("sort", "rack")
+    sort_dir = request.GET.get("dir", "asc")
+
+    # allowed sort fields
+    allowed_sorts = {"rack", "shelf", "name", "group"}
+    if sort_field not in allowed_sorts:
+        sort_field = "rack"
+
+    if sort_dir not in {"asc", "desc"}:
+        sort_dir = "asc"
+
+    # build order_by args
+    order_by_args = []
+
+    if sort_field == "rack":
+        # primary: rack, then S/B/Name
+        if sort_dir == "desc":
+            order_by_args.append("-rack")
+        else:
+            order_by_args.append("rack")
+        order_by_args.extend(["shelf", "box", "name"])
+
+    elif sort_field == "shelf":
+        if sort_dir == "desc":
+            order_by_args.append("-shelf")
+        else:
+            order_by_args.append("shelf")
+        order_by_args.extend(["rack", "box", "name"])
+
+    elif sort_field == "name":
+        if sort_dir == "desc":
+            order_by_args.append("-name")
+        else:
+            order_by_args.append("name")
+        order_by_args.extend(["rack", "shelf", "box"])
+
+    elif sort_field == "group":
+        # sort by related group name
+        if sort_dir == "desc":
+            order_by_args.append("-group__name")
+        else:
+            order_by_args.append("group__name")
+        order_by_args.extend(["rack", "shelf", "box", "name"])
+
+    # fallback, gdyby coś się rozwaliło
+    if not order_by_args:
+        order_by_args = ["rack", "shelf", "box", "name"]
+
+    # --- QUERYSET with per-user meta prefetch + sorting ---
     queryset = (
         InventoryItem.objects.all()
         .prefetch_related(
@@ -123,7 +173,7 @@ def home_view(request):
                 to_attr="meta_for_user",
             )
         )
-        .order_by("rack", "shelf", "box", "name")
+        .order_by(*order_by_args)
     )
 
     # --- PAGINATION ---
@@ -239,6 +289,10 @@ def home_view(request):
         # Roles for frontend
         "is_editor": is_editor,
         "can_edit": can_edit,
+
+        # Sorting info for frontend (strzałki, aktywna kolumna)
+        "sort_field": sort_field,
+        "sort_dir": sort_dir,
     }
 
     return render(request, "home.html", context)
