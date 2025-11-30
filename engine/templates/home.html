@@ -4,8 +4,11 @@
 {% block title %}Inventory | STOCKBRAIN{% endblock %}
 
 {% block content %}
+{{ can_edit|json_script:"can-edit-flag" }}
 <script>
-    window.CAN_EDIT = {{ can_edit|yesno:"true,false" }};
+    window.CAN_EDIT = JSON.parse(
+        document.getElementById("can-edit-flag").textContent
+    );
 </script>
 
 <div class="sb-card">
