@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Case, When, IntegerField
+from django.db.models.functions import Lower, Substr
 
 from .models import (
     InventoryItem,
@@ -86,6 +87,7 @@ def home_view(request):
     - role awareness: editor / purchase_manager / read-only
     - server-side sorting by R / S / Name / Group
     """
+
     # --- PAGE SIZE (from GET or session) ---
     page_size_param = request.GET.get("page_size")
     session_key = "inventory_page_size"
@@ -126,7 +128,27 @@ def home_view(request):
     if sort_dir not in {"asc", "desc"}:
         sort_dir = "asc"
 
-    # build order_by args
+    # Czy stosujemy specjalny klucz sortowania dla NAME?
+    use_name_sort_key = (sort_field == "name")
+
+    # --- BASE QUERYSET + OPTIONAL ANNOTATIONS ---
+    base_qs = InventoryItem.objects.all()
+
+    if use_name_sort_key:
+        # name_lower: sort case-insensitive
+        # first_char: pierwszy znak
+        # name_digit_flag: 0 gdy pierwsza cyfra, 1 gdy litera/inny znak
+        base_qs = base_qs.annotate(
+            name_lower=Lower("name"),
+            first_char=Substr("name", 1, 1),
+            name_digit_flag=Case(
+                When(first_char__in=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], then=0),
+                default=1,
+                output_field=IntegerField(),
+            ),
+        )
+
+    # --- SORT ORDER LIST ---
     order_by_args = []
 
     if sort_field == "rack":
@@ -145,10 +167,15 @@ def home_view(request):
         order_by_args.extend(["rack", "box", "name"])
 
     elif sort_field == "name":
+        # specjalne sortowanie:
+        # - najpierw cyfry (name_digit_flag=0), potem litery (1)
+        # - w ramach: rosnąco/malejąco po name_lower
         if sort_dir == "desc":
-            order_by_args.append("-name")
+            order_by_args.append("name_digit_flag")
+            order_by_args.append("-name_lower")
         else:
-            order_by_args.append("name")
+            order_by_args.append("name_digit_flag")
+            order_by_args.append("name_lower")
         order_by_args.extend(["rack", "shelf", "box"])
 
     elif sort_field == "group":
@@ -163,9 +190,9 @@ def home_view(request):
     if not order_by_args:
         order_by_args = ["rack", "shelf", "box", "name"]
 
-    # --- QUERYSET with per-user meta prefetch + sorting ---
+    # --- APPLY PREFETCH + ORDERING ---
     queryset = (
-        InventoryItem.objects.all()
+        base_qs
         .prefetch_related(
             Prefetch(
                 "user_meta",

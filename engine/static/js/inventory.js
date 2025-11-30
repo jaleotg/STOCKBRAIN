@@ -1,5 +1,6 @@
 (function () {
     const KEY = "stockbrain_theme";
+    let quillInstance = null;  // single global Quill instance for modal
 
     // Global flag from Django context: can user edit inventory fields?
     const CAN_EDIT = !!(window && window.CAN_EDIT);
@@ -715,12 +716,15 @@
         });
     }
 
+
     /* ================================================
        QUILL MODAL (DESCRIPTION + USER NOTE)
        – tylko dla CAN_EDIT
+       (Tylko z przycisków 🔍 i 📝)
     ================================================= */
     function sbInitQuillModal() {
-        if (!CAN_EDIT) return;
+        // tylko edytor / purchase_manager mają Quill
+        if (!window.CAN_EDIT) return;
 
         const modal = document.getElementById("sb-quill-modal");
         if (!modal || !window.Quill) return;
@@ -736,25 +740,30 @@
         const titleDesc = document.getElementById("sb-modal-title-description");
         const titleNote = document.getElementById("sb-modal-title-note");
 
-        const quill = new Quill(editorNode, {
-            theme: "snow",
-            modules: {
-                toolbar: [
-                    [{ header: [1, 2, false] }],
-                    ["bold", "italic", "underline"],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    ["link"],
-                    ["clean"],
-                ],
-            },
-        });
+        const csrftoken = getCookie("csrftoken");
+
+        // Quill inicjalizujemy tylko raz, żeby nie doklejał kolejnych toolbarów
+        if (!quillInstance) {
+            quillInstance = new Quill(editorNode, {
+                theme: "snow",
+                modules: {
+                    toolbar: [
+                        [{ header: [1, 2, false] }],
+                        ["bold", "italic", "underline"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        ["link"],
+                        ["clean"],
+                    ],
+                },
+            });
+        }
 
         const state = {
             currentItemId: null,
             mode: "description", // "description" | "note"
             currentCell: null,
             noteButton: null,
-            modal,
+            modal: modal,
         };
 
         function updateModalTitle(mode) {
@@ -770,7 +779,7 @@
         }
 
         function hideModal() {
-            modal.style.display = "none";
+            state.modal.style.display = "none";
             state.currentItemId = null;
             state.currentCell = null;
             state.noteButton = null;
@@ -778,6 +787,13 @@
             updateModalTitle("description");
         }
 
+        /**
+         * Otwiera modal:
+         *  mode: "description" | "note"
+         *  itemId: ID rekordu
+         *  html: treść HTML do załadowania do Quilla
+         *  targetElement: komórka <td> (dla description) albo przycisk 📝 (dla note)
+         */
         function openModal(mode, itemId, html, targetElement) {
             state.mode = mode || "description";
             state.currentItemId = itemId || null;
@@ -785,17 +801,18 @@
             state.noteButton = null;
 
             if (state.mode === "description") {
-                state.currentCell = targetElement;
+                state.currentCell = targetElement || null;
             } else if (state.mode === "note") {
-                state.noteButton = targetElement;
+                state.noteButton = targetElement || null;
             }
 
             updateModalTitle(state.mode);
 
-            quill.root.innerHTML = html || "";
-            modal.style.display = "flex";
+            quillInstance.root.innerHTML = html || "";
+            state.modal.style.display = "flex";
         }
 
+        // globalny „otwieracz” używany przez przyciski 🔍 i 📝
         window.sbOpenQuillEditor = openModal;
 
         if (closeBtn) closeBtn.addEventListener("click", hideModal);
@@ -814,11 +831,12 @@
                     return;
                 }
 
-                const html = quill.root.innerHTML.trim();
+                const html = quillInstance.root.innerHTML.trim();
 
-                // DESCRIPTION MODE
+                // --- DESCRIPTION MODE ---
                 if (state.mode === "description") {
                     const cell = state.currentCell;
+
                     const fd = new FormData();
                     fd.append("item_id", state.currentItemId);
                     fd.append("field", "part_description");
@@ -826,7 +844,7 @@
 
                     fetch("/api/update-field/", {
                         method: "POST",
-                        headers: { "X-CSRFToken": csrftoken },
+                        headers: { "X-CSRFToken": csrftoken || "" },
                         body: fd,
                     })
                         .then(r => r.json())
@@ -841,7 +859,10 @@
                                     tmp.innerHTML = html;
                                     preview.setAttribute("title", tmp.textContent.trim());
                                 }
-                                markClampedCells();
+                                // po zmianie opisu odświeżamy clamp
+                                if (typeof markClampedCells === "function") {
+                                    markClampedCells();
+                                }
                             }
                             hideModal();
                         })
@@ -851,16 +872,17 @@
                         });
                 }
 
-                // NOTE MODE
+                // --- NOTE MODE ---
                 else if (state.mode === "note") {
                     const btn = state.noteButton;
+
                     const fd = new FormData();
                     fd.append("item_id", state.currentItemId);
                     fd.append("note", html);
 
                     fetch("/api/update-note/", {
                         method: "POST",
-                        headers: { "X-CSRFToken": csrftoken },
+                        headers: { "X-CSRFToken": csrftoken || "" },
                         body: fd,
                     })
                         .then(r => r.json())
@@ -891,6 +913,8 @@
             });
         }
     }
+
+
 
     /* ================================================
        QUILL TRIGGERS (tylko przyciski 🔍, tylko CAN_EDIT)
@@ -1023,7 +1047,21 @@
             });
     }
 
+    /* ================================================
+       AJAX PAGINATION + PAGE SIZE
+       (trzyma sort + dir)
+    ================================================= */
     function sbInitPagination() {
+        const table = document.querySelector(".sb-table");
+        let currentSort = "rack";
+        let currentDir = "asc";
+
+        if (table) {
+            currentSort = table.dataset.currentSort || "rack";
+            currentDir = table.dataset.currentDir || "asc";
+        }
+
+        // --- dropdown Rows per page ---
         const sizeSelect = document.getElementById("page-size-select");
         if (sizeSelect) {
             sizeSelect.addEventListener("change", function () {
@@ -1032,11 +1070,14 @@
 
                 url.searchParams.set("page", 1);
                 url.searchParams.set("page_size", pageSize);
+                url.searchParams.set("sort", currentSort);
+                url.searchParams.set("dir", currentDir);
 
                 sbLoadInventory(url.toString());
             });
         }
 
+        // --- linki paginacji 1,2,3,<<,>> ---
         const pagerLinks = document.querySelectorAll(".sb-pagination .sb-page-link[data-page]");
         pagerLinks.forEach(link => {
             link.addEventListener("click", function (e) {
@@ -1046,6 +1087,8 @@
 
                 const url = new URL(window.location.href);
                 url.searchParams.set("page", targetPage);
+                url.searchParams.set("sort", currentSort);
+                url.searchParams.set("dir", currentDir);
 
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
@@ -1056,6 +1099,9 @@
             });
         });
     }
+
+
+
 
     /* ================================================
        THEME TOGGLE

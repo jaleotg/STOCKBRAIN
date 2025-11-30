@@ -48,25 +48,34 @@
                  data-current-page="{{ current_page_number }}"
                  data-page-size="{{ page_size }}">
 
-                <!-- FIRST << -->
-                <a href="?page=1{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                {# FIRST << #}
+                <a href="?page=1
+                    {% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}
+                    {% if sort_field %}&sort={{ sort_field }}{% endif %}
+                    {% if sort_dir %}&dir={{ sort_dir }}{% endif %}"
                    class="sb-page-link sb-page-first"
                    data-page="1">&laquo;</a>
 
-                <!-- PREV < -->
+                {# PREV < #}
                 {% if current_page_number > 1 %}
-                    <a href="?page={{ current_page_number|add:'-1' }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                    <a href="?page={{ current_page_number|add:'-1' }}
+                        {% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}
+                        {% if sort_field %}&sort={{ sort_field }}{% endif %}
+                        {% if sort_dir %}&dir={{ sort_dir }}{% endif %}"
                        class="sb-page-link sb-page-prev"
                        data-page="{{ current_page_number|add:'-1' }}">&lsaquo;</a>
                 {% else %}
                     <span class="sb-page-link sb-page-disabled">&lsaquo;</span>
                 {% endif %}
 
-                <!-- ALWAYS SHOW 1 -->
+                {# ALWAYS SHOW 1 #}
                 {% if current_page_number == 1 %}
                     <span class="sb-page-link sb-page-current" data-page="1">1</span>
                 {% else %}
-                    <a href="?page=1{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                    <a href="?page=1
+                        {% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}
+                        {% if sort_field %}&sort={{ sort_field }}{% endif %}
+                        {% if sort_dir %}&dir={{ sort_dir }}{% endif %}"
                        class="sb-page-link"
                        data-page="1">1</a>
                 {% endif %}
@@ -75,13 +84,16 @@
                     <span class="sb-page-link sb-page-ellipsis">…</span>
                 {% endif %}
 
-                <!-- SMART NUMBERS -->
+                {# SMART NUMBERS #}
                 {% for num in page_numbers %}
                     {% if num > 1 and num < num_pages %}
                         {% if num == current_page_number %}
                             <span class="sb-page-link sb-page-current" data-page="{{ num }}">{{ num }}</span>
                         {% else %}
-                            <a href="?page={{ num }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                            <a href="?page={{ num }}
+                                {% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}
+                                {% if sort_field %}&sort={{ sort_field }}{% endif %}
+                                {% if sort_dir %}&dir={{ sort_dir }}{% endif %}"
                                class="sb-page-link"
                                data-page="{{ num }}">{{ num }}</a>
                         {% endif %}
@@ -96,23 +108,32 @@
                     {% if current_page_number == num_pages %}
                         <span class="sb-page-link sb-page-current" data-page="{{ num_pages }}">{{ num_pages }}</span>
                     {% else %}
-                        <a href="?page={{ num_pages }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                        <a href="?page={{ num_pages }}
+                            {% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}
+                            {% if sort_field %}&sort={{ sort_field }}{% endif %}
+                            {% if sort_dir %}&dir={{ sort_dir }}{% endif %}"
                            class="sb-page-link"
                            data-page="{{ num_pages }}">{{ num_pages }}</a>
                     {% endif %}
                 {% endif %}
 
-                <!-- NEXT > -->
+                {# NEXT > #}
                 {% if current_page_number < num_pages %}
-                    <a href="?page={{ current_page_number|add:'1' }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                    <a href="?page={{ current_page_number|add:'1' }}
+                        {% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}
+                        {% if sort_field %}&sort={{ sort_field }}{% endif %}
+                        {% if sort_dir %}&dir={{ sort_dir }}{% endif %}"
                        class="sb-page-link sb-page-next"
                        data-page="{{ current_page_number|add:'1' }}">&rsaquo;</a>
                 {% else %}
                     <span class="sb-page-link sb-page-disabled">&rsaquo;</span>
                 {% endif %}
 
-                <!-- LAST >> -->
-                <a href="?page={{ num_pages }}{% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}"
+                {# LAST >> #}
+                <a href="?page={{ num_pages }}
+                    {% if page_size == 'all' %}&page_size=all{% else %}&page_size={{ page_size }}{% endif %}
+                    {% if sort_field %}&sort={{ sort_field }}{% endif %}
+                    {% if sort_dir %}&dir={{ sort_dir }}{% endif %}"
                    class="sb-page-link sb-page-last"
                    data-page="{{ num_pages }}">&raquo;</a>
             </nav>
