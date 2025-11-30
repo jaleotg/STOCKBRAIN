@@ -4,6 +4,9 @@
 {% block title %}Inventory | STOCKBRAIN{% endblock %}
 
 {% block content %}
+<script>
+    window.CAN_EDIT = {{ can_edit|yesno:"true,false" }};
+</script>
 
 <div class="sb-card">
 

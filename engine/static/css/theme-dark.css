@@ -12,8 +12,20 @@
     background-color: #2a2a2a;
 }
 
+/* Global links in dark mode */
 .sb-dark .sb-link {
     color: #9cd2f5;
+}
+
+/* Header links in dark mode – override white from layout.css */
+.sb-dark .sb-header .sb-link {
+    color: #9cd2f5;
+    font-weight: 500;
+}
+
+.sb-dark .sb-header .sb-link:hover {
+    color: #c0e4ff;
+    text-decoration: underline;
 }
 
 /* Cards */
@@ -53,7 +65,6 @@
     color: #ddd;
 }
 
-
 .sb-dark .sb-table tbody tr:nth-child(even) {
     background-color: #242424;
 }
@@ -87,6 +98,7 @@
     background-color: #5c4a0e;
     color: #ffe9a3;
 }
+
 /* Units dropdown in dark mode */
 .sb-dark .unit-select {
     background-color: #3a3a3a;
@@ -103,9 +115,10 @@
     border-color: #79aec8;
     box-shadow: 0 0 0 2px rgba(121, 174, 200, 0.4);
 }
+
+/* Frozen R/S/B columns in dark */
 .sb-dark .sb-table td.col-rck,
 .sb-dark .sb-table td.col-sh,
 .sb-dark .sb-table td.col-box {
     background-color: #2a2a2a;
 }
-

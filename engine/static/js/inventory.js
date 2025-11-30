@@ -1,6 +1,9 @@
 (function () {
     const KEY = "stockbrain_theme";
 
+    // Global flag from Django context: can user edit inventory fields?
+    const CAN_EDIT = !!(window && window.CAN_EDIT);
+
     /* ================================================
        APPLY DARK MODE EARLY (no white flash)
     ================================================= */
@@ -91,9 +94,16 @@
     const csrftoken = getCookie("csrftoken") || "";
 
     /* ================================================
-       AJAX: UPDATE UNIT (FK)
+       AJAX: UPDATE UNIT (FK) – only if CAN_EDIT
     ================================================= */
     function sbInitUnitDropdowns() {
+        if (!CAN_EDIT) {
+            // disable change for readonly users
+            const selects = document.querySelectorAll(".unit-select");
+            selects.forEach(sel => sel.setAttribute("disabled", "disabled"));
+            return;
+        }
+
         const selects = document.querySelectorAll(".unit-select");
         if (!selects.length) return;
 
@@ -128,9 +138,15 @@
     }
 
     /* ================================================
-       AJAX: UPDATE GROUP (FK)
+       AJAX: UPDATE GROUP (FK) – only if CAN_EDIT
     ================================================= */
     function sbInitGroupDropdowns() {
+        if (!CAN_EDIT) {
+            const selects = document.querySelectorAll(".group-select");
+            selects.forEach(sel => sel.setAttribute("disabled", "disabled"));
+            return;
+        }
+
         const selects = document.querySelectorAll(".group-select");
         if (!selects.length) return;
 
@@ -165,11 +181,16 @@
     }
 
     /* ================================================
-       AJAX: CONDITION STATUS DROPDOWN
+       AJAX: CONDITION STATUS DROPDOWN – only if CAN_EDIT
     ================================================= */
     function sbInitConditionDropdowns() {
         const selects = document.querySelectorAll(".condition-select");
         if (!selects.length) return;
+
+        if (!CAN_EDIT) {
+            selects.forEach(sel => sel.setAttribute("disabled", "disabled"));
+            return;
+        }
 
         selects.forEach(select => {
             select.addEventListener("change", e => {
@@ -203,11 +224,18 @@
     }
 
     /* ================================================
-       AJAX: REV. + DISC CHECKBOXES
+       AJAX: REV. + DISC CHECKBOXES – only if CAN_EDIT
     ================================================= */
     function sbInitRevDiscCheckboxes() {
         const revCheckboxes = document.querySelectorAll(".rev-checkbox");
         const discCheckboxes = document.querySelectorAll(".disc-checkbox");
+
+        if (!CAN_EDIT) {
+            // blokada dla zwykłych użytkowników – wizualnie disabled
+            revCheckboxes.forEach(cb => cb.setAttribute("disabled", "disabled"));
+            discCheckboxes.forEach(cb => cb.setAttribute("disabled", "disabled"));
+            return;
+        }
 
         function updateBooleanField(checkbox, fieldName) {
             const itemId = checkbox.dataset.itemId;
@@ -267,7 +295,7 @@
     }
 
     /* ================================================
-       AJAX: PER-USER FAVORITE STAR
+       AJAX: PER-USER FAVORITE STAR (zawsze dozwolone)
     ================================================= */
     function sbInitFavorites() {
         const stars = document.querySelectorAll(".sb-favorite");
@@ -355,7 +383,7 @@
     }
 
     /* ================================================
-       NOTE BUTTONS (CLICK → QUILL)
+       NOTE BUTTONS (CLICK → QUILL dla edytorów)
     ================================================= */
     function sbInitNoteButtons() {
         const buttons = document.querySelectorAll(".sb-note-btn");
@@ -367,6 +395,11 @@
                 btn.classList.add("sb-note-has-content");
             } else {
                 btn.classList.remove("sb-note-has-content");
+            }
+
+            // Zwykły user NIE otwiera Quilla – edytuje notatkę przez dblclick (inline)
+            if (!CAN_EDIT) {
+                return;
             }
 
             btn.addEventListener("click", () => {
@@ -385,9 +418,11 @@
     }
 
     /* ================================================
-       INLINE TEXT EDITING (dla td.inline)
+       INLINE TEXT EDITING (dla td.inline) – tylko CAN_EDIT
     ================================================= */
     function sbInitInlineEditing() {
+        if (!CAN_EDIT) return;
+
         const cells = document.querySelectorAll("td.inline");
         if (!cells.length) return;
 
@@ -469,114 +504,118 @@
 
     /* ================================================
        INLINE EDITING: DESCRIPTION + USER NOTE
-       (bez Quilla, jak w Excelu)
+       - DESCRIPTION: tylko CAN_EDIT
+       - NOTE: zawsze (prywatne pole usera)
     ================================================= */
     function sbInitInlineDescNoteEditing() {
         /* --------- DESCRIPTION (col-partdesc) ---------- */
         const descCells = document.querySelectorAll("td.col-partdesc");
-        descCells.forEach(td => {
-            td.addEventListener("dblclick", function (e) {
-                // jeśli klik na przycisk 🔍, nie włączaj inline
-                if (e.target.closest(".sb-desc-edit-btn")) {
-                    return;
-                }
 
-                const itemId = td.dataset.id;
-                const field = td.dataset.field || "part_description";
-                if (!itemId) return;
-
-                if (td.querySelector("textarea.sb-inline-textarea-desc")) {
-                    return;
-                }
-
-                const container = td.querySelector(".sb-desc-container");
-                const preview = container ? container.querySelector(".sb-desc-preview") : null;
-                if (!container || !preview) return;
-
-                // HTML -> plain text
-                const tmp = document.createElement("div");
-                tmp.innerHTML = preview.innerHTML;
-                const originalText = tmp.textContent.trim();
-
-                const textarea = document.createElement("textarea");
-                textarea.className = "sb-inline-textarea sb-inline-textarea-desc";
-                textarea.value = originalText;
-                textarea.rows = 4;
-
-                container.style.display = "none";
-                td.appendChild(textarea);
-                textarea.focus();
-                textarea.select();
-
-                const finish = (save) => {
-                    const newText = textarea.value.trim();
-
-                    if (!save || newText === originalText) {
-                        td.removeChild(textarea);
-                        container.style.display = "";
+        if (CAN_EDIT) {
+            descCells.forEach(td => {
+                td.addEventListener("dblclick", function (e) {
+                    // jeśli klik na przycisk 🔍, nie włączaj inline
+                    if (e.target.closest(".sb-desc-edit-btn")) {
                         return;
                     }
 
-                    const fd = new FormData();
-                    fd.append("item_id", itemId);
-                    fd.append("field", field);
-                    fd.append("value", newText);
+                    const itemId = td.dataset.id;
+                    const field = td.dataset.field || "part_description";
+                    if (!itemId) return;
 
-                    fetch("/api/update-field/", {
-                        method: "POST",
-                        headers: { "X-CSRFToken": csrftoken },
-                        body: fd,
-                    })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (!data.ok) {
-                                console.error("Inline description update failed:", data.error);
-                                td.removeChild(textarea);
-                                container.style.display = "";
-                            } else {
-                                const htmlNew = newText.replace(/\n/g, "<br>");
-                                preview.innerHTML = htmlNew;
-                                preview.setAttribute("title", newText);
-                                td.removeChild(textarea);
-                                container.style.display = "";
-                                markClampedCells();
-                            }
-                        })
-                        .catch(err => {
-                            console.error("Inline description update error:", err);
+                    if (td.querySelector("textarea.sb-inline-textarea-desc")) {
+                        return;
+                    }
+
+                    const container = td.querySelector(".sb-desc-container");
+                    const preview = container ? container.querySelector(".sb-desc-preview") : null;
+                    if (!container || !preview) return;
+
+                    // HTML -> plain text
+                    const tmp = document.createElement("div");
+                    tmp.innerHTML = preview.innerHTML;
+                    const originalText = tmp.textContent.trim();
+
+                    const textarea = document.createElement("textarea");
+                    textarea.className = "sb-inline-textarea sb-inline-textarea-desc";
+                    textarea.value = originalText;
+                    textarea.rows = 4;
+
+                    container.style.display = "none";
+                    td.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+
+                    const finish = (save) => {
+                        const newText = textarea.value.trim();
+
+                        if (!save || newText === originalText) {
                             td.removeChild(textarea);
                             container.style.display = "";
-                        });
-                };
+                            return;
+                        }
 
-                textarea.addEventListener("keydown", function (e2) {
-                    if (e2.key === "Enter" && (e2.ctrlKey || e2.metaKey)) {
-                        // Ctrl+Enter = nowa linia
-                        const pos = textarea.selectionStart;
-                        const val = textarea.value;
-                        textarea.value = val.slice(0, pos) + "\n" + val.slice(pos);
-                        textarea.selectionStart = textarea.selectionEnd = pos + 1;
-                        e2.preventDefault();
-                    } else if (e2.key === "Enter") {
-                        e2.preventDefault();
+                        const fd = new FormData();
+                        fd.append("item_id", itemId);
+                        fd.append("field", field);
+                        fd.append("value", newText);
+
+                        fetch("/api/update-field/", {
+                            method: "POST",
+                            headers: { "X-CSRFToken": csrftoken },
+                            body: fd,
+                        })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (!data.ok) {
+                                    console.error("Inline description update failed:", data.error);
+                                    td.removeChild(textarea);
+                                    container.style.display = "";
+                                } else {
+                                    const htmlNew = newText.replace(/\n/g, "<br>");
+                                    preview.innerHTML = htmlNew;
+                                    preview.setAttribute("title", newText);
+                                    td.removeChild(textarea);
+                                    container.style.display = "";
+                                    markClampedCells();
+                                }
+                            })
+                            .catch(err => {
+                                console.error("Inline description update error:", err);
+                                td.removeChild(textarea);
+                                container.style.display = "";
+                            });
+                    };
+
+                    textarea.addEventListener("keydown", function (e2) {
+                        if (e2.key === "Enter" && (e2.ctrlKey || e2.metaKey)) {
+                            // Ctrl+Enter = nowa linia
+                            const pos = textarea.selectionStart;
+                            const val = textarea.value;
+                            textarea.value = val.slice(0, pos) + "\n" + val.slice(pos);
+                            textarea.selectionStart = textarea.selectionEnd = pos + 1;
+                            e2.preventDefault();
+                        } else if (e2.key === "Enter") {
+                            e2.preventDefault();
+                            finish(true);
+                        } else if (e2.key === "Escape") {
+                            e2.preventDefault();
+                            finish(false);
+                        }
+                    });
+
+                    textarea.addEventListener("blur", function () {
                         finish(true);
-                    } else if (e2.key === "Escape") {
-                        e2.preventDefault();
-                        finish(false);
-                    }
-                });
-
-                textarea.addEventListener("blur", function () {
-                    finish(true);
+                    });
                 });
             });
-        });
+        }
 
         /* ------------- USER NOTE (col-note) ------------- */
         const noteCells = document.querySelectorAll("td.col-note");
         noteCells.forEach(td => {
             td.addEventListener("dblclick", function (e) {
-                // jeśli klik na przycisk 📝, nie włączaj inline — to otwiera Quilla
+                // jeśli klik na przycisk 📝, nie włączaj inline — to (dla edytorów) otwiera Quilla
                 if (e.target.closest(".sb-note-btn")) {
                     return;
                 }
@@ -678,9 +717,11 @@
 
     /* ================================================
        QUILL MODAL (DESCRIPTION + USER NOTE)
-       (Tylko z przycisków 🔍 i 📝)
+       – tylko dla CAN_EDIT
     ================================================= */
     function sbInitQuillModal() {
+        if (!CAN_EDIT) return;
+
         const modal = document.getElementById("sb-quill-modal");
         if (!modal || !window.Quill) return;
 
@@ -852,9 +893,11 @@
     }
 
     /* ================================================
-       QUILL TRIGGERS (tylko przyciski 🔍)
+       QUILL TRIGGERS (tylko przyciski 🔍, tylko CAN_EDIT)
     ================================================= */
     function sbInitQuillTriggers() {
+        if (!CAN_EDIT) return;
+
         const btns = document.querySelectorAll(".sb-desc-edit-btn");
         if (!btns.length || typeof window.sbOpenQuillEditor !== "function") return;
 
@@ -910,6 +953,8 @@
                     newWrapper.scrollTop = scrollState.top;
                 }
 
+                // re-init features
+                syncBodyDarkClass();
                 markClampedCells();
                 sbInitUnitDropdowns();
                 sbInitGroupDropdowns();

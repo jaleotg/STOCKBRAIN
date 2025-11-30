@@ -53,6 +53,17 @@ body {
 .sb-theme-btn:hover {
     opacity: 0.7;
 }
+/* Links in header (light theme) */
+.sb-header .sb-link {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.sb-header .sb-link:hover {
+    color: #e2f0f7;
+    text-decoration: underline;
+}
+
 
 /* =========================================
    MAIN CONTENT + CARDS

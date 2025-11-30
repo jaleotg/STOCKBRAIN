@@ -22,6 +22,27 @@ PAGE_SIZE_CHOICES = [50, 100, 200, 500, "all"]
 
 
 # ============================================
+# HELPERS: ROLES
+# ============================================
+
+def user_is_editor(user):
+    return user.groups.filter(name__iexact="editor").exists()
+
+
+def user_is_purchase_admin(user):
+    return user.groups.filter(name__iexact="purchase_manager").exists()
+
+
+def user_can_edit(user):
+    """
+    Global "can edit inventory" flag:
+    - editor
+    - purchase_manager
+    """
+    return user_is_editor(user) or user_is_purchase_admin(user)
+
+
+# ============================================
 # LOGIN
 # ============================================
 
@@ -62,6 +83,7 @@ def home_view(request):
     - page size selection
     - dropdowns Units / Groups / Condition
     - per-user meta: favorite_color + note (loaded via prefetch)
+    - role awareness: editor / purchase_manager / read-only
     """
     # --- PAGE SIZE (from GET or session) ---
     page_size_param = request.GET.get("page_size")
@@ -158,11 +180,12 @@ def home_view(request):
             show_first_ellipsis = start > 2
             show_last_ellipsis = end < (num_pages - 1)
 
-    # --- COLUMN VISIBILITY (purchase admin vs others) ---
+    # --- ROLES & COLUMN VISIBILITY ---
     user = request.user
 
-    # Czy użytkownik jest w grupie „purchase manager”
-    is_purchase_admin = user.groups.filter(name__iexact="purchase manager").exists()
+    is_editor = user_is_editor(user)
+    is_purchase_admin = user_is_purchase_admin(user)
+    can_edit = is_editor or is_purchase_admin
 
     # Wczytanie ustawień i listy kolumn ograniczonych
     restricted_fields = set()
@@ -209,9 +232,13 @@ def home_view(request):
         "show_last_ellipsis": show_last_ellipsis,
 
         # Column settings from admin
-        "columns": columns,                     # field_name → InventoryColumn
-        "restricted_fields": restricted_fields, # set pól tylko dla purchase admin
-        "is_purchase_admin": is_purchase_admin, # bool: czy user w grupie purchase
+        "columns": columns,                      # field_name → InventoryColumn
+        "restricted_fields": restricted_fields,  # set pól tylko dla purchase_manager
+        "is_purchase_admin": is_purchase_admin,  # bool: czy user w grupie purchase_manager
+
+        # Roles for frontend
+        "is_editor": is_editor,
+        "can_edit": can_edit,
     }
 
     return render(request, "home.html", context)
@@ -224,6 +251,10 @@ def home_view(request):
 @login_required
 @require_POST
 def update_unit(request):
+    # only editor / purchase_manager
+    if not user_can_edit(request.user):
+        return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
+
     item_id = request.POST.get("item_id")
     unit_id = request.POST.get("unit_id")
 
@@ -253,6 +284,10 @@ def update_unit(request):
 @login_required
 @require_POST
 def update_group(request):
+    # only editor / purchase_manager
+    if not user_can_edit(request.user):
+        return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
+
     item_id = request.POST.get("item_id")
     group_id = request.POST.get("group_id")
 
@@ -288,7 +323,14 @@ def update_field(request):
         item_id
         field
         value
+
+    Only for:
+        - editor
+        - purchase_manager
     """
+    if not user_can_edit(request.user):
+        return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
+
     item_id = request.POST.get("item_id")
     field = request.POST.get("field")
     value = request.POST.get("value")
@@ -390,6 +432,8 @@ def update_favorite(request):
     Expects:
         item_id
         color  (one of FAVORITE_COLOR_CHOICES values, e.g. RED/GREEN/YELLOW/BLUE/NONE)
+
+    Allowed for any authenticated user (including non-editor).
     """
     item_id = request.POST.get("item_id")
     color = (request.POST.get("color") or "NONE").upper()
@@ -431,6 +475,8 @@ def update_note(request):
     Expects:
         item_id
         note (HTML/string)
+
+    Allowed for any authenticated user (including non-editor).
     """
     item_id = request.POST.get("item_id")
     note = request.POST.get("note") or ""
