@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{% block title %}STOCKBRAIN{% endblock %}</title>
+    <title>{% block title %}DesertBrain{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Main CSS (imports layout.css, table.css, theme-dark.css) -->
@@ -19,8 +19,17 @@
 
     <!-- HEADER -->
     <header class="sb-header">
-        <div class="sb-header-title">STOCKBRAIN</div>
+        <div class="sb-header-title">DesertBrain</div>
+
         <div class="sb-header-right">
+
+            {# ADMIN MENU – only for staff users #}
+            {% if request.user.is_staff %}
+                <a href="{% url 'admin:index' %}" class="sb-link" style="margin-right:15px;">
+                    Admin
+                </a>
+            {% endif %}
+
             <button
                 type="button"
                 class="sb-theme-btn"
@@ -31,13 +40,16 @@
             </button>
 
             {% if request.user.is_authenticated %}
-                <span style="margin-right: 10px;">{{ request.user.username }}</span>
+                <span style="margin-left:10px; margin-right:10px;">
+                    {{ request.user.username }}
+                </span>
                 <a href="{% url 'logout' %}" class="sb-link">Logout</a>
             {% else %}
                 <a href="{% url 'login' %}" class="sb-link">Login</a>
             {% endif %}
         </div>
     </header>
+
 
     <!-- MAIN -->
     <main class="sb-main">
