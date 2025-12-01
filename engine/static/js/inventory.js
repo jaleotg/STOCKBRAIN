@@ -450,7 +450,13 @@
                 input.focus();
                 input.select();
 
+                // flaga – zabezpiecza przed wielokrotnym wywołaniem (ESC + blur itd.)
+                let finished = false;
+
                 const finish = (save) => {
+                    if (finished) return;
+                    finished = true;
+
                     const newValue = input.value.trim();
 
                     if (!save || newValue === originalText) {
@@ -490,15 +496,20 @@
 
                 input.addEventListener("keydown", function (e) {
                     if (e.key === "Enter") {
-                        finish(true);
+                        e.preventDefault();
+                        finish(true);    // ZAPIS
                     } else if (e.key === "Escape") {
-                        finish(false);
+                        e.preventDefault();
+                        finish(false);   // ANULUJ
                     }
                 });
 
                 input.addEventListener("blur", function () {
+                    // blur dalej zapisuje, ALE tylko jeśli
+                    // finish nie był wcześniej wywołany (np. ESC)
                     finish(true);
                 });
+
             });
         });
     }
