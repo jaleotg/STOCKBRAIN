@@ -5,6 +5,34 @@
     // Global flag from Django context: can user edit inventory fields?
     const CAN_EDIT = !!(window && window.CAN_EDIT);
 
+    const CELL_STATE_CLASSES = {
+        focus: "sb-cell-focus",
+        edited: "sb-cell-edited",
+        saved: "sb-cell-saved",
+    };
+
+    let activeCellState = { cell: null, type: null };
+
+    function clearActiveCellState() {
+        if (activeCellState.cell) {
+            activeCellState.cell.classList.remove(
+                CELL_STATE_CLASSES.focus,
+                CELL_STATE_CLASSES.edited,
+                CELL_STATE_CLASSES.saved
+            );
+        }
+        activeCellState = { cell: null, type: null };
+    }
+
+    function setActiveCellState(type, element) {
+        const cell = element ? element.closest("td") : null;
+        if (!cell || !CELL_STATE_CLASSES[type]) return;
+
+        clearActiveCellState();
+        cell.classList.add(CELL_STATE_CLASSES[type]);
+        activeCellState = { cell, type };
+    }
+
     /* ================================================
        APPLY DARK MODE EARLY (no white flash)
     ================================================= */
@@ -109,6 +137,8 @@
         if (!selects.length) return;
 
         selects.forEach(select => {
+            select.addEventListener("focus", () => setActiveCellState("edited", select));
+
             select.addEventListener("change", e => {
                 const sel = e.target;
                 const itemId = sel.dataset.itemId;
@@ -129,6 +159,8 @@
                     .then(data => {
                         if (!data.ok) {
                             console.error("Unit update failed", data.error);
+                        } else {
+                            setActiveCellState("saved", select);
                         }
                     })
                     .catch(err => {
@@ -152,6 +184,8 @@
         if (!selects.length) return;
 
         selects.forEach(select => {
+            select.addEventListener("focus", () => setActiveCellState("edited", select));
+
             select.addEventListener("change", e => {
                 const sel = e.target;
                 const itemId = sel.dataset.itemId;
@@ -172,6 +206,8 @@
                     .then(data => {
                         if (!data.ok) {
                             console.error("Group update failed", data.error);
+                        } else {
+                            setActiveCellState("saved", select);
                         }
                     })
                     .catch(err => {
@@ -194,6 +230,8 @@
         }
 
         selects.forEach(select => {
+            select.addEventListener("focus", () => setActiveCellState("edited", select));
+
             select.addEventListener("change", e => {
                 const sel = e.target;
                 const itemId = sel.dataset.itemId;
@@ -215,6 +253,8 @@
                     .then(data => {
                         if (!data.ok) {
                             console.error("Condition update failed", data.error);
+                        } else {
+                            setActiveCellState("saved", select);
                         }
                     })
                     .catch(err => {
@@ -384,6 +424,25 @@
     }
 
     /* ================================================
+       CELL STATE (focus / edited / saved)
+       - single active cell at a time
+    ================================================= */
+    function sbInitCellFocusTracking() {
+        const table = document.querySelector(".sb-table");
+        if (!table) return;
+
+        table.addEventListener("click", function (e) {
+            const cell = e.target.closest("td");
+            if (!cell || !table.contains(cell)) return;
+
+            // If we just marked this cell as edited, don't downgrade to focus.
+            if (cell.classList.contains(CELL_STATE_CLASSES.edited)) return;
+
+            setActiveCellState("focus", cell);
+        });
+    }
+
+    /* ================================================
        NOTE BUTTONS (CLICK → QUILL dla edytorów)
     ================================================= */
     function sbInitNoteButtons() {
@@ -438,6 +497,8 @@
                     return;
                 }
 
+                setActiveCellState("edited", td);
+
                 const originalText = td.innerText.trim();
 
                 const input = document.createElement("input");
@@ -461,6 +522,7 @@
 
                     if (!save || newValue === originalText) {
                         td.innerText = originalText;
+                        setActiveCellState("focus", td);
                         return;
                     }
 
@@ -486,6 +548,7 @@
                                     sbUpdateReorderFlag(itemId);
                                 }
                                 markClampedCells();
+                                setActiveCellState("saved", td);
                             }
                         })
                         .catch(err => {
@@ -543,6 +606,8 @@
                     const preview = container ? container.querySelector(".sb-desc-preview") : null;
                     if (!container || !preview) return;
 
+                    setActiveCellState("edited", td);
+
                     // HTML -> plain text
                     const tmp = document.createElement("div");
                     tmp.innerHTML = preview.innerHTML;
@@ -564,6 +629,7 @@
                         if (!save || newText === originalText) {
                             td.removeChild(textarea);
                             container.style.display = "";
+                            setActiveCellState("focus", td);
                             return;
                         }
 
@@ -590,6 +656,7 @@
                                     td.removeChild(textarea);
                                     container.style.display = "";
                                     markClampedCells();
+                                    setActiveCellState("saved", td);
                                 }
                             })
                             .catch(err => {
@@ -642,6 +709,8 @@
                 const btn = td.querySelector(".sb-note-btn");
                 if (!btn) return;
 
+                setActiveCellState("edited", td);
+
                 const raw = btn.dataset.note || "";
                 const html = decodeHtmlEntities(raw);
                 const tmp = document.createElement("div");
@@ -664,6 +733,7 @@
                     if (!save || newText === originalText) {
                         td.removeChild(textarea);
                         btn.style.display = "";
+                        setActiveCellState("focus", td);
                         return;
                     }
 
@@ -695,6 +765,7 @@
 
                                 td.removeChild(textarea);
                                 btn.style.display = "";
+                                setActiveCellState("saved", td);
                             }
                         })
                         .catch(err => {
@@ -789,7 +860,11 @@
             }
         }
 
-        function hideModal() {
+        function hideModal(clearState = false) {
+            if (clearState) {
+                clearActiveCellState();
+            }
+
             state.modal.style.display = "none";
             state.currentItemId = null;
             state.currentCell = null;
@@ -817,6 +892,14 @@
                 state.noteButton = targetElement || null;
             }
 
+            const targetCell = state.mode === "description"
+                ? state.currentCell
+                : (state.noteButton ? state.noteButton.closest("td") : null);
+
+            if (targetCell) {
+                setActiveCellState("edited", targetCell);
+            }
+
             updateModalTitle(state.mode);
 
             quillInstance.root.innerHTML = html || "";
@@ -826,12 +909,12 @@
         // globalny „otwieracz” używany przez przyciski 🔍 i 📝
         window.sbOpenQuillEditor = openModal;
 
-        if (closeBtn) closeBtn.addEventListener("click", hideModal);
-        if (cancelBtn) cancelBtn.addEventListener("click", hideModal);
+        if (closeBtn) closeBtn.addEventListener("click", () => hideModal(true));
+        if (cancelBtn) cancelBtn.addEventListener("click", () => hideModal(true));
 
         modal.addEventListener("click", function (e) {
             if (e.target === modal) {
-                hideModal();
+                hideModal(true);
             }
         });
 
@@ -874,6 +957,7 @@
                                 if (typeof markClampedCells === "function") {
                                     markClampedCells();
                                 }
+                                setActiveCellState("saved", cell);
                             }
                             hideModal();
                         })
@@ -912,6 +996,11 @@
                                     btn.classList.add("sb-note-has-content");
                                 } else {
                                     btn.classList.remove("sb-note-has-content");
+                                }
+
+                                const targetCell = btn.closest("td");
+                                if (targetCell) {
+                                    setActiveCellState("saved", targetCell);
                                 }
                             }
                             hideModal();
@@ -1029,6 +1118,7 @@
                 }
 
                 card.replaceWith(newCard);
+                clearActiveCellState();
 
                 const newWrapper = document.querySelector(".sb-table-wrapper");
                 if (newWrapper) {
@@ -1039,6 +1129,7 @@
                 // re-init features
                 syncBodyDarkClass();
                 markClampedCells();
+                sbInitCellFocusTracking();
                 sbInitUnitDropdowns();
                 sbInitGroupDropdowns();
                 sbInitConditionDropdowns();
@@ -1132,6 +1223,7 @@
     document.addEventListener("DOMContentLoaded", function () {
         syncBodyDarkClass();
         markClampedCells();
+        sbInitCellFocusTracking();
         sbInitUnitDropdowns();
         sbInitGroupDropdowns();
         sbInitConditionDropdowns();
