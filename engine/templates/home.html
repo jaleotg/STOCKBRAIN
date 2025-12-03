@@ -42,6 +42,15 @@
             </select>
         </div>
 
+        {% if can_edit or is_purchase_admin %}
+        <div class="sb-add-item-wrapper" style="flex:1; display:flex; justify-content:center;">
+            <button type="button" id="sb-add-item-btn" class="sb-add-item-btn">
+                +
+                <span>Add new item</span>
+            </button>
+        </div>
+        {% endif %}
+
         <!-- PAGER -->
         {% if is_paginated %}
             <nav class="sb-pagination"
@@ -618,5 +627,203 @@
         </table>
     </div>
 </div>
+
+{% if can_edit or is_purchase_admin %}
+<!-- ADD ITEM MODAL -->
+<div id="sb-add-item-modal" class="sb-modal" aria-hidden="true">
+    <div class="sb-modal-dialog sb-add-item-dialog">
+        <div class="sb-modal-header">
+            <div>
+                <strong>Add new item</strong>
+            </div>
+            <div>
+                <button type="button" class="sb-modal-close" aria-label="Close">&times;</button>
+            </div>
+        </div>
+        <div class="sb-modal-body">
+            <form id="sb-add-item-form" class="sb-add-item-form">
+                <div class="sb-add-row rsb-row">
+                    {% with col=columns.rack %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"Rack" }}</label>
+                            <input type="text" name="rack" required>
+                        </div>
+                    {% endwith %}
+                    {% with col=columns.shelf %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"Shelf" }}</label>
+                            <input type="text" name="shelf" required>
+                        </div>
+                    {% endwith %}
+                    {% with col=columns.box %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"Box" }}</label>
+                            <input type="text" name="box" required>
+                        </div>
+                    {% endwith %}
+                </div>
+
+                {% with col=columns.group %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"Group" }}</label>
+                    <select name="group_id">
+                        {% for g in groups %}
+                            <option value="{{ g.id }}">{{ g.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endwith %}
+
+                {% with col=columns.name %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"Name" }}</label>
+                    <input type="text" name="name">
+                </div>
+                {% endwith %}
+
+                {% with col=columns.part_description %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"Part description" }}</label>
+                    <textarea name="part_description" rows="3"></textarea>
+                </div>
+                {% endwith %}
+
+                {% with col=columns.part_number %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"Part number" }}</label>
+                    <input type="text" name="part_number">
+                </div>
+                {% endwith %}
+
+                {% with col=columns.dcm_number %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"DCM" }}</label>
+                    <input type="text" name="dcm_number">
+                </div>
+                {% endwith %}
+
+                {% with col=columns.oem_name %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"OEM Name" }}</label>
+                    <input type="text" name="oem_name">
+                </div>
+                {% endwith %}
+
+                {% with col=columns.oem_number %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"OEM Number" }}</label>
+                    <input type="text" name="oem_number">
+                </div>
+                {% endwith %}
+
+                {% if is_purchase_admin or 'vendor' not in restricted_fields %}
+                    {% with col=columns.vendor %}
+                    <div class="sb-add-field">
+                        <label>{{ col.full_label|default:col.field_name|default:"Vendor" }}</label>
+                        <input type="text" name="vendor">
+                    </div>
+                    {% endwith %}
+                {% endif %}
+
+                {% if is_purchase_admin or 'source_location' not in restricted_fields %}
+                    {% with col=columns.source_location %}
+                    <div class="sb-add-field">
+                        <label>{{ col.full_label|default:col.field_name|default:"Source location" }}</label>
+                        <input type="text" name="source_location">
+                    </div>
+                    {% endwith %}
+                {% endif %}
+
+                {% with col=columns.unit %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"Unit" }}</label>
+                    <select name="unit_id" required>
+                        {% for u in units %}
+                            <option value="{{ u.id }}">{{ u.code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endwith %}
+
+                {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
+                    {% with col=columns.quantity_in_stock %}
+                    <div class="sb-add-field">
+                        <label>{{ col.full_label|default:col.field_name|default:"Quantity in stock" }}</label>
+                        <input type="number" step="1" name="quantity_in_stock" required>
+                    </div>
+                    {% endwith %}
+                {% endif %}
+
+                {% if is_purchase_admin or 'price' not in restricted_fields %}
+                    {% with col=columns.price %}
+                    <div class="sb-add-field">
+                        <label>{{ col.full_label|default:col.field_name|default:"Price" }}</label>
+                        <input type="number" step="0.01" name="price">
+                    </div>
+                    {% endwith %}
+                {% endif %}
+
+                {% if is_purchase_admin or 'reorder_level' not in restricted_fields %}
+                    {% with col=columns.reorder_level %}
+                    <div class="sb-add-field">
+                        <label>{{ col.full_label|default:col.field_name|default:"Reorder level" }}</label>
+                        <input type="number" step="1" name="reorder_level">
+                    </div>
+                    {% endwith %}
+                {% endif %}
+
+                {% with col=columns.reorder_time_days %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"RT days" }}</label>
+                    <input type="number" step="1" name="reorder_time_days">
+                </div>
+                {% endwith %}
+
+                {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
+                    {% with col=columns.quantity_in_reorder %}
+                    <div class="sb-add-field">
+                        <label>{{ col.full_label|default:col.field_name|default:"Qty reorder" }}</label>
+                        <input type="number" step="1" name="quantity_in_reorder">
+                    </div>
+                    {% endwith %}
+                {% endif %}
+
+                {% with col=columns.condition_status %}
+                <div class="sb-add-field">
+                    <label>{{ col.full_label|default:col.field_name|default:"Condition" }}</label>
+                    <select name="condition_status">
+                        <option value="">---</option>
+                        {% for value, label in condition_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endwith %}
+
+                <div class="sb-add-row">
+                    {% with col=columns.discontinued %}
+                    <label class="sb-add-checkbox">
+                        <input type="checkbox" name="discontinued">
+                        <span>{{ col.full_label|default:col.field_name|default:"Discontinued" }}</span>
+                    </label>
+                    {% endwith %}
+
+                    {% with col=columns.verify %}
+                    <label class="sb-add-checkbox">
+                        <input type="checkbox" name="verify">
+                        <span>{{ col.full_label|default:col.field_name|default:"Verify" }}</span>
+                    </label>
+                    {% endwith %}
+                </div>
+            </form>
+        </div>
+        <div class="sb-modal-footer">
+            <button type="button" class="sb-modal-save" data-mode="save">Save</button>
+            <button type="button" class="sb-modal-save" data-mode="save-next">Save and next</button>
+            <button type="button" class="sb-modal-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}

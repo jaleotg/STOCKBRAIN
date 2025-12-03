@@ -547,6 +547,134 @@
     }
 
     /* ================================================
+       ADD ITEM MODAL (Editor / Purchase Manager)
+    ================================================= */
+    function sbInitAddItemModal() {
+        const btn = document.getElementById("sb-add-item-btn");
+        const modal = document.getElementById("sb-add-item-modal");
+        if (!btn || !modal) return;
+
+        const dialog = modal.querySelector(".sb-modal-dialog");
+        const closeBtn = modal.querySelector(".sb-modal-close");
+        const cancelBtn = modal.querySelector(".sb-modal-cancel");
+        const saveBtns = modal.querySelectorAll(".sb-modal-save");
+        const form = modal.querySelector("#sb-add-item-form");
+
+        let isOpen = false;
+
+        function openModal() {
+            if (!modal) return;
+            modal.style.display = "flex";
+            isOpen = true;
+            const firstInput = form ? form.querySelector("input, select, textarea") : null;
+            if (firstInput) firstInput.focus();
+        }
+
+        function resetForm() {
+            if (form) form.reset();
+        }
+
+        function closeModal(clear) {
+            if (!modal) return;
+            modal.style.display = "none";
+            isOpen = false;
+            if (clear) resetForm();
+        }
+
+        function handleKeydown(e) {
+            if (!isOpen) return;
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeModal(true);
+            }
+        }
+
+        document.addEventListener("keydown", handleKeydown);
+
+        function serializeForm() {
+            if (!form) return null;
+            const fd = new FormData();
+            const required = ["rack", "shelf", "box", "unit_id", "quantity_in_stock"];
+            let missing = [];
+
+            const elements = form.querySelectorAll("input, select, textarea");
+            elements.forEach(el => {
+                const name = el.name;
+                if (!name) return;
+
+                if (el.type === "checkbox") {
+                    fd.append(name, el.checked ? "1" : "0");
+                } else {
+                    fd.append(name, el.value);
+                }
+
+                if (required.includes(name) && !el.value.trim()) {
+                    missing.push(name);
+                }
+            });
+
+            if (missing.length) {
+                alert("Please fill required fields: " + missing.join(", "));
+                return null;
+            }
+            return fd;
+        }
+
+        function postNewItem(mode) {
+            const fd = serializeForm();
+            if (!fd) return;
+
+            fd.append("save_mode", mode);
+
+            fetch("/api/create-item/", {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken || "" },
+                body: fd,
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) {
+                        console.error("Create item failed:", data.error);
+                        alert("Create item failed: " + (data.error || "Unknown error"));
+                        return;
+                    }
+
+                    if (mode === "save-next") {
+                        resetForm();
+                        const firstInput = form ? form.querySelector("input, select, textarea") : null;
+                        if (firstInput) firstInput.focus();
+                    } else {
+                        closeModal(true);
+                    }
+
+                    sbLoadInventory(window.location.href);
+                })
+                .catch(err => {
+                    console.error("Create item error:", err);
+                    alert("Create item error. See console for details.");
+                });
+        }
+
+        btn.addEventListener("click", openModal);
+
+        if (closeBtn) closeBtn.addEventListener("click", () => closeModal(true));
+        if (cancelBtn) cancelBtn.addEventListener("click", () => closeModal(true));
+
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) {
+                closeModal(true);
+            }
+        });
+
+        saveBtns.forEach(sbtn => {
+            sbtn.addEventListener("click", function () {
+                const mode = this.dataset.mode === "save-next" ? "save-next" : "save";
+                postNewItem(mode);
+            });
+        });
+    }
+
+    /* ================================================
        INLINE TEXT EDITING (dla td.inline) – tylko CAN_EDIT
     ================================================= */
     function sbInitInlineEditing() {
@@ -1268,6 +1396,7 @@
                 sbInitQuillModal();
                 sbInitQuillTriggers();
                 sbInitNoteButtons();
+                sbInitAddItemModal();
             })
             .catch(err => {
                 console.error("Pagination AJAX error:", err);
@@ -1362,5 +1491,6 @@
         sbInitQuillModal();
         sbInitQuillTriggers();
         sbInitNoteButtons();
+        sbInitAddItemModal();
     });
 })();
