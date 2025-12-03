@@ -1,12 +1,1 @@
-wprowadz 4 stany kazdej rubryki:
-1) normalna -bez zmian w wygladzie 
-2) focus-  ta rubryka bedzie sie odznaczala pogrubioną niebieską ramką. przejscie do tego stanu nastapi po pojedynczym kliknieciu na jakiejkolwiek rubryce raz. [taka pamiec podreczna ulatwiajaca skupienie] rownoczesnie czyszczac stany focus, just edited lub saved w poprzednich - czyli we wszystkich pozostałych rubrykach
-3) just edited - pogrubiona czerwona ramka- otwarcie dropdowna, inline edytora lub quilla bedzie powodowalo przejscie do tego stanum czyszczac rownoczesnie stany just edited saved oraz focus w innych rubrykach
-4) saved - gdy rubryka zostanie zapisana jej ramka zrobi sie zielona pogrubiona 
-
-nie przypisuj stanów do wszystkich rubryk - to zajmuje za duzo czasu procesora. Raczej trzymaj rejestr tej jednej specjalnej - edited, saved lub focus i zanim zapiszesz nowy stan wyczysc ten poprzedni z odpowiedniej rubryki. 
-
-
-
-popraw teraz komorki w kolumnie note - notatka uzytkownika, chce by wygladaly i zachowywaly sie tak samo jak w kolumnie description, oczywiscie zapis ma byc nadal tam gdzie do tej pory.
-czyli innymi slowy, widoczny w komorce tekst jesli jest, edytor inline edytor quill, to samo zachowanie kolorow ramki czerwone zielone niebieskie co w pozostalych komorkach
+sortowanie zle dziala po "R". 10-B-10 jest przed 10-B-2

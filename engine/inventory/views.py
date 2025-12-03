@@ -4,8 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Prefetch, Case, When, IntegerField
-from django.db.models.functions import Lower, Substr
+from django.db.models import Prefetch, Case, When, IntegerField, Window
+from django.db.models.functions import Lower, Substr, RowNumber
 
 from .models import (
     InventoryItem,
@@ -640,6 +640,17 @@ def create_item(request):
     discontinued = data.get("discontinued") == "1"
     verify = data.get("verify") == "1"
 
+    sort_field = data.get("sort") or "rack"
+    sort_dir = data.get("dir") or "asc"
+    try:
+        page_size_val = data.get("page_size")
+        if page_size_val == "all":
+            page_size_int = None
+        else:
+            page_size_int = int(page_size_val) if page_size_val else 50
+    except (TypeError, ValueError):
+        page_size_int = 50
+
     for f in required_fields:
         if not data.get(f):
             errors.append(f"Missing required field: {f}")
@@ -693,4 +704,49 @@ def create_item(request):
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
-    return JsonResponse({"ok": True, "id": item.id})
+    # --- compute page where item would appear with current sort + page size ---
+    order_by_args = []
+    annotate_kwargs = {}
+
+    if sort_field == "rack":
+        order_by_args.append("-rack" if sort_dir == "desc" else "rack")
+        order_by_args.extend(["shelf", "box", "name"])
+    elif sort_field == "shelf":
+        order_by_args.append("-shelf" if sort_dir == "desc" else "shelf")
+        order_by_args.extend(["rack", "box", "name"])
+    elif sort_field == "name":
+        annotate_kwargs["name_lower"] = Lower("name")
+        annotate_kwargs["first_char"] = Substr("name", 1, 1)
+        annotate_kwargs["name_digit_flag"] = Case(
+            When(first_char__in=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], then=0),
+            default=1,
+            output_field=IntegerField(),
+        )
+        if sort_dir == "desc":
+            order_by_args.extend(["name_digit_flag", "-name_lower"])
+        else:
+            order_by_args.extend(["name_digit_flag", "name_lower"])
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "group":
+        order_by_args.append("-group__name" if sort_dir == "desc" else "group__name")
+        order_by_args.extend(["rack", "shelf", "box", "name"])
+    else:
+        order_by_args = ["rack", "shelf", "box", "name"]
+
+    row_number = None
+    try:
+        qs = InventoryItem.objects.annotate(**annotate_kwargs).annotate(
+            row_number=Window(expression=RowNumber(), order_by=order_by_args)
+        ).filter(pk=item.id).values_list("row_number", flat=True)
+        row_number = qs[0] if qs else None
+    except Exception:
+        row_number = None
+
+    page_for_item = 1
+    if row_number is not None:
+        if page_size_int:
+            page_for_item = (row_number - 1) // page_size_int + 1
+        else:
+            page_for_item = 1
+
+    return JsonResponse({"ok": True, "id": item.id, "page": page_for_item})

@@ -644,20 +644,20 @@
             <form id="sb-add-item-form" class="sb-add-item-form">
                 <div class="sb-add-row rsb-row">
                     {% with col=columns.rack %}
-                        <div class="sb-add-field">
-                            <label>{{ col.full_label|default:col.field_name|default:"Rack" }}</label>
+                        <div class="sb-add-field sb-mandatory">
+                            <label>{{ col.full_label|default:col.field_name|default:"Rack" }} <span class="sb-mandatory-badge">mandatory</span></label>
                             <input type="text" name="rack" required>
                         </div>
                     {% endwith %}
                     {% with col=columns.shelf %}
-                        <div class="sb-add-field">
-                            <label>{{ col.full_label|default:col.field_name|default:"Shelf" }}</label>
+                        <div class="sb-add-field sb-mandatory">
+                            <label>{{ col.full_label|default:col.field_name|default:"Shelf" }} <span class="sb-mandatory-badge">mandatory</span></label>
                             <input type="text" name="shelf" required>
                         </div>
                     {% endwith %}
                     {% with col=columns.box %}
-                        <div class="sb-add-field">
-                            <label>{{ col.full_label|default:col.field_name|default:"Box" }}</label>
+                        <div class="sb-add-field sb-mandatory">
+                            <label>{{ col.full_label|default:col.field_name|default:"Box" }} <span class="sb-mandatory-badge">mandatory</span></label>
                             <input type="text" name="box" required>
                         </div>
                     {% endwith %}
@@ -675,9 +675,9 @@
                 {% endwith %}
 
                 {% with col=columns.name %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"Name" }}</label>
-                    <input type="text" name="name">
+                <div class="sb-add-field sb-mandatory">
+                    <label>{{ col.full_label|default:col.field_name|default:"Name" }} <span class="sb-mandatory-badge">mandatory</span></label>
+                    <input type="text" name="name" required>
                 </div>
                 {% endwith %}
 
@@ -735,8 +735,8 @@
                 {% endif %}
 
                 {% with col=columns.unit %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"Unit" }}</label>
+                <div class="sb-add-field sb-mandatory">
+                    <label>{{ col.full_label|default:col.field_name|default:"Unit" }} <span class="sb-mandatory-badge">mandatory</span></label>
                     <select name="unit_id" required>
                         {% for u in units %}
                             <option value="{{ u.id }}">{{ u.code }}</option>
@@ -747,8 +747,8 @@
 
                 {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
                     {% with col=columns.quantity_in_stock %}
-                    <div class="sb-add-field">
-                        <label>{{ col.full_label|default:col.field_name|default:"Quantity in stock" }}</label>
+                    <div class="sb-add-field sb-mandatory">
+                        <label>{{ col.full_label|default:col.field_name|default:"Quantity in stock" }} <span class="sb-mandatory-badge">mandatory</span></label>
                         <input type="number" step="1" name="quantity_in_stock" required>
                     </div>
                     {% endwith %}

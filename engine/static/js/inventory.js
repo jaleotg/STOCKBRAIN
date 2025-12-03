@@ -4,6 +4,7 @@
 
     // Global flag from Django context: can user edit inventory fields?
     const CAN_EDIT = !!(window && window.CAN_EDIT);
+    const HIGHLIGHT_KEY = "sb_new_item_highlight";
 
     const CELL_STATE_CLASSES = {
         focus: "sb-cell-focus",
@@ -492,43 +493,48 @@
         textarea.style.width = "100%";
     }
 
-    function sbEnsureNewItemVisible(itemId) {
-        if (!itemId) return;
+    function rememberHighlight(id) {
+        try {
+            localStorage.setItem(HIGHLIGHT_KEY, String(id));
+        } catch (e) {}
+    }
 
-        function highlightIfPresent() {
-            const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
-            if (!row) return false;
+    function applyPendingHighlight() {
+        let id = null;
+        try {
+            id = localStorage.getItem(HIGHLIGHT_KEY);
+        } catch (e) {}
+        if (!id) return;
+
+        const row = document.querySelector(`tr[data-item-id="${id}"]`);
+        if (row) {
             const nameCell = row.querySelector(".col-name") || row.querySelector("td");
             if (nameCell) {
                 setActiveCellState("saved", nameCell);
                 nameCell.scrollIntoView({ behavior: "smooth", block: "center" });
             }
-            return true;
         }
 
-        if (highlightIfPresent()) return;
+        try {
+            localStorage.removeItem(HIGHLIGHT_KEY);
+        } catch (e) {}
+    }
 
-        const last = document.querySelector(".sb-pagination .sb-page-last[data-page]");
-        const totalPages = last ? parseInt(last.dataset.page, 10) : 1;
+    function sbEnsureNewItemVisible(itemId, targetPage) {
+        if (!itemId) return;
+
         const pageSizeSel = document.getElementById("page-size-select");
-
+        const target = targetPage ? String(targetPage) : null;
         const url = new URL(window.location.href);
+        if (target) {
+            url.searchParams.set("page", target);
+        }
         if (pageSizeSel) {
             url.searchParams.set("page_size", pageSizeSel.value);
         }
 
-        function tryPage(pageNum) {
-            if (pageNum > totalPages) return;
-            url.searchParams.set("page", pageNum);
-            sbLoadInventory(url.toString(), {
-                onLoaded: () => {
-                    if (highlightIfPresent()) return;
-                    tryPage(pageNum + 1);
-                },
-            });
-        }
-
-        tryPage(1);
+        rememberHighlight(itemId);
+        window.location.href = url.toString();
     }
 
     /* ================================================
@@ -589,9 +595,6 @@
        ADD ITEM MODAL (Editor / Purchase Manager)
     ================================================= */
     function sbInitAddItemModal() {
-        if (sbInitAddItemModal.initialized) return;
-        sbInitAddItemModal.initialized = true;
-
         const btn = document.getElementById("sb-add-item-btn");
         const modal = document.getElementById("sb-add-item-modal");
         if (!btn || !modal) return;
@@ -631,7 +634,10 @@
             }
         }
 
-        document.addEventListener("keydown", handleKeydown);
+        if (!document._sbAddItemKeydownBound) {
+            document.addEventListener("keydown", handleKeydown);
+            document._sbAddItemKeydownBound = true;
+        }
 
         function serializeForm() {
             if (!form) return null;
@@ -668,6 +674,16 @@
 
             fd.append("save_mode", mode);
 
+            const table = document.querySelector(".sb-table");
+            const currentSort = table ? (table.dataset.currentSort || "rack") : "rack";
+            const currentDir = table ? (table.dataset.currentDir || "asc") : "asc";
+            const pageSizeSel = document.getElementById("page-size-select");
+            const pageSizeVal = pageSizeSel ? pageSizeSel.value : "50";
+
+            fd.append("sort", currentSort);
+            fd.append("dir", currentDir);
+            fd.append("page_size", pageSizeVal);
+
             fetch("/api/create-item/", {
                 method: "POST",
                 headers: { "X-CSRFToken": csrftoken || "" },
@@ -682,6 +698,7 @@
                     }
 
                     const newId = data.id;
+                    const targetPage = data.page;
 
                     if (mode === "save-next") {
                         resetForm();
@@ -691,7 +708,7 @@
                         closeModal(true);
                     }
 
-                    sbEnsureNewItemVisible(newId);
+                    sbEnsureNewItemVisible(newId, targetPage);
                 })
                 .catch(err => {
                     console.error("Create item error:", err);
@@ -699,22 +716,36 @@
                 });
         }
 
-        btn.addEventListener("click", openModal);
+        if (!btn.dataset.sbBound) {
+            btn.addEventListener("click", openModal);
+            btn.dataset.sbBound = "1";
+        }
 
-        if (closeBtn) closeBtn.addEventListener("click", () => closeModal(true));
-        if (cancelBtn) cancelBtn.addEventListener("click", () => closeModal(true));
+        if (!closeBtn?.dataset?.sbBound) {
+            closeBtn.addEventListener("click", () => closeModal(true));
+            closeBtn.dataset.sbBound = "1";
+        }
+        if (!cancelBtn?.dataset?.sbBound) {
+            cancelBtn.addEventListener("click", () => closeModal(true));
+            cancelBtn.dataset.sbBound = "1";
+        }
 
-        modal.addEventListener("click", function (e) {
-            if (e.target === modal) {
-                closeModal(true);
-            }
-        });
+        if (!modal.dataset.sbOverlayBound) {
+            modal.addEventListener("click", function (e) {
+                if (e.target === modal) {
+                    closeModal(true);
+                }
+            });
+            modal.dataset.sbOverlayBound = "1";
+        }
 
         saveBtns.forEach(sbtn => {
+            if (sbtn.dataset.sbBound) return;
             sbtn.addEventListener("click", function () {
                 const mode = this.dataset.mode === "save-next" ? "save-next" : "save";
                 postNewItem(mode);
             });
+            sbtn.dataset.sbBound = "1";
         });
     }
 
@@ -1441,6 +1472,7 @@
                 sbInitQuillTriggers();
                 sbInitNoteButtons();
                 sbInitAddItemModal();
+                applyPendingHighlight();
                 if (typeof opts.onLoaded === "function") {
                     opts.onLoaded();
                 }
@@ -1542,5 +1574,6 @@
         sbInitQuillTriggers();
         sbInitNoteButtons();
         sbInitAddItemModal();
+        applyPendingHighlight();
     });
 })();

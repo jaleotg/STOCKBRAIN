@@ -513,6 +513,44 @@
     font-size: 12px;
 }
 
+.sb-add-field select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 28px;
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-color: #fff;
+    color: #333;
+}
+
+.sb-dark .sb-add-field select {
+    background-color: #3a3a3a;
+    color: #eee;
+    border-color: #555;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.sb-mandatory .sb-mandatory-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    background: #ffe0e0;
+    color: #c0392b;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.sb-mandatory input,
+.sb-mandatory select,
+.sb-mandatory textarea {
+    border: 3px solid #c0392b !important;
+}
+
 .sb-add-field input,
 .sb-add-field select,
 .sb-add-field textarea {
