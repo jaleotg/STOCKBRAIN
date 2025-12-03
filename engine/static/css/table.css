@@ -301,6 +301,29 @@
     border-color: #666;
 }
 
+/* Save/Cancel flash after inline edit */
+td.inline.sb-inline-flash-save {
+    background-color: #e6f4ea;
+    box-shadow: inset 0 0 0 2px #2e9d61;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+td.inline.sb-inline-flash-cancel {
+    background-color: #eaf1ff;
+    box-shadow: inset 0 0 0 2px #2f6bdc;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sb-dark td.inline.sb-inline-flash-save {
+    background-color: #1d3226;
+    box-shadow: inset 0 0 0 2px #2e9d61;
+}
+
+.sb-dark td.inline.sb-inline-flash-cancel {
+    background-color: #1a2238;
+    box-shadow: inset 0 0 0 2px #2f6bdc;
+}
+
 /* ============================================================
    DROPDOWNS (Units + Group)
 ============================================================ */
