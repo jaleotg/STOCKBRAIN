@@ -139,6 +139,23 @@
 
         selects.forEach(select => {
             select.addEventListener("focus", () => setActiveCellState("edited", select));
+            select.addEventListener("blur", () => {
+                const td = select.closest("td");
+                if (td && td.classList.contains(CELL_STATE_CLASSES.edited)) {
+                    setActiveCellState("focus", select);
+                }
+            });
+            select.addEventListener("keydown", e => {
+                if (e.key === "Escape") {
+                    setActiveCellState("focus", select);
+                    select.blur();
+                }
+            });
+            select.addEventListener("keyup", e => {
+                if (e.key === "Escape") {
+                    setActiveCellState("focus", select);
+                }
+            });
 
             select.addEventListener("change", e => {
                 const sel = e.target;
@@ -186,6 +203,23 @@
 
         selects.forEach(select => {
             select.addEventListener("focus", () => setActiveCellState("edited", select));
+            select.addEventListener("blur", () => {
+                const td = select.closest("td");
+                if (td && td.classList.contains(CELL_STATE_CLASSES.edited)) {
+                    setActiveCellState("focus", select);
+                }
+            });
+            select.addEventListener("keydown", e => {
+                if (e.key === "Escape") {
+                    setActiveCellState("focus", select);
+                    select.blur();
+                }
+            });
+            select.addEventListener("keyup", e => {
+                if (e.key === "Escape") {
+                    setActiveCellState("focus", select);
+                }
+            });
 
             select.addEventListener("change", e => {
                 const sel = e.target;
@@ -232,6 +266,23 @@
 
         selects.forEach(select => {
             select.addEventListener("focus", () => setActiveCellState("edited", select));
+            select.addEventListener("blur", () => {
+                const td = select.closest("td");
+                if (td && td.classList.contains(CELL_STATE_CLASSES.edited)) {
+                    setActiveCellState("focus", select);
+                }
+            });
+            select.addEventListener("keydown", e => {
+                if (e.key === "Escape") {
+                    setActiveCellState("focus", select);
+                    select.blur();
+                }
+            });
+            select.addEventListener("keyup", e => {
+                if (e.key === "Escape") {
+                    setActiveCellState("focus", select);
+                }
+            });
 
             select.addEventListener("change", e => {
                 const sel = e.target;
