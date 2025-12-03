@@ -492,6 +492,45 @@
         textarea.style.width = "100%";
     }
 
+    function sbEnsureNewItemVisible(itemId) {
+        if (!itemId) return;
+
+        function highlightIfPresent() {
+            const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+            if (!row) return false;
+            const nameCell = row.querySelector(".col-name") || row.querySelector("td");
+            if (nameCell) {
+                setActiveCellState("saved", nameCell);
+                nameCell.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+            return true;
+        }
+
+        if (highlightIfPresent()) return;
+
+        const last = document.querySelector(".sb-pagination .sb-page-last[data-page]");
+        const totalPages = last ? parseInt(last.dataset.page, 10) : 1;
+        const pageSizeSel = document.getElementById("page-size-select");
+
+        const url = new URL(window.location.href);
+        if (pageSizeSel) {
+            url.searchParams.set("page_size", pageSizeSel.value);
+        }
+
+        function tryPage(pageNum) {
+            if (pageNum > totalPages) return;
+            url.searchParams.set("page", pageNum);
+            sbLoadInventory(url.toString(), {
+                onLoaded: () => {
+                    if (highlightIfPresent()) return;
+                    tryPage(pageNum + 1);
+                },
+            });
+        }
+
+        tryPage(1);
+    }
+
     /* ================================================
        CELL STATE (focus / edited / saved)
        - single active cell at a time
@@ -550,6 +589,9 @@
        ADD ITEM MODAL (Editor / Purchase Manager)
     ================================================= */
     function sbInitAddItemModal() {
+        if (sbInitAddItemModal.initialized) return;
+        sbInitAddItemModal.initialized = true;
+
         const btn = document.getElementById("sb-add-item-btn");
         const modal = document.getElementById("sb-add-item-modal");
         if (!btn || !modal) return;
@@ -639,6 +681,8 @@
                         return;
                     }
 
+                    const newId = data.id;
+
                     if (mode === "save-next") {
                         resetForm();
                         const firstInput = form ? form.querySelector("input, select, textarea") : null;
@@ -647,7 +691,7 @@
                         closeModal(true);
                     }
 
-                    sbLoadInventory(window.location.href);
+                    sbEnsureNewItemVisible(newId);
                 })
                 .catch(err => {
                     console.error("Create item error:", err);
@@ -1342,7 +1386,7 @@
     /* ================================================
        AJAX PAGINATION + PAGE SIZE
     ================================================= */
-    function sbLoadInventory(url) {
+    function sbLoadInventory(url, opts = {}) {
         const card = document.querySelector(".sb-card");
         if (!card) {
             window.location.href = url;
@@ -1397,9 +1441,15 @@
                 sbInitQuillTriggers();
                 sbInitNoteButtons();
                 sbInitAddItemModal();
+                if (typeof opts.onLoaded === "function") {
+                    opts.onLoaded();
+                }
             })
             .catch(err => {
                 console.error("Pagination AJAX error:", err);
+                if (typeof opts.onError === "function") {
+                    opts.onError(err);
+                }
                 window.location.href = url;
             });
     }
