@@ -5,3 +5,8 @@ wprowadz 4 stany kazdej rubryki:
 4) saved - gdy rubryka zostanie zapisana jej ramka zrobi sie zielona pogrubiona 
 
 nie przypisuj stanów do wszystkich rubryk - to zajmuje za duzo czasu procesora. Raczej trzymaj rejestr tej jednej specjalnej - edited, saved lub focus i zanim zapiszesz nowy stan wyczysc ten poprzedni z odpowiedniej rubryki. 
+
+
+
+popraw teraz komorki w kolumnie note - notatka uzytkownika, chce by wygladaly i zachowywaly sie tak samo jak w kolumnie description, oczywiscie zapis ma byc nadal tam gdzie do tej pory.
+czyli innymi slowy, widoczny w komorce tekst jesli jest, edytor inline edytor quill, to samo zachowanie kolorow ramki czerwone zielone niebieskie co w pozostalych komorkach

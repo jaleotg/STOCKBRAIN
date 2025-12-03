@@ -45,9 +45,10 @@
 
 .sb-table th,
 .sb-table td {
-    padding: 6px 8px;
+    padding: 2px 4px;
     border: 1px solid #ddd;
-    font-size: 13px;
+    font-size: 10px;
+    line-height: 1.2;
     color: #333;
 }
 
@@ -125,6 +126,8 @@
     background-color: #f5f5f5;
     border-bottom: 2px solid #d0d0d0;
     text-align: center;
+    padding: 6px 6px;
+    font-size: 12px;
 }
 
 .sb-dark .sb-table thead th {
@@ -240,12 +243,7 @@
     white-space: normal;
     overflow: hidden;
     word-wrap: break-word;
-}
-
-/* Lolly pop indicator when truncated */
-.sb-table td.sb-clamped::after {
-    content: " 🍭";
-    white-space: nowrap;
+    max-height: calc(1.2em * 5);
 }
 
 /* ============================================================
@@ -303,17 +301,32 @@
 
 .sb-inline-input {
     width: 100%;
+    height: 100%;
     font: inherit;
-    padding: 2px 4px;
+    padding: 0;
     box-sizing: border-box;
-    border: 1px solid #aaa;
-    border-radius: 3px;
+    border: none;
+    outline: none;
+    background: transparent;
 }
 
-.sb-dark .sb-inline-input {
-    background-color: #3a3a3a;
-    color: #eee;
-    border-color: #666;
+.sb-inline-textarea {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    display: block;
+    font: inherit;
+    padding: 0;
+    box-sizing: border-box;
+    border: none;
+    outline: none;
+    background: transparent;
+    resize: none;
+    line-height: inherit;
+}
+
+.sb-inline-editing {
+    padding: 0 !important;
 }
 
 /* ============================================================
@@ -325,7 +338,7 @@
 .condition-select {
     font: inherit;
     max-width: 100%;
-    padding: 2px 26px 2px 6px;
+    padding: 0 22px 0 6px;
     border-radius: 4px;
     border: 1px solid #ccc;
     background-color: #fff;
@@ -333,13 +346,12 @@
     cursor: pointer;
 
     appearance: none;
-    background-image: url("data:image/svg+xml,\
-        <svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'>\
-            <polygon points='0,0 10,0 5,6' fill='%23666'/>\
-        </svg>");
+    -webkit-appearance: none;
+    -moz-appearance: none;
     background-repeat: no-repeat;
-    background-position: calc(100% - 10px) 50%;
-    background-size: 10px 6px;
+    background-position: right 8px center;
+    background-size: 12px 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 
@@ -363,10 +375,25 @@
     background-color: #3a3a3a;
     color: #eee;
     border-color: #555;
-    background-image: url("data:image/svg+xml,\
-        <svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'>\
-            <polygon points='0,0 10,0 5,6' fill='%23ccc'/>\
-        </svg>");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.unit-select:disabled,
+.group-select:disabled,
+.condition-select:disabled {
+    color: #666;
+    background-color: #f5f5f5;
+    opacity: 1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.sb-dark .unit-select:disabled,
+.sb-dark .group-select:disabled,
+.sb-dark .condition-select:disabled {
+    color: #aaa;
+    background-color: #2a2a2a;
+    opacity: 1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 
@@ -381,7 +408,18 @@
     position: relative;
 }
 
+.sb-note-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    position: relative;
+}
+
 .sb-desc-preview {
+    flex: 1;
+    min-width: 0;
+}
+.sb-note-preview {
     flex: 1;
     min-width: 0;
 }
@@ -408,6 +446,42 @@
     color: #eee;
 }
 .sb-dark .sb-desc-edit-btn:hover {
+    background: #555;
+}
+
+.sb-icon-pencil {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: middle;
+}
+
+.col-note .sb-note-btn {
+    border: none;
+    background: #e5e5e5;
+    color: #333;
+    border-radius: 4px;
+    font-size: 14px;
+    padding: 2px 5px;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s;
+}
+
+.col-note .sb-note-btn:hover {
+    background: #d0d0d0;
+    transform: none;
+}
+
+.sb-dark .col-note .sb-note-btn {
+    background: #444;
+    color: #eee;
+}
+.sb-dark .col-note .sb-note-btn:hover {
     background: #555;
 }
 
@@ -761,19 +835,6 @@
 }
 
 /* If note exists, make it very visible */
-.col-note .sb-note-btn.sb-note-has-content {
-    color: #ffffff;
-    background-color: #417690;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-weight: bold;
-}
-
-.sb-dark .col-note .sb-note-btn.sb-note-has-content {
-    color: #ffffff;
-    background-color: #2c4f60;
-}
-
 
 /* ============================================================
    TABLE COLUMN LAYOUT FOR NEW FIELDS
@@ -782,7 +843,17 @@
 .col-fav,
 .col-note {
     text-align: center;
-    width: 50px;
+    min-width: 120px;
+}
+
+.col-note {
+    text-align: left;
+    max-width: 50ch;
+}
+
+.sb-note-container,
+.sb-note-preview {
+    max-width: 50ch;
 }
 /* ============================================================
    NARROW COLUMNS: R / S / B

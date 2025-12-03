@@ -447,7 +447,9 @@
                                     class="sb-desc-edit-btn"
                                     data-id="{{ item.id }}"
                                     title="Open full editor for description">
-                                🔍
+                                <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M12 20H5l2-7 9.5-9.5a2.1 2.1 0 0 1 3 3L10 16l-5 2" />
+                                </svg>
                             </button>
                         </div>
                     </td>
@@ -578,14 +580,22 @@
                         <td class="col-note"
                             data-item-id="{{ item.id }}"
                             data-field="note">
-                            <button type="button"
-                                    class="sb-note-btn{% if note %} sb-note-has-content{% endif %}"
-                                    data-item-id="{{ item.id }}"
-                                    data-note="{{ note|escape }}"
-                                    data-has-note="{% if note %}1{% else %}0{% endif %}"
-                                    title="Open full editor for your private note">
-                                📝
-                            </button>
+                            <div class="sb-note-container">
+                                <div class="sb-note-preview sb-multiline"
+                                     title="{{ note|striptags }}">
+                                    {{ note|safe }}
+                                </div>
+                                <button type="button"
+                                        class="sb-note-btn{% if note %} sb-note-has-content{% endif %}"
+                                        data-item-id="{{ item.id }}"
+                                        data-note="{{ note|escape }}"
+                                        data-has-note="{% if note %}1{% else %}0{% endif %}"
+                                        title="Open full editor for your private note">
+                                    <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M12 20H5l2-7 9.5-9.5a2.1 2.1 0 0 1 3 3L10 16l-5 2" />
+                                    </svg>
+                                </button>
+                            </div>
                         </td>
                     {% endwith %}
 

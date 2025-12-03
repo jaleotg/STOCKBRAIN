@@ -66,7 +66,8 @@
             "td.col-oemname .sb-multiline," +
             "td.col-oemnum .sb-multiline," +
             "td.col-vendor .sb-multiline," +
-            "td.col-sourceloc .sb-multiline"
+            "td.col-sourceloc .sb-multiline," +
+            "td.col-note .sb-multiline"
         );
 
         cells.forEach(el => {
@@ -423,6 +424,24 @@
         return textarea.value;
     }
 
+    function setInlineTextareaSize(td, textarea, baseHeight = 0) {
+        if (!td || !textarea) return;
+
+        const cs = window.getComputedStyle(textarea);
+        const lineHeight = parseFloat(cs.lineHeight) || 16;
+        const maxHeight = lineHeight * 5;
+
+        const targetHeight = Math.min(
+            Math.max(baseHeight, td.clientHeight, textarea.scrollHeight, 40),
+            maxHeight
+        );
+
+        textarea.style.height = `${targetHeight}px`;
+        textarea.style.minHeight = `${targetHeight}px`;
+        textarea.style.maxHeight = `${maxHeight}px`;
+        textarea.style.width = "100%";
+    }
+
     /* ================================================
        CELL STATE (focus / edited / saved)
        - single active cell at a time
@@ -493,23 +512,27 @@
 
                 if (!field || !itemId) return;
 
-                if (td.querySelector("input.sb-inline-input")) {
+                if (td.querySelector(".sb-inline-textarea")) {
                     return;
                 }
 
                 setActiveCellState("edited", td);
+                td.classList.add("sb-inline-editing");
 
+                const baseHeight = td.clientHeight;
+                const originalHTML = td.innerHTML;
                 const originalText = td.innerText.trim();
 
-                const input = document.createElement("input");
-                input.type = "text";
-                input.className = "sb-inline-input";
-                input.value = originalText;
+                const textarea = document.createElement("textarea");
+                textarea.className = "sb-inline-textarea sb-inline-textarea-generic";
+                textarea.value = originalText;
+                textarea.rows = Math.max(1, (originalText.match(/\n/g) || []).length + 1);
 
                 td.innerHTML = "";
-                td.appendChild(input);
-                input.focus();
-                input.select();
+                td.appendChild(textarea);
+                setInlineTextareaSize(td, textarea, baseHeight);
+                textarea.focus();
+                textarea.select();
 
                 // flaga – zabezpiecza przed wielokrotnym wywołaniem (ESC + blur itd.)
                 let finished = false;
@@ -518,10 +541,11 @@
                     if (finished) return;
                     finished = true;
 
-                    const newValue = input.value.trim();
+                    const newValue = textarea.value.trim();
 
                     if (!save || newValue === originalText) {
-                        td.innerText = originalText;
+                        td.innerHTML = originalHTML;
+                        td.classList.remove("sb-inline-editing");
                         setActiveCellState("focus", td);
                         return;
                     }
@@ -540,25 +564,46 @@
                         .then(data => {
                             if (!data.ok) {
                                 console.error("Inline update failed:", data.error);
-                                td.innerText = originalText;
+                                td.innerHTML = originalHTML;
+                                td.classList.remove("sb-inline-editing");
                             } else {
-                                td.innerText = newValue;
+                                const span = document.createElement("span");
+                                span.className = "sb-multiline";
+                                span.setAttribute("title", newValue);
+                                span.innerHTML = newValue
+                                    .split("\n")
+                                    .map(line => line
+                                        .replace(/&/g, "&amp;")
+                                        .replace(/</g, "&lt;")
+                                        .replace(/>/g, "&gt;"))
+                                    .join("<br>");
+                                td.innerHTML = "";
+                                td.appendChild(span);
+
                                 // jeśli zmieniliśmy stock albo reorder level → przelicz Reorder
                                 if (field === "quantity_in_stock" || field === "reorder_level") {
                                     sbUpdateReorderFlag(itemId);
                                 }
                                 markClampedCells();
+                                td.classList.remove("sb-inline-editing");
                                 setActiveCellState("saved", td);
                             }
                         })
                         .catch(err => {
                             console.error("Inline update error:", err);
-                            td.innerText = originalText;
+                            td.innerHTML = originalHTML;
+                            td.classList.remove("sb-inline-editing");
                         });
                 };
 
-                input.addEventListener("keydown", function (e) {
-                    if (e.key === "Enter") {
+                textarea.addEventListener("keydown", function (e) {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        const pos = textarea.selectionStart;
+                        const val = textarea.value;
+                        textarea.value = val.slice(0, pos) + "\n" + val.slice(pos);
+                        textarea.selectionStart = textarea.selectionEnd = pos + 1;
+                        e.preventDefault();
+                    } else if (e.key === "Enter") {
                         e.preventDefault();
                         finish(true);    // ZAPIS
                     } else if (e.key === "Escape") {
@@ -567,7 +612,7 @@
                     }
                 });
 
-                input.addEventListener("blur", function () {
+                textarea.addEventListener("blur", function () {
                     // blur dalej zapisuje, ALE tylko jeśli
                     // finish nie był wcześniej wywołany (np. ESC)
                     finish(true);
@@ -606,20 +651,24 @@
                     const preview = container ? container.querySelector(".sb-desc-preview") : null;
                     if (!container || !preview) return;
 
+                    const baseHeight = td.clientHeight;
+
                     setActiveCellState("edited", td);
+                    td.classList.add("sb-inline-editing");
 
                     // HTML -> plain text
                     const tmp = document.createElement("div");
                     tmp.innerHTML = preview.innerHTML;
                     const originalText = tmp.textContent.trim();
 
-                    const textarea = document.createElement("textarea");
+                const textarea = document.createElement("textarea");
                     textarea.className = "sb-inline-textarea sb-inline-textarea-desc";
                     textarea.value = originalText;
-                    textarea.rows = 4;
+                    textarea.rows = Math.max(3, (originalText.match(/\n/g) || []).length + 1);
 
                     container.style.display = "none";
                     td.appendChild(textarea);
+                    setInlineTextareaSize(td, textarea, baseHeight);
                     textarea.focus();
                     textarea.select();
 
@@ -629,6 +678,7 @@
                         if (!save || newText === originalText) {
                             td.removeChild(textarea);
                             container.style.display = "";
+                            td.classList.remove("sb-inline-editing");
                             setActiveCellState("focus", td);
                             return;
                         }
@@ -649,6 +699,7 @@
                                     console.error("Inline description update failed:", data.error);
                                     td.removeChild(textarea);
                                     container.style.display = "";
+                                    td.classList.remove("sb-inline-editing");
                                 } else {
                                     const htmlNew = newText.replace(/\n/g, "<br>");
                                     preview.innerHTML = htmlNew;
@@ -656,6 +707,7 @@
                                     td.removeChild(textarea);
                                     container.style.display = "";
                                     markClampedCells();
+                                    td.classList.remove("sb-inline-editing");
                                     setActiveCellState("saved", td);
                                 }
                             })
@@ -663,6 +715,7 @@
                                 console.error("Inline description update error:", err);
                                 td.removeChild(textarea);
                                 container.style.display = "";
+                                td.classList.remove("sb-inline-editing");
                             });
                     };
 
@@ -707,9 +760,13 @@
                 }
 
                 const btn = td.querySelector(".sb-note-btn");
-                if (!btn) return;
+                const preview = td.querySelector(".sb-note-preview");
+                const container = td.querySelector(".sb-note-container");
+                if (!btn || !preview || !container) return;
 
                 setActiveCellState("edited", td);
+                td.classList.add("sb-inline-editing");
+                const baseHeight = td.clientHeight;
 
                 const raw = btn.dataset.note || "";
                 const html = decodeHtmlEntities(raw);
@@ -720,10 +777,11 @@
                 const textarea = document.createElement("textarea");
                 textarea.className = "sb-inline-textarea sb-inline-textarea-note";
                 textarea.value = originalText;
-                textarea.rows = 3;
+                textarea.rows = Math.max(3, (originalText.match(/\n/g) || []).length + 1);
 
-                btn.style.display = "none";
+                container.style.display = "none";
                 td.appendChild(textarea);
+                setInlineTextareaSize(td, textarea, baseHeight);
                 textarea.focus();
                 textarea.select();
 
@@ -732,7 +790,8 @@
 
                     if (!save || newText === originalText) {
                         td.removeChild(textarea);
-                        btn.style.display = "";
+                        container.style.display = "";
+                        td.classList.remove("sb-inline-editing");
                         setActiveCellState("focus", td);
                         return;
                     }
@@ -751,7 +810,8 @@
                             if (!data.ok) {
                                 console.error("Inline note update failed:", data.error);
                                 td.removeChild(textarea);
-                                btn.style.display = "";
+                                container.style.display = "";
+                                td.classList.remove("sb-inline-editing");
                             } else {
                                 btn.dataset.note = newText;
 
@@ -763,15 +823,24 @@
                                     btn.classList.remove("sb-note-has-content");
                                 }
 
+                                if (preview) {
+                                    const htmlNew = newText.replace(/\n/g, "<br>");
+                                    preview.innerHTML = htmlNew;
+                                    preview.setAttribute("title", plain);
+                                }
+
+                                markClampedCells();
                                 td.removeChild(textarea);
-                                btn.style.display = "";
+                                container.style.display = "";
+                                td.classList.remove("sb-inline-editing");
                                 setActiveCellState("saved", td);
                             }
                         })
                         .catch(err => {
                             console.error("Inline note update error:", err);
                             td.removeChild(textarea);
-                            btn.style.display = "";
+                            container.style.display = "";
+                            td.classList.remove("sb-inline-editing");
                         });
                 };
 
@@ -999,6 +1068,13 @@
                                 }
 
                                 const targetCell = btn.closest("td");
+                                const preview = targetCell ? targetCell.querySelector(".sb-note-preview") : null;
+                                if (preview) {
+                                    preview.innerHTML = html;
+                                    preview.setAttribute("title", plain);
+                                }
+                                markClampedCells();
+
                                 if (targetCell) {
                                     setActiveCellState("saved", targetCell);
                                 }
