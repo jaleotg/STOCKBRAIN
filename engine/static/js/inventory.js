@@ -421,6 +421,17 @@
     /* ================================================
        INLINE TEXT EDITING (dla td.inline) – tylko CAN_EDIT
     ================================================= */
+    function sbFlashInline(td, variant) {
+        if (!td) return;
+
+        const cls = variant === "save" ? "sb-inline-flash-save" : "sb-inline-flash-cancel";
+        td.classList.remove("sb-inline-flash-save", "sb-inline-flash-cancel");
+        // force reflow to restart animation when toggling the same class
+        void td.offsetWidth;
+        td.classList.add(cls);
+        setTimeout(() => td.classList.remove(cls), 900);
+    }
+
     function sbInitInlineEditing() {
         if (!CAN_EDIT) return;
 
@@ -459,8 +470,15 @@
 
                     const newValue = input.value.trim();
 
-                    if (!save || newValue === originalText) {
+                    if (!save) {
                         td.innerText = originalText;
+                        sbFlashInline(td, "cancel");
+                        return;
+                    }
+
+                    if (newValue === originalText) {
+                        td.innerText = originalText;
+                        sbFlashInline(td, "save");
                         return;
                     }
 
@@ -479,6 +497,7 @@
                             if (!data.ok) {
                                 console.error("Inline update failed:", data.error);
                                 td.innerText = originalText;
+                                sbFlashInline(td, "cancel");
                             } else {
                                 td.innerText = newValue;
                                 // jeśli zmieniliśmy stock albo reorder level → przelicz Reorder
@@ -486,11 +505,13 @@
                                     sbUpdateReorderFlag(itemId);
                                 }
                                 markClampedCells();
+                                sbFlashInline(td, "save");
                             }
                         })
                         .catch(err => {
                             console.error("Inline update error:", err);
                             td.innerText = originalText;
+                            sbFlashInline(td, "cancel");
                         });
                 };
 
@@ -558,12 +579,25 @@
                     textarea.focus();
                     textarea.select();
 
+                    let finished = false;
+
                     const finish = (save) => {
+                        if (finished) return;
+                        finished = true;
+
                         const newText = textarea.value.trim();
 
-                        if (!save || newText === originalText) {
+                        if (!save) {
                             td.removeChild(textarea);
                             container.style.display = "";
+                            sbFlashInline(td, "cancel");
+                            return;
+                        }
+
+                        if (newText === originalText) {
+                            td.removeChild(textarea);
+                            container.style.display = "";
+                            sbFlashInline(td, "save");
                             return;
                         }
 
@@ -583,6 +617,7 @@
                                     console.error("Inline description update failed:", data.error);
                                     td.removeChild(textarea);
                                     container.style.display = "";
+                                    sbFlashInline(td, "cancel");
                                 } else {
                                     const htmlNew = newText.replace(/\n/g, "<br>");
                                     preview.innerHTML = htmlNew;
@@ -590,12 +625,14 @@
                                     td.removeChild(textarea);
                                     container.style.display = "";
                                     markClampedCells();
+                                    sbFlashInline(td, "save");
                                 }
                             })
                             .catch(err => {
                                 console.error("Inline description update error:", err);
                                 td.removeChild(textarea);
                                 container.style.display = "";
+                                sbFlashInline(td, "cancel");
                             });
                     };
 
@@ -658,12 +695,25 @@
                 textarea.focus();
                 textarea.select();
 
+                let finished = false;
+
                 const finishNote = (save) => {
+                    if (finished) return;
+                    finished = true;
+
                     const newText = textarea.value.trim();
 
-                    if (!save || newText === originalText) {
+                    if (!save) {
                         td.removeChild(textarea);
                         btn.style.display = "";
+                        sbFlashInline(td, "cancel");
+                        return;
+                    }
+
+                    if (newText === originalText) {
+                        td.removeChild(textarea);
+                        btn.style.display = "";
+                        sbFlashInline(td, "save");
                         return;
                     }
 
@@ -682,6 +732,7 @@
                                 console.error("Inline note update failed:", data.error);
                                 td.removeChild(textarea);
                                 btn.style.display = "";
+                                sbFlashInline(td, "cancel");
                             } else {
                                 btn.dataset.note = newText;
 
@@ -695,12 +746,14 @@
 
                                 td.removeChild(textarea);
                                 btn.style.display = "";
+                                sbFlashInline(td, "save");
                             }
                         })
                         .catch(err => {
                             console.error("Inline note update error:", err);
                             td.removeChild(textarea);
                             btn.style.display = "";
+                            sbFlashInline(td, "cancel");
                         });
                 };
 
