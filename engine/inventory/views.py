@@ -18,6 +18,14 @@ from .models import (
 )
 
 
+def user_can_edit_or_json_error(request):
+    if not user_can_edit(request.user):
+        return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+    return None
+
+
 # Do wyboru ilości rekordów na stronę
 PAGE_SIZE_CHOICES = [50, 100, 200, 500, "all"]
 
@@ -581,3 +589,108 @@ def update_note(request):
         meta.save()
 
     return JsonResponse({"ok": True})
+
+
+# ============================================
+# AJAX: CREATE ITEM
+# ============================================
+
+@login_required
+@require_POST
+def create_item(request):
+    if not user_can_edit(request.user):
+        return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
+
+    data = request.POST
+    errors = []
+
+    required_fields = ["rack", "shelf", "box", "unit_id", "quantity_in_stock"]
+
+    def get_int(name, allow_none=False):
+        val = data.get(name)
+        if val in (None, ""):
+            return None if allow_none else 0
+        try:
+            return int(val)
+        except ValueError:
+            errors.append(f"Invalid int for {name}")
+            return None
+
+    rack = get_int("rack")
+    shelf = (data.get("shelf") or "").strip().upper()
+    box = (data.get("box") or "").strip()
+
+    group_id = data.get("group_id")
+    name = (data.get("name") or "").strip()
+    part_description = (data.get("part_description") or "").strip()
+    part_number = (data.get("part_number") or "").strip()
+    dcm_number = (data.get("dcm_number") or "").strip()
+    oem_name = (data.get("oem_name") or "").strip()
+    oem_number = (data.get("oem_number") or "").strip()
+    vendor = (data.get("vendor") or "").strip()
+    source_location = (data.get("source_location") or "").strip()
+
+    unit_id = data.get("unit_id")
+    quantity_in_stock = get_int("quantity_in_stock", allow_none=False)
+    price = data.get("price")
+    reorder_level = get_int("reorder_level", allow_none=True)
+    reorder_time_days = get_int("reorder_time_days", allow_none=True)
+    quantity_in_reorder = get_int("quantity_in_reorder", allow_none=True)
+    condition_status = data.get("condition_status") or ""
+    discontinued = data.get("discontinued") == "1"
+    verify = data.get("verify") == "1"
+
+    for f in required_fields:
+        if not data.get(f):
+            errors.append(f"Missing required field: {f}")
+
+    if errors:
+        return JsonResponse({"ok": False, "error": "; ".join(errors)}, status=400)
+
+    group_obj = None
+    if group_id:
+        try:
+            group_obj = ItemGroup.objects.get(id=group_id)
+        except ItemGroup.DoesNotExist:
+            errors.append("Invalid group")
+
+    unit_obj = None
+    if unit_id:
+        try:
+            unit_obj = Unit.objects.get(id=unit_id)
+        except Unit.DoesNotExist:
+            errors.append("Invalid unit")
+
+    if errors:
+        return JsonResponse({"ok": False, "error": "; ".join(errors)}, status=400)
+
+    try:
+        item = InventoryItem.objects.create(
+            rack=rack,
+            shelf=shelf,
+            box=box,
+            group=group_obj,
+            group_name=group_obj.name if group_obj else "",
+            name=name,
+            part_description=part_description,
+            part_number=part_number,
+            dcm_number=dcm_number,
+            oem_name=oem_name,
+            oem_number=oem_number,
+            vendor=vendor,
+            source_location=source_location,
+            unit=unit_obj,
+            units=unit_obj.code if unit_obj else "",
+            quantity_in_stock=quantity_in_stock,
+            price=price if price not in (None, "") else None,
+            reorder_level=reorder_level,
+            reorder_time_days=reorder_time_days,
+            quantity_in_reorder=quantity_in_reorder,
+            condition_status=condition_status or None,
+            discontinued=discontinued,
+            verify=verify,
+        )
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)
+
+    return JsonResponse({"ok": True, "id": item.id})
