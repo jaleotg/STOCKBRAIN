@@ -395,7 +395,6 @@
         if (!stars.length) return;
 
         const cycle = ["NONE", "RED", "GREEN", "YELLOW", "BLUE"];
-
         function setStarAppearance(el, color) {
             el.dataset.color = color;
 
