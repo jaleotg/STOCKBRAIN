@@ -60,13 +60,15 @@
 }
 .sb-table tbody tr:hover {
 }
-/* R/S/B zebra & hover – keep frozen columns in sync with row background */
+/* Frozen columns zebra & hover – keep in sync with row background */
+.sb-table tbody tr:nth-child(even) td.col-location,
 .sb-table tbody tr:nth-child(even) td.col-rck,
 .sb-table tbody tr:nth-child(even) td.col-sh,
 .sb-table tbody tr:nth-child(even) td.col-box {
     background-color: inherit;
 }
 
+.sb-table tbody tr:hover td.col-location,
 .sb-table tbody tr:hover td.col-rck,
 .sb-table tbody tr:hover td.col-sh,
 .sb-table tbody tr:hover td.col-box {
@@ -110,10 +112,12 @@
 }
 
 /* ============================================================
-   FROZEN LEFT COLUMNS (Rck / Sh / Box)
+   FROZEN LEFT COLUMNS (Location / Rck / Sh / Box)
 ============================================================ */
 
 /* wspólne: sticky */
+.sb-table th.col-location,
+.sb-table td.col-location,
 .sb-table th.col-rck,
 .sb-table th.col-sh,
 .sb-table th.col-box,
@@ -124,6 +128,7 @@
 }
 
 /* tło tylko dla komórek body – nagłówki dziedziczą z thead */
+.sb-table td.col-location,
 .sb-table td.col-rck,
 .sb-table td.col-sh,
 .sb-table td.col-box {
@@ -132,12 +137,21 @@
 
 
 /* stałe szerokości w znakach – wąskie R / S / B */
+.sb-table th.col-location,
+.sb-table td.col-location {
+    min-width: 10ch;
+    max-width: 10ch;
+    width: 10ch;
+    left: 0;
+    text-align: center;
+}
+
 .sb-table th.col-rck,
 .sb-table td.col-rck {
     min-width: 3ch;
     max-width: 3ch;
     width: 3ch;
-    left: 0;
+    left: 12ch;
 }
 
 .sb-table th.col-sh,
@@ -145,7 +159,7 @@
     min-width: 3ch;
     max-width: 3ch;
     width: 3ch;
-    left: 3ch;  /* szerokość R */
+    left: calc(12ch + 3ch);  /* location + R */
 }
 
 .sb-table th.col-box,
@@ -153,11 +167,12 @@
     min-width: 7ch;
     max-width: 7ch;
     width: 7ch;
-    left: calc(3ch + 3ch); /* R + S */
+    left: calc(12ch + 3ch + 3ch); /* location + R + S */
 }
 
 
 /* nagłówki zamrożone – najwyżej, z poziomą linią */
+.sb-table thead th.col-location,
 .sb-table thead th.col-rck,
 .sb-table thead th.col-sh,
 .sb-table thead th.col-box {
@@ -167,6 +182,7 @@
 }
 
 /* body zamrożone – nad zwykłymi komórkami */
+.sb-table tbody td.col-location,
 .sb-table tbody td.col-rck,
 .sb-table tbody td.col-sh,
 .sb-table tbody td.col-box {
@@ -174,6 +190,11 @@
 }
 
 /* pionowa linia po prawej stronie Box */
+.sb-table th.col-location,
+.sb-table td.col-location {
+    border-right: 1px solid transparent;
+}
+
 .sb-table th.col-box,
 .sb-table td.col-box {
     border-right: 1px solid transparent;

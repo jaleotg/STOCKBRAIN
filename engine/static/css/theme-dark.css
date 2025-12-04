@@ -66,6 +66,10 @@
     border-color: #555;
 }
 
+.sb-dark .sb-table td.col-location {
+    background-color: #3a3a3a;
+}
+
 .sb-dark .sb-table tbody tr:nth-child(even) {
     background-color: #242424;
 }
@@ -122,24 +126,33 @@
 }
 
 /* Frozen R/S/B columns in dark */
+.sb-dark .sb-table td.col-location {
+    background-color: #2a2a2a;
+}
 .sb-dark .sb-table td.col-rck,
 .sb-dark .sb-table td.col-sh,
 .sb-dark .sb-table td.col-box {
     background-color: #2a2a2a;
 }
 
+.sb-dark .sb-table th.col-location,
+.sb-dark .sb-table td.col-location {
+    border-right: 1px solid #555;
+}
 .sb-dark .sb-table th.col-box,
 .sb-dark .sb-table td.col-box {
     border-right: 1px solid #555;
 }
 
 /* Frozen columns zebra + hover */
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-location,
 .sb-dark .sb-table tbody tr:nth-child(even) td.col-rck,
 .sb-dark .sb-table tbody tr:nth-child(even) td.col-sh,
 .sb-dark .sb-table tbody tr:nth-child(even) td.col-box {
     background-color: #242424;
 }
 
+.sb-dark .sb-table tbody tr:hover td.col-location,
 .sb-dark .sb-table tbody tr:hover td.col-rck,
 .sb-dark .sb-table tbody tr:hover td.col-sh,
 .sb-dark .sb-table tbody tr:hover td.col-box {
@@ -262,6 +275,9 @@
 }
 
 .sb-dark .sb-table tr.sb-row-verify {
+    background-color: #7a6400 !important;
+}
+.sb-dark .sb-table tr.sb-row-verify td {
     background-color: #7a6400 !important;
 }
 .sb-dark .sb-table tr.sb-row-verify td.col-rck,

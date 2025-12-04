@@ -73,6 +73,10 @@
     border-color: #ddd;
 }
 
+.sb-light .sb-table td.col-location {
+    background-color: #f5f5f5;
+}
+
 .sb-light .sb-table th,
 .sb-light .sb-table td {
     border: 1px solid #ddd;
@@ -133,6 +137,11 @@
 
 .sb-light .sb-table th.col-box,
 .sb-light .sb-table td.col-box {
+    border-right: 1px solid #d0d0d0;
+}
+
+.sb-light .sb-table th.col-location,
+.sb-light .sb-table td.col-location {
     border-right: 1px solid #d0d0d0;
 }
 
@@ -291,6 +300,9 @@
 }
 
 .sb-light .sb-table tr.sb-row-verify {
+    background-color: #fff3b0 !important;
+}
+.sb-light .sb-table tr.sb-row-verify td {
     background-color: #fff3b0 !important;
 }
 .sb-light .sb-table tr.sb-row-verify td.col-rck,

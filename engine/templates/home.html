@@ -159,6 +159,14 @@
                data-current-dir="{{ sort_dir }}">
             <thead>
             <tr>
+                {# LOCATION (computed) #}
+                {% with col=columns.location %}
+                    <th class="col-location"
+                        title="{{ col.full_label|default:'Location' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                        {{ col.short_label|default:col.full_label|default:'Location' }}
+                    </th>
+                {% endwith %}
+
                 {# R (sortowalne) #}
                 {% with col=columns.rack %}
                     <th class="col-rck sb-sortable-header"
@@ -419,6 +427,13 @@
                         data-fav="{{ usermeta.favorite_color|default:'NONE' }}"
                         data-note="{{ usermeta.note|default:''|escape }}">
                 {% endwith %}
+
+                    <!-- LOCATION -->
+                    <td class="col-location" data-id="{{ item.id }}">
+                        <span class="sb-multiline" title="{{ item.rack }}-{{ item.shelf }}-{{ item.box }}">
+                            {{ item.rack }}-{{ item.shelf }}-{{ item.box }}
+                        </span>
+                    </td>
 
                     <!-- R/S/B -->
                     <td class="col-rck inline" data-field="rack" data-id="{{ item.id }}">{{ item.rack }}</td>
