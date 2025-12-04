@@ -1,1 +1,7 @@
 sortowanie zle dziala po "R". 10-B-10 jest przed 10-B-2
+
+
+to bedzie duża zmiana wiec zanmim zaczniesz robić kod, opracujmy dobrze koncepcję.
+Chce, zeby lokalizacja wyświetlałą sie jako jedna kolumna z napisem typu 3-B-7b czyli łaczymy wszystkie 3 kolumny w jedna, łacząc napisy myślnikiem, ale nie w bazie tylko w tabelce. W bazie zostanie tak jak jest.
+Ta kolumna bedzi sticky. podwojne klikniecie otworzy okienko z formularzem zmian. 
+Na razie utwórz tylko pusty formularz, z nic nie robiacym przyciskiem zapisz i z wychodzacym z formularza przyciskiem anuluj.

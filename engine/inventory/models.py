@@ -134,6 +134,7 @@ class InventoryColumn(models.Model):
         ("rack", "Rack"),
         ("shelf", "Shelf"),
         ("box", "Box"),
+        ("location", "Location (header)"),
         ("group", "Group (FK)"),
         ("name", "Name"),
         ("part_description", "Part Description"),
