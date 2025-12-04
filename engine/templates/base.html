@@ -6,7 +6,20 @@
     <title>{% block title %}DesertBrain{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Main CSS (imports layout.css, table.css, theme-dark.css) -->
+    <script>
+        (function () {
+            var KEY = "stockbrain_theme";
+            var root = document.documentElement;
+            var saved = null;
+            try {
+                saved = localStorage.getItem(KEY);
+            } catch (e) {}
+            var isDark = saved === "dark";
+            root.classList.remove("sb-light", "sb-dark");
+            root.classList.add(isDark ? "sb-dark" : "sb-light");
+        })();
+    </script>
+    <!-- Main CSS (imports layout.css, table.css, theme-light.css, theme-dark.css) -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 
     <!-- Quill WYSIWYG -->

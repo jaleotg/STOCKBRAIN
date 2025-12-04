@@ -6,8 +6,6 @@ body {
     margin: 0;
     padding: 0;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background-color: #e8e8e8;
-    color: #333;
 }
 
 .sb-page {
@@ -21,8 +19,6 @@ body {
 ========================================= */
 
 .sb-header {
-    background-color: #417690;
-    color: #fff;
     padding: 10px 20px;
     font-size: 18px;
     font-weight: 600;
@@ -46,7 +42,6 @@ body {
     font-size: 20px;
     cursor: pointer;
     margin-right: 12px;
-    color: #fff;
     transition: opacity 0.2s;
 }
 
@@ -55,12 +50,10 @@ body {
 }
 /* Links in header (light theme) */
 .sb-header .sb-link {
-    color: #ffffff;
     font-weight: 500;
 }
 
 .sb-header .sb-link:hover {
-    color: #e2f0f7;
     text-decoration: underline;
 }
 
@@ -70,16 +63,15 @@ body {
 ========================================= */
 
 .sb-main {
-    padding: 20px;
+    padding: 10px;
 }
 
 .sb-card {
-    background-color: #fff;
     border-radius: 6px;
-    border: 1px solid #ccc;
     padding: 20px;
-    max-width: 1200px;
-    margin: 20px auto;
+    max-width: none;
+    width: calc(100% - 20px); /* 10px margines z lewej/prawej */
+    margin: 10px auto;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
@@ -92,7 +84,6 @@ body {
     margin-bottom: 15px;
     font-size: 22px;
     font-weight: 600;
-    color: #2c3e50;
 }
 
 .sb-home-topbar {
@@ -125,13 +116,10 @@ body {
     box-sizing: border-box;
     padding: 6px 8px;
     border-radius: 4px;
-    border: 1px solid #ccc;
 }
 
 .sb-input:focus {
     outline: none;
-    border-color: #417690;
-    box-shadow: 0 0 0 2px rgba(65, 118, 144, 0.2);
 }
 
 .sb-checkbox-row {
@@ -154,31 +142,9 @@ body {
     text-decoration: none;
 }
 
-.sb-btn-primary {
-    background-color: #79aec8;
-    border-color: #79aec8;
-    color: #fff;
-}
-
-.sb-btn-primary:hover {
-    background-color: #609ab4;
-    border-color: #609ab4;
-}
-
-.sb-btn-secondary {
-    background-color: #f5f5f5;
-    border-color: #ccc;
-    color: #333;
-}
-
-.sb-btn-secondary:hover {
-    background-color: #e5e5e5;
-}
-
 /* Links */
 
 .sb-link {
-    color: #417690;
     text-decoration: none;
 }
 
@@ -189,9 +155,6 @@ body {
 /* Alert */
 
 .sb-alert-error {
-    color: #ba2121;
-    background-color: #fbeaea;
-    border: 1px solid #ba2121;
     border-radius: 4px;
     padding: 8px 10px;
     margin-bottom: 15px;
@@ -209,19 +172,13 @@ body {
 }
 
 .sb-tag-warning {
-    background-color: #faf0d7;
-    color: #8b6b12;
 }
 
 .sb-tag-muted {
-    background-color: #f0f0f0;
-    color: #666;
 }
 
 /* Check mark tag (Disc.) */
 .sb-tag-check {
-    background-color: #faf0d7; /* same as warning */
-    color: #8b6b12;
     border-radius: 10px;
     padding: 2px 6px;
     font-size: 11px;

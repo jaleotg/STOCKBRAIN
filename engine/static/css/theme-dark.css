@@ -63,6 +63,7 @@
        żeby zebra i hover z tr były widoczne */
     background-color: transparent;
     color: #ddd;
+    border-color: #555;
 }
 
 .sb-dark .sb-table tbody tr:nth-child(even) {
@@ -114,10 +115,164 @@
     border-color: #79aec8;
     box-shadow: 0 0 0 2px rgba(121, 174, 200, 0.4);
 }
+.sb-dark .group-select:focus,
+.sb-dark .condition-select:focus {
+    border-color: #79aec8;
+    box-shadow: 0 0 0 2px rgba(121, 174, 200, 0.4);
+}
 
 /* Frozen R/S/B columns in dark */
 .sb-dark .sb-table td.col-rck,
 .sb-dark .sb-table td.col-sh,
 .sb-dark .sb-table td.col-box {
     background-color: #2a2a2a;
+}
+
+.sb-dark .sb-table th.col-box,
+.sb-dark .sb-table td.col-box {
+    border-right: 1px solid #555;
+}
+
+/* Frozen columns zebra + hover */
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-rck,
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-sh,
+.sb-dark .sb-table tbody tr:nth-child(even) td.col-box {
+    background-color: #242424;
+}
+
+.sb-dark .sb-table tbody tr:hover td.col-rck,
+.sb-dark .sb-table tbody tr:hover td.col-sh,
+.sb-dark .sb-table tbody tr:hover td.col-box {
+    background-color: #333;
+}
+
+/* Selects (unit / group / condition) */
+.sb-dark .unit-select,
+.sb-dark .group-select,
+.sb-dark .condition-select {
+    background-color: #3a3a3a;
+    color: #eee;
+    border-color: #555;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.sb-dark .unit-select:disabled,
+.sb-dark .group-select:disabled,
+.sb-dark .condition-select:disabled {
+    color: #aaa;
+    background-color: #2a2a2a;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* Inline / modal description button */
+.sb-dark .sb-desc-edit-btn {
+    background: #444;
+    color: #eee;
+}
+.sb-dark .sb-desc-edit-btn:hover {
+    background: #555;
+}
+
+/* Add item form selects */
+.sb-dark .sb-add-field select {
+    background-color: #3a3a3a;
+    color: #eee;
+    border-color: #555;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* Note button */
+.sb-dark .col-note .sb-note-btn {
+    color: #eee;
+}
+.sb-dark .col-note .sb-note-btn:hover {
+    color: #fff;
+}
+
+/* Pagination */
+.sb-dark .sb-page-link {
+    color: #ddd;
+    background-color: #3a3a3a;
+    border-color: #555;
+}
+.sb-dark .sb-page-link:hover {
+    background-color: #555;
+}
+.sb-dark .sb-page-current {
+    background-color: #27ae60 !important;
+    color: #fff !important;
+    border-color: #1e8c4a !important;
+}
+
+/* Modals */
+.sb-dark .sb-modal-dialog {
+    background: #2a2a2a;
+    color: #ddd;
+}
+
+.sb-dark .sb-modal-header {
+    background: #417690;
+    color: #fff;
+}
+.sb-dark .sb-modal-header .sb-modal-close {
+    color: #fff;
+}
+
+.sb-dark #sb-quill-editor {
+    background: #1d1d1d;
+    color: #eee;
+}
+
+.sb-dark .sb-modal-footer {
+    background: #333;
+    border-top: 1px solid #444;
+}
+
+.sb-dark .sb-modal-save {
+    background: #2ecc71;
+    color: #fff;
+}
+.sb-dark .sb-modal-save[data-mode="save-next"] {
+    background: #27ae60;
+}
+.sb-dark .sb-modal-cancel {
+    background: #555;
+    color: #ddd;
+}
+
+.sb-dark .sb-btn-secondary {
+    background: #555;
+    color: #ddd;
+    border-color: #666;
+}
+.sb-dark .sb-btn-secondary:hover {
+    background: #666;
+}
+
+/* Row highlighting */
+.sb-dark .sb-row-verify {
+    background-color: #7a6400 !important;
+}
+.sb-dark .sb-row-disc {
+    color: #777 !important;
+}
+.sb-dark .sb-row-verify.sb-row-disc {
+    background-color: #7a6400 !important;
+    color: #999 !important;
+}
+
+.sb-dark .sb-table tr.sb-row-verify {
+    background-color: #7a6400 !important;
+}
+.sb-dark .sb-table tr.sb-row-verify td.col-rck,
+.sb-dark .sb-table tr.sb-row-verify td.col-sh,
+.sb-dark .sb-table tr.sb-row-verify td.col-box {
+    background-color: #7a6400 !important;
+}
+.sb-dark .sb-table tr.sb-row-disc td {
+    color: #777 !important;
+}
+.sb-dark .sb-table tr.sb-row-verify.sb-row-disc td {
+    background-color: #7a6400 !important;
+    color: #999 !important;
 }

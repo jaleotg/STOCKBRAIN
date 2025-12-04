@@ -35,19 +35,38 @@
     }
 
     /* ================================================
-       APPLY DARK MODE EARLY (no white flash)
+       APPLY THEME EARLY (no flash)
+       Default: sb-light; when stored: sb-dark
     ================================================= */
-    try {
-        if (localStorage.getItem(KEY) === "dark") {
-            document.documentElement.classList.add("sb-dark");
-        }
-    } catch (e) {}
+    (function applyInitialTheme() {
+        const root = document.documentElement;
+        const body = document.body;
+        root.classList.add("sb-light");
+        if (body) body.classList.add("sb-light");
+        try {
+            if (localStorage.getItem(KEY) === "dark") {
+                root.classList.remove("sb-light");
+                root.classList.add("sb-dark");
+                if (body) {
+                    body.classList.remove("sb-light");
+                    body.classList.add("sb-dark");
+                }
+            }
+        } catch (e) {}
+    })();
 
     function syncBodyDarkClass() {
-        if (document.documentElement.classList.contains("sb-dark")) {
+        const root = document.documentElement;
+        const body = document.body;
+        const isDark = root.classList.contains("sb-dark");
+        if (isDark) {
             document.body.classList.add("sb-dark");
+            root.classList.remove("sb-light");
+            body && body.classList.remove("sb-light");
         } else {
             document.body.classList.remove("sb-dark");
+            root.classList.add("sb-light");
+            body && body.classList.add("sb-light");
         }
     }
 
@@ -1547,10 +1566,27 @@
     ================================================= */
     window.sbToggleTheme = function () {
         const root = document.documentElement;
-        const nowDark = root.classList.toggle("sb-dark");
-        syncBodyDarkClass();
+        const body = document.body;
+        const willDark = !root.classList.contains("sb-dark");
+
+        if (willDark) {
+            root.classList.add("sb-dark");
+            root.classList.remove("sb-light");
+            if (body) {
+                body.classList.add("sb-dark");
+                body.classList.remove("sb-light");
+            }
+        } else {
+            root.classList.remove("sb-dark");
+            root.classList.add("sb-light");
+            if (body) {
+                body.classList.remove("sb-dark");
+                body.classList.add("sb-light");
+            }
+        }
+
         try {
-            localStorage.setItem(KEY, nowDark ? "dark" : "light");
+            localStorage.setItem(KEY, willDark ? "dark" : "light");
         } catch (e) {}
     };
 
