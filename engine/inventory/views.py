@@ -164,6 +164,7 @@ def home_view(request):
         "source_location",
         "unit",
         "quantity_in_stock",
+        "price",
         "reorder_level",
         "reorder_time_days",
         "quantity_in_reorder",
@@ -310,6 +311,9 @@ def home_view(request):
         order_by_args.extend(["rack", "shelf", "box"])
     elif sort_field == "quantity_in_stock":
         order_by_args.append("-quantity_in_stock" if sort_dir == "desc" else "quantity_in_stock")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "price":
+        order_by_args.append("-price" if sort_dir == "desc" else "price")
         order_by_args.extend(["rack", "shelf", "box"])
     elif sort_field == "reorder_level":
         order_by_args.append("-reorder_level" if sort_dir == "desc" else "reorder_level")

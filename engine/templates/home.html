@@ -183,20 +183,35 @@
                 <th class="col-dcm"></th>
                 <th class="col-oemname"></th>
                 <th class="col-oemnum"></th>
-                <th class="col-vendor"></th>
-                <th class="col-sourceloc"></th>
+                {% if is_purchase_admin or 'vendor' not in restricted_fields %}
+                    <th class="col-vendor"></th>
+                {% endif %}
+                {% if is_purchase_admin or 'source_location' not in restricted_fields %}
+                    <th class="col-sourceloc"></th>
+                {% endif %}
                 <th class="col-units"></th>
-                <th class="col-instock"></th>
-                <th class="col-price"></th>
-                <th class="col-reorderlevel"></th>
+                {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
+                    <th class="col-instock"></th>
+                {% endif %}
+                {% if is_purchase_admin or 'price' not in restricted_fields %}
+                    <th class="col-price"></th>
+                {% endif %}
+                {% if is_purchase_admin or 'reorder_level' not in restricted_fields %}
+                    <th class="col-reorderlevel"></th>
+                {% endif %}
                 <th class="col-rt"></th>
-                <th class="col-qtyreorder"></th>
+                {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
+                    <th class="col-qtyreorder"></th>
+                {% endif %}
                 <th class="col-condition"></th>
                 <th class="col-disc"></th>
                 <th class="col-rev"></th>
                 <th class="col-fav"></th>
                 <th class="col-note"></th>
                 <th class="col-reorder"></th>
+                {% if can_edit %}
+                    <th class="col-trash"></th>
+                {% endif %}
             </tr>
             <tr>
                 {# LOCATION (computed) #}
@@ -424,9 +439,19 @@
                 {# PRICE – może być restricted #}
                 {% with col=columns.price %}
                     {% if is_purchase_admin or 'price' not in restricted_fields %}
-                        <th class="col-price"
+                        <th class="col-price sb-sortable-header"
+                            data-sort-field="price"
                             title="{{ col.full_label|default:'Price' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                            {{ col.short_label|default:col.full_label|default:'Price' }}
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'Price' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'price' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'price' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
                         </th>
                     {% endif %}
                 {% endwith %}
@@ -580,6 +605,10 @@
                         </span>
                     </th>
                 {% endwith %}
+
+                {% if can_edit %}
+                    <th class="col-trash"></th>
+                {% endif %}
             </tr>
             </thead>
 
@@ -791,6 +820,13 @@
                             <span class="sb-tag sb-tag-warning">YES</span>
                         {% endif %}
                     </td>
+                    {% if can_edit %}
+                        <td class="col-trash">
+                            <button type="button" class="sb-trash-btn" data-item-id="{{ item.id }}" title="Delete">
+                                🗑
+                            </button>
+                        </td>
+                    {% endif %}
 
                 </tr>
             {% empty %}
