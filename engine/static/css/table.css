@@ -90,6 +90,18 @@
     font-size: 12px;
 }
 
+.sb-table thead .sb-header-filter-row th {
+    top: 0;
+    z-index: 4;
+    background: inherit;
+    padding: 4px 6px;
+    height: 34px;
+}
+
+.sb-table thead tr.sb-header-filter-row + tr th {
+    top: 44px; /* dopasowane do wysokości filtra */
+}
+
 .sb-add-item-btn {
     display: inline-flex;
     align-items: center;
