@@ -144,7 +144,7 @@
     const csrftoken = getCookie("csrftoken") || "";
 
     /* ================================================
-       AJAX: UPDATE UNIT (FK) – only if CAN_EDIT
+       AJAX: UPDATE UNIT (FK) - only if CAN_EDIT
     ================================================= */
     function sbInitUnitDropdowns() {
         if (!CAN_EDIT) {
@@ -266,7 +266,7 @@
     }
 
     /* ================================================
-       AJAX: UPDATE GROUP (FK) – only if CAN_EDIT
+       AJAX: UPDATE GROUP (FK) - only if CAN_EDIT
     ================================================= */
     function sbInitGroupDropdowns() {
         if (!CAN_EDIT) {
@@ -330,7 +330,7 @@
     }
 
     /* ================================================
-       AJAX: CONDITION STATUS DROPDOWN – only if CAN_EDIT
+       AJAX: CONDITION STATUS DROPDOWN - only if CAN_EDIT
     ================================================= */
     function sbInitConditionDropdowns() {
         const selects = document.querySelectorAll(".condition-select");
@@ -394,14 +394,14 @@
     }
 
     /* ================================================
-       AJAX: REV. + DISC CHECKBOXES – only if CAN_EDIT
+       AJAX: REV. + DISC CHECKBOXES - only if CAN_EDIT
     ================================================= */
     function sbInitRevDiscCheckboxes() {
         const revCheckboxes = document.querySelectorAll(".rev-checkbox");
         const discCheckboxes = document.querySelectorAll(".disc-checkbox");
 
         if (!CAN_EDIT) {
-            // blokada dla zwykłych użytkowników – wizualnie disabled
+            // blokada dla zwyklych uzytkownikow - wizualnie disabled
             revCheckboxes.forEach(cb => cb.setAttribute("disabled", "disabled"));
             discCheckboxes.forEach(cb => cb.setAttribute("disabled", "disabled"));
             return;
@@ -446,7 +446,7 @@
                         } else {
                             row.classList.remove("sb-row-disc");
                         }
-                        // discontinued wpływa na for_reorder
+                        // discontinued wplywa na for_reorder
                         sbUpdateReorderFlag(itemId);
                     }
                 })
@@ -483,20 +483,20 @@
                 "sb-fav-none"
             );
 
-            let symbol = "☆";
+            let symbol = "?";
             let cls = "sb-fav-none";
 
             if (color === "RED") {
-                symbol = "★";
+                symbol = "?";
                 cls = "sb-fav-red";
             } else if (color === "GREEN") {
-                symbol = "★";
+                symbol = "?";
                 cls = "sb-fav-green";
             } else if (color === "YELLOW") {
-                symbol = "★";
+                symbol = "?";
                 cls = "sb-fav-yellow";
             } else if (color === "BLUE") {
-                symbol = "★";
+                symbol = "?";
                 cls = "sb-fav-blue";
             }
 
@@ -619,7 +619,7 @@
             url.searchParams.set("page_size", pageSizeSel.value);
         }
 
-        // kontrolny komunikat dokąd nastąpi przekierowanie
+        // kontrolny komunikat dokad nastapi przekierowanie
         rememberHighlight(itemId);
         window.location.href = url.toString();
     }
@@ -636,7 +636,7 @@
             const cell = e.target.closest("td");
             if (!cell || !table.contains(cell)) return;
 
-            // If we just marked this cell as edited, don't downgrade to focus.
+            // If we just marked this cell as edited, do not downgrade to focus.
             if (cell.classList.contains(CELL_STATE_CLASSES.edited)) return;
 
             setActiveCellState("focus", cell);
@@ -644,7 +644,7 @@
     }
 
     /* ================================================
-       NOTE BUTTONS (CLICK → QUILL dla edytorów)
+       NOTE BUTTONS (CLICK -> QUILL dla edytorow)
     ================================================= */
     function sbInitNoteButtons() {
         const buttons = document.querySelectorAll(".sb-note-btn");
@@ -658,7 +658,7 @@
                 btn.classList.remove("sb-note-has-content");
             }
 
-            // Zwykły user NIE otwiera Quilla – edytuje notatkę przez dblclick (inline)
+            // Zwykly user NIE otwiera Quilla - edytuje notatk? przez dblclick (inline)
             if (!CAN_EDIT) {
                 return;
             }
@@ -792,12 +792,17 @@
             btn.addEventListener("click", () => {
                 const row = btn.closest("tr");
                 const itemId = btn.dataset.itemId;
-                const locCell = row ? row.querySelector(".col-location") : null;
-                const nameCell = row ? row.querySelector(".col-name") : null;
-                const qtyCell = row ? row.querySelector(".col-instock") : null;
-                const loc = locCell ? locCell.textContent.trim() : "";
-                const name = nameCell ? nameCell.textContent.trim() : "";
-                const qty = qtyCell ? qtyCell.textContent.trim() : "";
+
+                // Prefer explicit data attributes; fall back to DOM text.
+                const loc =
+                    btn.dataset.loc ||
+                    (row ? (row.querySelector(".col-location")?.textContent.trim() || "") : "");
+                const name =
+                    btn.dataset.name ||
+                    (row ? (row.querySelector(".col-name")?.textContent.trim() || "") : "");
+                const qty =
+                    btn.dataset.qty ||
+                    (row ? (row.querySelector(".col-instock")?.textContent.trim() || "") : "");
                 openModal(itemId, loc, name, qty);
             });
         });
@@ -962,7 +967,7 @@
     }
 
     /* ================================================
-       INLINE TEXT EDITING (dla td.inline) – tylko CAN_EDIT
+       INLINE TEXT EDITING (dla td.inline) - tylko CAN_EDIT
     ================================================= */
     function sbInitInlineEditing() {
         if (!CAN_EDIT) return;
@@ -999,7 +1004,7 @@
                 textarea.focus();
                 textarea.select();
 
-                // flaga – zabezpiecza przed wielokrotnym wywołaniem (ESC + blur itd.)
+                // flaga - zabezpiecza przed wielokrotnym wywolaniem (ESC + blur itd.)
                 let finished = false;
 
                 const finish = (save) => {
@@ -1045,7 +1050,7 @@
                                 td.innerHTML = "";
                                 td.appendChild(span);
 
-                                // jeśli zmieniliśmy stock albo reorder level → przelicz Reorder
+                                // jesli zmienilismy stock albo reorder level -> przelicz Reorder
                                 if (field === "quantity_in_stock" || field === "reorder_level") {
                                     sbUpdateReorderFlag(itemId);
                                 }
@@ -1078,8 +1083,8 @@
                 });
 
                 textarea.addEventListener("blur", function () {
-                    // blur dalej zapisuje, ALE tylko jeśli
-                    // finish nie był wcześniej wywołany (np. ESC)
+                    // blur dalej zapisuje, ALE tylko jesli
+                    // finish nie byl wczesniej wywolany (np. ESC)
                     finish(true);
                 });
 
@@ -1099,7 +1104,7 @@
         if (CAN_EDIT) {
             descCells.forEach(td => {
                 td.addEventListener("dblclick", function (e) {
-                    // jeśli klik na przycisk 🔍, nie włączaj inline
+                    // jesli klik na przycisk ?, nie wlaczaj inline
                     if (e.target.closest(".sb-desc-edit-btn")) {
                         return;
                     }
@@ -1212,7 +1217,7 @@
         const noteCells = document.querySelectorAll("td.col-note");
         noteCells.forEach(td => {
             td.addEventListener("dblclick", function (e) {
-                // jeśli klik na przycisk 📝, nie włączaj inline — to (dla edytorów) otwiera Quilla
+                // jesli klik na przycisk ?, nie wlaczaj inline - to (dla edytorow) otwiera Quilla
                 if (e.target.closest(".sb-note-btn")) {
                     return;
                 }
@@ -1335,11 +1340,11 @@
 
     /* ================================================
        QUILL MODAL (DESCRIPTION + USER NOTE)
-       – tylko dla CAN_EDIT
-       (Tylko z przycisków 🔍 i 📝)
+       - tylko dla CAN_EDIT
+       (Tylko z przyciskow ? i ?)
     ================================================= */
     function sbInitQuillModal() {
-        // tylko edytor / purchase_manager mają Quill
+        // tylko edytor / purchase_manager maja Quill
         if (!window.CAN_EDIT) return;
 
         const modal = document.getElementById("sb-quill-modal");
@@ -1358,7 +1363,7 @@
 
         const csrftoken = getCookie("csrftoken");
 
-        // Quill inicjalizujemy tylko raz, żeby nie doklejał kolejnych toolbarów
+        // Quill inicjalizujemy tylko raz, zeby nie doklejal kolejnych toolbarow
         if (!quillInstance) {
             quillInstance = new Quill(editorNode, {
                 theme: "snow",
@@ -1411,8 +1416,8 @@
          * Otwiera modal:
          *  mode: "description" | "note"
          *  itemId: ID rekordu
-         *  html: treść HTML do załadowania do Quilla
-         *  targetElement: komórka <td> (dla description) albo przycisk 📝 (dla note)
+         *  html: tresc HTML do zaladowania do Quilla
+         *  targetElement: komorka <td> (dla description) albo przycisk ? (dla note)
          */
         function openModal(mode, itemId, html, targetElement) {
             state.mode = mode || "description";
@@ -1440,7 +1445,7 @@
             state.modal.style.display = "flex";
         }
 
-        // globalny „otwieracz” używany przez przyciski 🔍 i 📝
+        // globalny ?otwieracz" uzywany przez przyciski ? i ?
         window.sbOpenQuillEditor = openModal;
 
         if (closeBtn) closeBtn.addEventListener("click", () => hideModal(true));
@@ -1487,7 +1492,7 @@
                                     tmp.innerHTML = html;
                                     preview.setAttribute("title", tmp.textContent.trim());
                                 }
-                                // po zmianie opisu odświeżamy clamp
+                                // po zmianie opisu odswiezamy clamp
                                 if (typeof markClampedCells === "function") {
                                     markClampedCells();
                                 }
@@ -1558,7 +1563,7 @@
 
 
     /* ================================================
-       QUILL TRIGGERS (tylko przyciski 🔍, tylko CAN_EDIT)
+       QUILL TRIGGERS (tylko przyciski ?, tylko CAN_EDIT)
     ================================================= */
     function sbInitQuillTriggers() {
         if (!CAN_EDIT) return;
@@ -1601,7 +1606,7 @@
                         const rackSelect = document.querySelector(".sb-filter-rack");
                         const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
 
-                        // Dodajemy klasę "loading" do tabeli i klikniętego nagłówka
+                        // Dodajemy klas? "loading" do tabeli i klikni?tego naglowka
                         table.classList.add("sb-table-sorting");
                         headers.forEach(h => h.classList.remove("sb-sort-loading"));
                         th.classList.add("sb-sort-loading");
@@ -1615,7 +1620,7 @@
                         url.searchParams.set("sort", field);
                         url.searchParams.set("dir", nextDir);
 
-                        // Przy zmianie sortowania wracamy na stronę 1
+                        // Przy zmianie sortowania wracamy na stron? 1
                         url.searchParams.set("page", 1);
 
                         if (activeRack) {

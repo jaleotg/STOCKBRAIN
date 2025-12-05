@@ -49,6 +49,22 @@
     text-align: center;
 }
 
+.sb-trash-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #d9534f;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.sb-trash-btn:hover,
+.sb-trash-btn:focus {
+    color: #b52b27;
+    outline: none;
+}
+
 .sb-table td.sb-cell-focus {
     border-color: #2c7be5;
     box-shadow: 0 0 0 2px #2c7be5 inset;
@@ -65,10 +81,7 @@
 }
 
 /* striped + hover */
-.sb-table tbody tr:nth-child(even) {
-}
-.sb-table tbody tr:hover {
-}
+
 /* Frozen columns zebra & hover – keep in sync with row background */
 .sb-table tbody tr:nth-child(even) td.col-location,
 .sb-table tbody tr:nth-child(even) td.col-rck,
@@ -410,9 +423,6 @@
     transition: background 0.15s;
 }
 
-.sb-desc-edit-btn:hover {
-}
-
 .sb-icon-pencil {
     width: 16px;
     height: 16px;
@@ -519,15 +529,37 @@
     font-weight: 600;
 }
 
-.sb-modal-footer .sb-modal-save[data-mode="save-next"] {
-}
-
 .sb-modal-footer .sb-modal-cancel {
     border: none;
     padding: 8px 12px;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
+}
+
+/* Delete modal fields */
+.sb-delete-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.sb-delete-field label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.sb-delete-readonly {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #f7f7f7;
+    min-height: 30px;
+    font-size: 13px;
+    color: #222;
+    word-break: break-word;
 }
 
 .col-note .sb-note-btn {

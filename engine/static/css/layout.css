@@ -175,12 +175,6 @@ body {
     font-weight: 600;
 }
 
-.sb-tag-warning {
-}
-
-.sb-tag-muted {
-}
-
 /* Check mark tag (Disc.) */
 .sb-tag-check {
     border-radius: 10px;
