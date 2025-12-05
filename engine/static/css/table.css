@@ -4,7 +4,8 @@
 
 .sb-table-wrapper {
     margin-top: 10px;
-    max-height: calc(100vh - 210px);
+    /* Reduced offset to minimize bottom gap under the scrollbar */
+    max-height: calc(100vh - 130px);
     overflow-x: auto;
     overflow-y: auto;
     white-space: nowrap;
