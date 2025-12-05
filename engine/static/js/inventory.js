@@ -215,7 +215,6 @@
 
         const currentSort = table.dataset.currentSort || "rack";
         const currentDir = table.dataset.currentDir || "asc";
-                const currentRackFilter = table.dataset.rackFilter || "";
 
         select.addEventListener("change", function () {
             const url = new URL(window.location.href);
@@ -225,6 +224,34 @@
             } else {
                 url.searchParams.delete("rack_filter");
                 // wracamy do ustawionego page size
+                const ps = document.getElementById("page-size-select");
+                if (ps) {
+                    url.searchParams.set("page_size", ps.value);
+                }
+            }
+            url.searchParams.set("page", 1);
+            url.searchParams.set("sort", currentSort);
+            url.searchParams.set("dir", currentDir);
+
+            sbLoadInventory(url.toString());
+        });
+    }
+
+    function sbInitGroupFilter() {
+        const select = document.querySelector(".sb-filter-group");
+        const table = document.querySelector(".sb-table");
+        if (!select || !table) return;
+
+        const currentSort = table.dataset.currentSort || "rack";
+        const currentDir = table.dataset.currentDir || "asc";
+
+        select.addEventListener("change", function () {
+            const url = new URL(window.location.href);
+            if (this.value) {
+                url.searchParams.set("group_filter", this.value);
+                url.searchParams.set("page_size", "all");
+            } else {
+                url.searchParams.delete("group_filter");
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
                     url.searchParams.set("page_size", ps.value);
@@ -647,6 +674,131 @@
                 const html = decodeHtmlEntities(raw);
 
                 window.sbOpenQuillEditor("note", itemId, html, btn);
+            });
+        });
+    }
+
+    /* ================================================
+       DELETE ITEM MODAL
+    ================================================= */
+    function sbInitDeleteModal() {
+        const modal = document.getElementById("sb-delete-modal");
+        const successModal = document.getElementById("sb-delete-success");
+        if (!modal) return;
+
+        const dialog = modal.querySelector(".sb-modal-dialog");
+        const closeBtn = modal.querySelector(".sb-modal-close");
+        const cancelBtn = modal.querySelector(".sb-delete-cancel");
+        const confirmBtn = modal.querySelector(".sb-delete-confirm");
+        const passwordInput = modal.querySelector("#sb-delete-password");
+        const locEl = modal.querySelector("#sb-del-loc");
+        const nameEl = modal.querySelector("#sb-del-name");
+        const qtyEl = modal.querySelector("#sb-del-qty");
+        const okBtn = successModal ? successModal.querySelector(".sb-delete-ok") : null;
+
+        let isOpen = false;
+        let currentItemId = null;
+
+        function closeModal() {
+            modal.style.display = "none";
+            isOpen = false;
+            currentItemId = null;
+            if (passwordInput) passwordInput.value = "";
+        }
+
+        function openModal(itemId, loc, name, qty) {
+            currentItemId = itemId;
+            if (locEl) locEl.textContent = loc || "";
+            if (nameEl) nameEl.textContent = name || "";
+            if (qtyEl) qtyEl.textContent = qty || "";
+            modal.style.display = "flex";
+            isOpen = true;
+            if (passwordInput) passwordInput.focus();
+        }
+
+        function closeSuccess() {
+            if (successModal) successModal.style.display = "none";
+        }
+
+        function showSuccess() {
+            if (successModal) {
+                successModal.style.display = "flex";
+            }
+        }
+
+        function handleOutsideClick(e) {
+            if (!isOpen) return;
+            if (dialog && !dialog.contains(e.target)) {
+                closeModal();
+            }
+        }
+
+        function handleKeydown(e) {
+            if (!isOpen) return;
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeModal();
+            }
+        }
+
+        document.addEventListener("mousedown", handleOutsideClick);
+        document.addEventListener("keydown", handleKeydown);
+
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+        if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+
+        if (okBtn) {
+            okBtn.addEventListener("click", () => {
+                closeSuccess();
+                const url = new URL(window.location.href);
+                sbLoadInventory(url.toString());
+            });
+        }
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener("click", () => {
+                if (!currentItemId) return;
+                const pwd = passwordInput ? passwordInput.value : "";
+                const fd = new URLSearchParams();
+                fd.append("item_id", currentItemId);
+                fd.append("password", pwd);
+
+                fetch("/api/delete-item/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrftoken || "",
+                    },
+                    body: fd.toString(),
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.ok) {
+                            alert(data.error || "Delete failed");
+                            return;
+                        }
+                        closeModal();
+                        showSuccess();
+                    })
+                    .catch(err => {
+                        console.error("Delete error", err);
+                        alert("Delete failed");
+                    });
+            });
+        }
+
+        const buttons = document.querySelectorAll(".sb-trash-btn");
+        buttons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const row = btn.closest("tr");
+                const itemId = btn.dataset.itemId;
+                const locCell = row ? row.querySelector(".col-location") : null;
+                const nameCell = row ? row.querySelector(".col-name") : null;
+                const qtyCell = row ? row.querySelector(".col-instock") : null;
+                const loc = locCell ? locCell.textContent.trim() : "";
+                const name = nameCell ? nameCell.textContent.trim() : "";
+                const qty = qtyCell ? qtyCell.textContent.trim() : "";
+                openModal(itemId, loc, name, qty);
             });
         });
     }
@@ -1537,12 +1689,14 @@
                 sbInitInlineEditing();
                 sbInitSorting();
                 sbInitRackFilter();
+                sbInitGroupFilter();
                 sbInitInlineDescNoteEditing();
                 sbInitPagination();
                 sbInitQuillModal();
                 sbInitQuillTriggers();
                 sbInitNoteButtons();
                 sbInitAddItemModal();
+                sbInitDeleteModal();
                 applyPendingHighlight();
                 if (typeof opts.onLoaded === "function") {
                     opts.onLoaded();
@@ -1668,12 +1822,14 @@
         sbInitInlineEditing();
         sbInitSorting();
         sbInitRackFilter();
+        sbInitGroupFilter();
         sbInitInlineDescNoteEditing();
         sbInitPagination();
         sbInitQuillModal();
         sbInitQuillTriggers();
         sbInitNoteButtons();
         sbInitAddItemModal();
+        sbInitDeleteModal();
         applyPendingHighlight();
     });
 })();

@@ -1017,3 +1017,32 @@ def create_item(request):
             page_for_item = 1
 
     return JsonResponse({"ok": True, "id": item.id, "page": page_for_item})
+
+
+# ============================================
+# AJAX: DELETE ITEM (requires password)
+# ============================================
+
+@login_required
+@require_POST
+def delete_item(request):
+    if not user_can_edit(request.user):
+        return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
+
+    item_id = request.POST.get("item_id")
+    password = request.POST.get("password") or ""
+
+    if not item_id:
+        return JsonResponse({"ok": False, "error": "Missing item_id"}, status=400)
+
+    user = authenticate(request, username=request.user.username, password=password)
+    if not user:
+        return JsonResponse({"ok": False, "error": "Invalid password"}, status=403)
+
+    try:
+        item = InventoryItem.objects.get(pk=item_id)
+    except InventoryItem.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Item not found"}, status=404)
+
+    item.delete()
+    return JsonResponse({"ok": True})

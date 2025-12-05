@@ -840,6 +840,58 @@
 </div>
 
 {% if can_edit or is_purchase_admin %}
+<!-- DELETE ITEM MODAL -->
+<div id="sb-delete-modal" class="sb-modal" aria-hidden="true">
+    <div class="sb-modal-dialog sb-delete-dialog">
+        <div class="sb-modal-header">
+            <div><strong>Delete item</strong></div>
+            <div><button type="button" class="sb-modal-close" aria-label="Close">&times;</button></div>
+        </div>
+        <div class="sb-modal-body">
+            <p>Are you sure you want to delete this item?</p>
+            <div class="sb-delete-summary">
+                <div class="sb-delete-field">
+                    <label>Location</label>
+                    <div class="sb-delete-readonly" id="sb-del-loc"></div>
+                </div>
+                <div class="sb-delete-field">
+                    <label>Name</label>
+                    <div class="sb-delete-readonly" id="sb-del-name"></div>
+                </div>
+                <div class="sb-delete-field">
+                    <label>In stock</label>
+                    <div class="sb-delete-readonly" id="sb-del-qty"></div>
+                </div>
+            </div>
+            <div class="sb-delete-field">
+                <label for="sb-delete-password">Password</label>
+                <input type="password" id="sb-delete-password" autocomplete="current-password">
+            </div>
+        </div>
+        <div class="sb-modal-footer">
+            <button type="button" class="sb-modal-cancel sb-delete-cancel">Cancel</button>
+            <button type="button" class="sb-modal-save sb-delete-confirm" style="background:#d9534f;">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- DELETE SUCCESS MODAL -->
+<div id="sb-delete-success" class="sb-modal" aria-hidden="true">
+    <div class="sb-modal-dialog sb-delete-dialog">
+        <div class="sb-modal-header">
+            <div><strong>Item deleted</strong></div>
+        </div>
+        <div class="sb-modal-body">
+            <p>The item has been deleted.</p>
+        </div>
+        <div class="sb-modal-footer">
+            <button type="button" class="sb-delete-ok">OK</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if can_edit or is_purchase_admin %}
 <!-- ADD ITEM MODAL -->
 <div id="sb-add-item-modal" class="sb-modal" aria-hidden="true">
     <div class="sb-modal-dialog sb-add-item-dialog">
