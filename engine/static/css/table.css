@@ -447,8 +447,8 @@
     display: inline-block;
     margin-left: 6px;
     padding: 1px 6px;
-    background: #ffe0e0;
-    color: #c0392b;
+    background: #c0392b; /* red background */
+    color: #fff;         /* white text */
     border-radius: 4px;
     font-size: 11px;
     font-weight: 700;
