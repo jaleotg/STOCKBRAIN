@@ -20,28 +20,34 @@
 
         <!-- PAGE SIZE DROPDOWN -->
         {% if not rack_filter %}
-        <div class="sb-page-size-control">
-            <label for="page-size-select">
-                Rows per page:
-            </label>
-            <select id="page-size-select"
-                    class="sb-page-size-select"
-                    name="page_size">
-                {% for opt in page_size_choices %}
-                    {% if opt == "all" %}
-                        <option value="all"
-                                {% if page_size == "all" %}selected{% endif %}>
-                            All
-                        </option>
-                    {% else %}
-                        <option value="{{ opt }}"
-                                {% if page_size == opt %}selected{% endif %}>
-                            {{ opt }}
-                        </option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-        </div>
+            <div class="sb-page-size-control">
+                <label for="page-size-select">
+                    Rows per page:
+                </label>
+                <select id="page-size-select"
+                        class="sb-page-size-select"
+                        name="page_size">
+                    {% for opt in page_size_choices %}
+                        {% if opt == "all" %}
+                            <option value="all"
+                                    {% if page_size == "all" %}selected{% endif %}>
+                                All
+                            </option>
+                        {% else %}
+                            <option value="{{ opt }}"
+                                    {% if page_size == opt %}selected{% endif %}>
+                                {{ opt }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        {% else %}
+            <div class="sb-page-size-control">
+                <span class="sb-rack-selection-info">
+                    {{ selected_rack_count|default:"0" }} items selected in rack {{ rack_filter }}
+                </span>
+            </div>
         {% endif %}
 
         {% if can_edit or is_purchase_admin %}

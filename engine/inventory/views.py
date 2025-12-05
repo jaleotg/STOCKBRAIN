@@ -369,9 +369,11 @@ def home_view(request):
     show_first_ellipsis = False
     show_last_ellipsis = False
 
+    selected_rack_count = None
     if page_size == "all":
         # No pagination
         items = list(queryset)
+        selected_rack_count = len(items)
     else:
         paginator = Paginator(queryset, page_size)
         page_number = request.GET.get("page", 1)
@@ -469,6 +471,8 @@ def home_view(request):
         "page_numbers": page_numbers,
         "show_first_ellipsis": show_first_ellipsis,
         "show_last_ellipsis": show_last_ellipsis,
+        "rack_filter": rack_filter_int,
+        "selected_rack_count": selected_rack_count,
 
         # Column settings from admin
         "columns": columns,                      # field_name → InventoryColumn
