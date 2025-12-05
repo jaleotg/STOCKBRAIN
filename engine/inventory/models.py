@@ -131,9 +131,6 @@ class InventoryColumn(models.Model):
     """
 
     FIELD_CHOICES = [
-        ("rack", "Rack"),
-        ("shelf", "Shelf"),
-        ("box", "Box"),
         ("location", "Location (header)"),
         ("group", "Group (FK)"),
         ("name", "Name"),

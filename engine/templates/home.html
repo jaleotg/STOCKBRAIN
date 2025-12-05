@@ -167,53 +167,6 @@
                     </th>
                 {% endwith %}
 
-                {# R (sortowalne) #}
-                {% with col=columns.rack %}
-                    <th class="col-rck sb-sortable-header"
-                        style="text-align:center;"
-                        data-sort-field="rack"
-                        title="{{ col.full_label|default:'Rack' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:'R' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'rack' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'rack' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
-                {% endwith %}
-
-                {# S (sortowalne) #}
-                {% with col=columns.shelf %}
-                    <th class="col-sh sb-sortable-header"
-                        style="text-align:center;"
-                        data-sort-field="shelf"
-                        title="{{ col.full_label|default:'Shelf' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:'S' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'shelf' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'shelf' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
-                {% endwith %}
-
-                {# B (bez sortowania) #}
-                {% with col=columns.box %}
-                    <th class="col-box"
-                        style="text-align:center;"
-                        title="{{ col.full_label|default:'Box' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'B' }}
-                    </th>
-                {% endwith %}
-
                 {# GROUP (nigdy nie ukrywamy, sortowalne) #}
                 {% with col=columns.group %}
                     <th class="col-group sb-sortable-header"
@@ -433,13 +386,6 @@
                         <span class="sb-multiline" title="{{ item.rack }}-{{ item.shelf }}-{{ item.box }}">
                             {{ item.rack }}-{{ item.shelf }}-{{ item.box }}
                         </span>
-                    </td>
-
-                    <!-- R/S/B -->
-                    <td class="col-rck inline" data-field="rack" data-id="{{ item.id }}">{{ item.rack }}</td>
-                    <td class="col-sh inline" data-field="shelf" data-id="{{ item.id }}">{{ item.shelf }}</td>
-                    <td class="col-box inline" data-field="box" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.box }}">{{ item.box }}</span>
                     </td>
 
                     <!-- GROUP -->

@@ -9,9 +9,10 @@ body {
 }
 
 .sb-page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    display: block;
+    min-height: auto;
+    padding: 0;
+    margin: 0;
 }
 
 /* =========================================
@@ -63,15 +64,18 @@ body {
 ========================================= */
 
 .sb-main {
-    padding: 10px;
+    display: block;
+    padding: 10px 10px 0 10px;
+    margin: 0;
 }
 
 .sb-card {
-    border-radius: 6px;
-    padding: 20px;
+    /* auto height to avoid large empty bottom space */
+    border-radius: 0px;
+    padding: 10px;
     max-width: none;
-    width: calc(100% - 20px); /* 10px margines z lewej/prawej */
-    margin: 10px auto;
+    width: auto;
+    margin: 0px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
