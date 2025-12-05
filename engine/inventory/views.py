@@ -129,7 +129,7 @@ def home_view(request):
     sort_dir = request.GET.get("dir", "asc")
 
     # allowed sort fields
-    allowed_sorts = {"rack", "shelf", "name", "group"}
+    allowed_sorts = {"rack", "shelf", "name", "group", "location"}
     if sort_field not in allowed_sorts:
         sort_field = "rack"
 
@@ -193,6 +193,12 @@ def home_view(request):
         else:
             order_by_args.append("group__name")
         order_by_args.extend(["rack", "shelf", "box", "name"])
+    elif sort_field == "location":
+        # sort by composite rack/shelf/box
+        if sort_dir == "desc":
+            order_by_args.extend(["-rack", "-shelf", "-box", "name"])
+        else:
+            order_by_args.extend(["rack", "shelf", "box", "name"])
 
     # fallback, gdyby coś się rozwaliło
     if not order_by_args:
@@ -730,16 +736,25 @@ def create_item(request):
     elif sort_field == "group":
         order_by_args.append("-group__name" if sort_dir == "desc" else "group__name")
         order_by_args.extend(["rack", "shelf", "box", "name"])
+    elif sort_field == "location":
+        if sort_dir == "desc":
+            order_by_args.extend(["-rack", "-shelf", "-box", "name"])
+        else:
+            order_by_args.extend(["rack", "shelf", "box", "name"])
     else:
         order_by_args = ["rack", "shelf", "box", "name"]
 
-    row_number = None
+    # Oblicz pozycję nowego rekordu w aktualnym sortowaniu (prosto w Pythonie,
+    # żeby uniknąć problemów z window functions)
+    ordered_ids = list(
+        InventoryItem.objects.annotate(**annotate_kwargs)
+        .order_by(*order_by_args)
+        .values_list("id", flat=True)
+    )
     try:
-        qs = InventoryItem.objects.annotate(**annotate_kwargs).annotate(
-            row_number=Window(expression=RowNumber(), order_by=order_by_args)
-        ).filter(pk=item.id).values_list("row_number", flat=True)
-        row_number = qs[0] if qs else None
-    except Exception:
+        idx = ordered_ids.index(item.id)
+        row_number = idx + 1  # 1-based
+    except ValueError:
         row_number = None
 
     page_for_item = 1

@@ -543,15 +543,26 @@
         if (!itemId) return;
 
         const pageSizeSel = document.getElementById("page-size-select");
-        const target = targetPage ? String(targetPage) : null;
+        const table = document.querySelector(".sb-table");
         const url = new URL(window.location.href);
-        if (target) {
-            url.searchParams.set("page", target);
+
+        // force requested page
+        if (targetPage) {
+            url.searchParams.set("page", String(targetPage));
         }
-        if (pageSizeSel) {
+        // keep current sort/dir from table dataset (fallback to existing params)
+        if (table) {
+            const curSort = table.dataset.currentSort;
+            const curDir = table.dataset.currentDir;
+            if (curSort) url.searchParams.set("sort", curSort);
+            if (curDir) url.searchParams.set("dir", curDir);
+        }
+        // keep page size from UI dropdown if present
+        if (pageSizeSel && pageSizeSel.value) {
             url.searchParams.set("page_size", pageSizeSel.value);
         }
 
+        // kontrolny komunikat dokąd nastąpi przekierowanie
         rememberHighlight(itemId);
         window.location.href = url.toString();
     }

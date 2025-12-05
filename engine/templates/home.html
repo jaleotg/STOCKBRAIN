@@ -161,9 +161,19 @@
             <tr>
                 {# LOCATION (computed) #}
                 {% with col=columns.location %}
-                    <th class="col-location"
+                    <th class="col-location sb-sortable-header"
+                        data-sort-field="location"
                         title="{{ col.full_label|default:'Location' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'Location' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'Location' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'location' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'location' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
