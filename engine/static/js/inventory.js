@@ -920,6 +920,8 @@
                         resetForm();
                         const firstInput = form ? form.querySelector("input, select, textarea") : null;
                         if (firstInput) firstInput.focus();
+                        alert("Item saved. You can add the next one.");
+                        return; // stay in modal, do not navigate
                     } else {
                         closeModal(true);
                     }
