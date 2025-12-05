@@ -625,9 +625,9 @@
                 </div>
 
                 {% with col=columns.group %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"Group" }}</label>
-                    <select name="group_id">
+                <div class="sb-add-field sb-mandatory">
+                    <label>{{ col.full_label|default:col.field_name|default:"Group" }} <span class="sb-mandatory-badge">mandatory</span></label>
+                    <select name="group_id" required>
                         {% for g in groups %}
                             <option value="{{ g.id }}">{{ g.name }}</option>
                         {% endfor %}
@@ -695,25 +695,27 @@
                     {% endwith %}
                 {% endif %}
 
-                {% with col=columns.unit %}
-                <div class="sb-add-field sb-mandatory">
-                    <label>{{ col.full_label|default:col.field_name|default:"Unit" }} <span class="sb-mandatory-badge">mandatory</span></label>
-                    <select name="unit_id" required>
-                        {% for u in units %}
-                            <option value="{{ u.id }}">{{ u.code }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endwith %}
-
-                {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
-                    {% with col=columns.quantity_in_stock %}
+                <div class="sb-add-row rsb-row">
+                    {% with col=columns.unit %}
                     <div class="sb-add-field sb-mandatory">
-                        <label>{{ col.full_label|default:col.field_name|default:"Quantity in stock" }} <span class="sb-mandatory-badge">mandatory</span></label>
-                        <input type="number" step="1" name="quantity_in_stock" required>
+                        <label>{{ col.full_label|default:col.field_name|default:"Unit" }} <span class="sb-mandatory-badge">mandatory</span></label>
+                        <select name="unit_id" required>
+                            {% for u in units %}
+                                <option value="{{ u.id }}">{{ u.code }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     {% endwith %}
-                {% endif %}
+
+                    {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
+                        {% with col=columns.quantity_in_stock %}
+                        <div class="sb-add-field sb-mandatory">
+                            <label>{{ col.full_label|default:col.field_name|default:"Quantity in stock" }} <span class="sb-mandatory-badge">mandatory</span></label>
+                            <input type="number" step="1" name="quantity_in_stock" required>
+                        </div>
+                        {% endwith %}
+                    {% endif %}
+                </div>
 
                 {% if is_purchase_admin or 'price' not in restricted_fields %}
                     {% with col=columns.price %}
