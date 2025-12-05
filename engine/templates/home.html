@@ -215,50 +215,110 @@
 
                 {# DESCRIPTION #}
                 {% with col=columns.part_description %}
-                    <th class="col-partdesc"
+                    <th class="col-partdesc sb-sortable-header"
+                        data-sort-field="part_description"
                         title="{{ col.full_label|default:'Part Description' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'Part Description' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'Part Description' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'part_description' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'part_description' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# PART NUMBER #}
                 {% with col=columns.part_number %}
-                    <th class="col-partnum"
+                    <th class="col-partnum sb-sortable-header"
+                        data-sort-field="part_number"
                         title="{{ col.full_label|default:'Part Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'Part Number' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'Part Number' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'part_number' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'part_number' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# DCM #}
                 {% with col=columns.dcm_number %}
-                    <th class="col-dcm"
+                    <th class="col-dcm sb-sortable-header"
+                        data-sort-field="dcm_number"
                         title="{{ col.full_label|default:'DCM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'DCM NUMBER' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'DCM NUMBER' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'dcm_number' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'dcm_number' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# OEM NAME #}
                 {% with col=columns.oem_name %}
-                    <th class="col-oemname"
+                    <th class="col-oemname sb-sortable-header"
+                        data-sort-field="oem_name"
                         title="{{ col.full_label|default:'OEM Name' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'OEM Name' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'OEM Name' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'oem_name' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'oem_name' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# OEM NUMBER #}
                 {% with col=columns.oem_number %}
-                    <th class="col-oemnum"
+                    <th class="col-oemnum sb-sortable-header"
+                        data-sort-field="oem_number"
                         title="{{ col.full_label|default:'OEM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'OEM Number' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'OEM Number' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'oem_number' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'oem_number' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# VENDOR – może być restricted #}
                 {% with col=columns.vendor %}
                     {% if is_purchase_admin or 'vendor' not in restricted_fields %}
-                        <th class="col-vendor"
+                        <th class="col-vendor sb-sortable-header"
+                            data-sort-field="vendor"
                             title="{{ col.full_label|default:'Vendor' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                            {{ col.short_label|default:col.full_label|default:'Vendor' }}
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'Vendor' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'vendor' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'vendor' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
                         </th>
                     {% endif %}
                 {% endwith %}
@@ -266,27 +326,57 @@
                 {# SOURCE LOCATION – może być restricted #}
                 {% with col=columns.source_location %}
                     {% if is_purchase_admin or 'source_location' not in restricted_fields %}
-                        <th class="col-sourceloc"
+                        <th class="col-sourceloc sb-sortable-header"
+                            data-sort-field="source_location"
                             title="{{ col.full_label|default:'Source Location' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                            {{ col.short_label|default:col.full_label|default:'Source Location' }}
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'Source Location' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'source_location' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'source_location' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
                         </th>
                     {% endif %}
                 {% endwith %}
 
                 {# UNITS #}
                 {% with col=columns.unit %}
-                    <th class="col-units"
+                    <th class="col-units sb-sortable-header"
+                        data-sort-field="unit"
                         title="{{ col.full_label|default:'Units' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'Units' }}
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'Units' }}
+                        </span>
+                        <span class="sb-sort-arrow {% if sort_field == 'unit' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'unit' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# IN STOCK – może być restricted #}
                 {% with col=columns.quantity_in_stock %}
                     {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
-                        <th class="col-instock"
+                        <th class="col-instock sb-sortable-header"
+                            data-sort-field="quantity_in_stock"
                             title="{{ col.full_label|default:'In stock' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                            {{ col.short_label|default:col.full_label|default:'In stock' }}
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'In stock' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'quantity_in_stock' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'quantity_in_stock' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
                         </th>
                     {% endif %}
                 {% endwith %}
@@ -304,76 +394,148 @@
                 {# REORDER LEVEL – może być restricted #}
                 {% with col=columns.reorder_level %}
                     {% if is_purchase_admin or 'reorder_level' not in restricted_fields %}
-                        <th class="col-reorderlevel"
+                        <th class="col-reorderlevel sb-sortable-header"
+                            data-sort-field="reorder_level"
                             title="{{ col.full_label|default:'Reorder level' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                            <span>{{ col.short_label|default:col.full_label|default:'Reorder level' }}</span>
+                            <span class="sb-header-label">{{ col.short_label|default:col.full_label|default:'Reorder level' }}</span>
+                            <span class="sb-sort-arrow {% if sort_field == 'reorder_level' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'reorder_level' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
                         </th>
                     {% endif %}
                 {% endwith %}
 
                 {# RT DAYS #}
                 {% with col=columns.reorder_time_days %}
-                    <th class="col-rt"
+                    <th class="col-rt sb-sortable-header"
+                        data-sort-field="reorder_time_days"
                         title="{{ col.full_label|default:'Reorder Time in Days' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'RT' }}
+                        <span class="sb-header-label">{{ col.short_label|default:'RT' }}</span>
+                        <span class="sb-sort-arrow {% if sort_field == 'reorder_time_days' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'reorder_time_days' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# QTY REORDER – może być restricted #}
                 {% with col=columns.quantity_in_reorder %}
                     {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
-                        <th class="col-qtyreorder"
+                        <th class="col-qtyreorder sb-sortable-header"
+                            data-sort-field="quantity_in_reorder"
                             title="{{ col.full_label|default:'Quantity Reorder' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                            <span>{{ col.short_label|default:col.full_label|default:'Quantity Reorder' }}</span>
+                            <span class="sb-header-label">{{ col.short_label|default:col.full_label|default:'Quantity Reorder' }}</span>
+                            <span class="sb-sort-arrow {% if sort_field == 'quantity_in_reorder' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'quantity_in_reorder' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
                         </th>
                     {% endif %}
                 {% endwith %}
 
                 {# CONDITION #}
                 {% with col=columns.condition_status %}
-                    <th class="col-condition"
+                    <th class="col-condition sb-sortable-header"
+                        data-sort-field="condition_status"
                         title="{{ col.full_label|default:'Condition status' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:col.full_label|default:'Condition' }}
+                        <span class="sb-header-label">{{ col.short_label|default:col.full_label|default:'Condition' }}</span>
+                        <span class="sb-sort-arrow {% if sort_field == 'condition_status' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'condition_status' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# DISC #}
                 {% with col=columns.discontinued %}
-                    <th class="col-disc"
+                    <th class="col-disc sb-sortable-header"
+                        data-sort-field="discontinued"
                         title="{{ col.full_label|default:'Discontinued' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'Disc.' }}
+                        <span class="sb-header-label">{{ col.short_label|default:'Disc.' }}</span>
+                        <span class="sb-sort-arrow {% if sort_field == 'discontinued' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'discontinued' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# REV #}
                 {% with col=columns.verify %}
-                    <th class="col-rev"
+                    <th class="col-rev sb-sortable-header"
+                        data-sort-field="verify"
                         title="{{ col.full_label|default:'To Review / Verify' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'REV.' }}
+                        <span class="sb-header-label">{{ col.short_label|default:'REV.' }}</span>
+                        <span class="sb-sort-arrow {% if sort_field == 'verify' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'verify' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# FAVORITE #}
                 {% with col=columns.favorite %}
-                    <th class="col-fav"
+                    <th class="col-fav sb-sortable-header"
+                        data-sort-field="favorite"
                         title="{{ col.full_label|default:'Favorite' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'Fav' }}
+                        <span class="sb-header-label">{{ col.short_label|default:'Fav' }}</span>
+                        <span class="sb-sort-arrow {% if sort_field == 'favorite' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'favorite' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# USER NOTE #}
                 {% with col=columns.note %}
-                    <th class="col-note"
+                    <th class="col-note sb-sortable-header"
+                        data-sort-field="note"
                         title="{{ col.full_label|default:'User Note' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'Note' }}
+                        <span class="sb-header-label">{{ col.short_label|default:'Note' }}</span>
+                        <span class="sb-sort-arrow {% if sort_field == 'note' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'note' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
 
                 {# REORDER FLAG #}
                 {% with col=columns.for_reorder %}
-                    <th class="col-reorder"
+                    <th class="col-reorder sb-sortable-header"
+                        data-sort-field="for_reorder"
                         title="{{ col.full_label|default:'Reorder flag' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        {{ col.short_label|default:'Reorder' }}
+                        <span class="sb-header-label">{{ col.short_label|default:'Reorder' }}</span>
+                        <span class="sb-sort-arrow {% if sort_field == 'for_reorder' %}sb-sort-arrow--active{% endif %}">
+                            {% if sort_field == 'for_reorder' %}
+                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                            {% else %}
+                                ⇅
+                            {% endif %}
+                        </span>
                     </th>
                 {% endwith %}
             </tr>
