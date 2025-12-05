@@ -483,24 +483,23 @@
                 "sb-fav-none"
             );
 
-            let symbol = "?";
             let cls = "sb-fav-none";
-
             if (color === "RED") {
-                symbol = "?";
                 cls = "sb-fav-red";
             } else if (color === "GREEN") {
-                symbol = "?";
                 cls = "sb-fav-green";
             } else if (color === "YELLOW") {
-                symbol = "?";
                 cls = "sb-fav-yellow";
             } else if (color === "BLUE") {
-                symbol = "?";
                 cls = "sb-fav-blue";
             }
 
-            el.textContent = symbol;
+            const filled = color !== "NONE";
+            const svg = filled
+                ? '<svg class="sb-fav-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2l2.9 5.88 6.49.94-4.7 4.58 1.11 6.47L12 16.9 6.2 19.87l1.11-6.47-4.7-4.58 6.49-.94z"/></svg>'
+                : '<svg class="sb-fav-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 2l2.9 5.88 6.49.94-4.7 4.58 1.11 6.47L12 16.9 6.2 19.87l1.11-6.47-4.7-4.58 6.49-.94z"/></svg>';
+
+            el.innerHTML = svg;
             el.classList.add(cls);
         }
 

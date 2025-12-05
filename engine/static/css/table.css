@@ -719,35 +719,32 @@
 
 
 .col-fav .sb-favorite {
-    font-size: 26px;      /* ★ bigger */
     cursor: pointer;
     line-height: 1;
-    display: inline-block;
-    width: 30px;
-    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
     user-select: none;
 }
 
+.sb-fav-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
 /* Colors */
-.sb-fav-red {
-    color: #ff3b30;       /* iOS red */
-}
-.sb-fav-green {
-    color: #34c759;       /* iOS green */
-}
-.sb-fav-yellow {
-    color: #ffcc00;       /* iOS yellow */
-}
-.sb-fav-blue {
-    color: #007aff;       /* iOS blue */
-}
-.sb-fav-none {
-    color: #aaa;
-}
+.sb-fav-red { color: #ff3b30; }
+.sb-fav-green { color: #34c759; }
+.sb-fav-yellow { color: #ffcc00; }
+.sb-fav-blue { color: #007aff; }
+.sb-fav-none { color: #aaa; }
 
 /* Hover */
 .col-fav .sb-favorite:hover {
-    transform: scale(1.25);
+    transform: scale(1.15);
 }
 
 /* ============================================================
