@@ -14,6 +14,7 @@ from django.db.models import (
     Exists,
     OuterRef,
     Subquery,
+    F,
 )
 from django.db.models.functions import Lower, Substr, RowNumber
 
@@ -134,6 +135,15 @@ def home_view(request):
             except (TypeError, ValueError):
                 page_size = 50
 
+    # --- RACK FILTER ---
+    rack_filter = request.GET.get("rack_filter")
+    rack_filter_int = None
+    if rack_filter:
+        try:
+            rack_filter_int = int(rack_filter)
+        except ValueError:
+            rack_filter_int = None
+
     # --- SORTING (R, S, Name, Group) ---
     sort_field = request.GET.get("sort", "rack")
     sort_dir = request.GET.get("dir", "asc")
@@ -190,6 +200,13 @@ def home_view(request):
             default=Value(1),
             output_field=IntegerField(),
         ),
+        for_reorder_ann=Case(
+            When(discontinued=True, then=Value(0)),
+            When(reorder_level__isnull=True, then=Value(0)),
+            When(quantity_in_stock__lte=F("reorder_level"), then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
         note_present_int=Case(
             When(user_note_present=True, then=Value(1)),
             default=Value(0),
@@ -203,6 +220,9 @@ def home_view(request):
             output_field=IntegerField(),
         ),
     )
+    if rack_filter_int is not None:
+        base_qs = base_qs.filter(rack=rack_filter_int)
+        page_size = "all"
 
     if use_name_sort_key:
         # name_lower: sort case-insensitive
@@ -320,7 +340,7 @@ def home_view(request):
         else:
             order_by_args.extend(["-note_present_int", "rack", "shelf", "box"])
     elif sort_field == "for_reorder":
-        order_by_args.append("-for_reorder" if sort_dir == "asc" else "for_reorder")
+        order_by_args.append("-for_reorder_ann" if sort_dir == "asc" else "for_reorder_ann")
         order_by_args.extend(["rack", "shelf", "box"])
 
     # fallback, gdyby coś się rozwaliło
@@ -425,6 +445,10 @@ def home_view(request):
         # nie wysypujemy widoku.
         condition_choices = []
 
+    rack_filter_values = list(
+        InventoryItem.objects.values_list("rack", flat=True).distinct().order_by("rack")
+    )
+
     context = {
         "items": items,
         "units": units,
@@ -439,6 +463,7 @@ def home_view(request):
         "page_size_choices": PAGE_SIZE_CHOICES,
         "current_page_number": current_page_number,
         "num_pages": num_pages,
+        "rack_filter_values": rack_filter_values,
 
         # Pagination helpers
         "page_numbers": page_numbers,
@@ -457,6 +482,7 @@ def home_view(request):
         # Sorting info for frontend (strzałki, aktywna kolumna)
         "sort_field": sort_field,
         "sort_dir": sort_dir,
+        "rack_filter": rack_filter_int,
     }
 
     return render(request, "home.html", context)
@@ -851,6 +877,13 @@ def create_item(request):
             default=Value(1),
             output_field=IntegerField(),
         ),
+        "for_reorder_ann": Case(
+            When(discontinued=True, then=Value(0)),
+            When(reorder_level__isnull=True, then=Value(0)),
+            When(quantity_in_stock__lte=F("reorder_level"), then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
         "note_present_int": Case(
             When(user_note_present=True, then=Value(1)),
             default=Value(0),
@@ -950,7 +983,7 @@ def create_item(request):
         else:
             order_by_args.extend(["-note_present_int", "rack", "shelf", "box"])
     elif sort_field == "for_reorder":
-        order_by_args.append("-for_reorder" if sort_dir == "asc" else "for_reorder")
+        order_by_args.append("-for_reorder_ann" if sort_dir == "asc" else "for_reorder_ann")
         order_by_args.extend(["rack", "shelf", "box"])
     else:
         order_by_args = ["rack", "shelf", "box", "name"]

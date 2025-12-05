@@ -208,6 +208,36 @@
         });
     }
 
+    function sbInitRackFilter() {
+        const select = document.querySelector(".sb-filter-rack");
+        const table = document.querySelector(".sb-table");
+        if (!select || !table) return;
+
+        const currentSort = table.dataset.currentSort || "rack";
+        const currentDir = table.dataset.currentDir || "asc";
+                const currentRackFilter = table.dataset.rackFilter || "";
+
+        select.addEventListener("change", function () {
+            const url = new URL(window.location.href);
+            if (this.value) {
+                url.searchParams.set("rack_filter", this.value);
+                url.searchParams.set("page_size", "all");
+            } else {
+                url.searchParams.delete("rack_filter");
+                // wracamy do ustawionego page size
+                const ps = document.getElementById("page-size-select");
+                if (ps) {
+                    url.searchParams.set("page_size", ps.value);
+                }
+            }
+            url.searchParams.set("page", 1);
+            url.searchParams.set("sort", currentSort);
+            url.searchParams.set("dir", currentDir);
+
+            sbLoadInventory(url.toString());
+        });
+    }
+
     /* ================================================
        AJAX: UPDATE GROUP (FK) – only if CAN_EDIT
     ================================================= */
@@ -1416,6 +1446,9 @@
                     th.addEventListener("click", function (e) {
                         e.preventDefault();
 
+                        const rackSelect = document.querySelector(".sb-filter-rack");
+                        const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+
                         // Dodajemy klasę "loading" do tabeli i klikniętego nagłówka
                         table.classList.add("sb-table-sorting");
                         headers.forEach(h => h.classList.remove("sb-sort-loading"));
@@ -1433,9 +1466,16 @@
                         // Przy zmianie sortowania wracamy na stronę 1
                         url.searchParams.set("page", 1);
 
+                        if (activeRack) {
+                            url.searchParams.set("rack_filter", activeRack);
+                            url.searchParams.set("page_size", "all");
+                        }
+
                         const ps = document.getElementById("page-size-select");
                         if (ps) {
-                            url.searchParams.set("page_size", ps.value);
+                            if (!activeRack) {
+                                url.searchParams.set("page_size", ps.value);
+                            }
                         }
 
                         sbLoadInventory(url.toString());
@@ -1496,6 +1536,7 @@
                 sbInitFavorites();
                 sbInitInlineEditing();
                 sbInitSorting();
+                sbInitRackFilter();
                 sbInitInlineDescNoteEditing();
                 sbInitPagination();
                 sbInitQuillModal();
@@ -1522,8 +1563,10 @@
     ================================================= */
     function sbInitPagination() {
         const table = document.querySelector(".sb-table");
-        let currentSort = "rack";
-        let currentDir = "asc";
+        let currentSort = table ? (table.dataset.currentSort || "rack") : "rack";
+        let currentDir = table ? (table.dataset.currentDir || "asc") : "asc";
+        const rackSelect = document.querySelector(".sb-filter-rack");
+        const currentRackFilter = rackSelect ? rackSelect.value : (table ? (table.dataset.rackFilter || "") : "");
 
         if (table) {
             currentSort = table.dataset.currentSort || "rack";
@@ -1554,14 +1597,23 @@
                 const targetPage = this.dataset.page;
                 if (!targetPage) return;
 
+                const rackSelect = document.querySelector(".sb-filter-rack");
+                const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+
                 const url = new URL(window.location.href);
                 url.searchParams.set("page", targetPage);
                 url.searchParams.set("sort", currentSort);
                 url.searchParams.set("dir", currentDir);
+                if (activeRack) {
+                    url.searchParams.set("rack_filter", activeRack);
+                    url.searchParams.set("page_size", "all");
+                }
 
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
-                    url.searchParams.set("page_size", ps.value);
+                    if (!activeRack) {
+                        url.searchParams.set("page_size", ps.value);
+                    }
                 }
 
                 sbLoadInventory(url.toString());
@@ -1615,6 +1667,7 @@
         sbInitFavorites();
         sbInitInlineEditing();
         sbInitSorting();
+        sbInitRackFilter();
         sbInitInlineDescNoteEditing();
         sbInitPagination();
         sbInitQuillModal();

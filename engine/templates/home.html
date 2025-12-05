@@ -19,6 +19,7 @@
     <div class="sb-home-controls" style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:10px;">
 
         <!-- PAGE SIZE DROPDOWN -->
+        {% if not rack_filter %}
         <div class="sb-page-size-control">
             <label for="page-size-select">
                 Rows per page:
@@ -41,6 +42,7 @@
                 {% endfor %}
             </select>
         </div>
+        {% endif %}
 
         {% if can_edit or is_purchase_admin %}
         <div class="sb-add-item-wrapper" style="flex:1; display:flex; justify-content:center;">
@@ -156,8 +158,40 @@
     <div class="sb-table-wrapper">
         <table class="sb-table"
                data-current-sort="{{ sort_field }}"
-               data-current-dir="{{ sort_dir }}">
+               data-current-dir="{{ sort_dir }}"
+               data-rack-filter="{{ rack_filter|default:'' }}">
             <thead>
+            <tr class="sb-header-filter-row">
+                <th class="col-location">
+                    <select class="sb-filter-rack">
+                        <option value="" {% if not rack_filter %}selected{% endif %}>------</option>
+                        {% for r in rack_filter_values %}
+                            <option value="{{ r }}" {% if rack_filter == r %}selected{% endif %}>{{ r }}-X-X</option>
+                        {% endfor %}
+                    </select>
+                </th>
+                <th class="col-group"></th>
+                <th class="col-name"></th>
+                <th class="col-partdesc"></th>
+                <th class="col-partnum"></th>
+                <th class="col-dcm"></th>
+                <th class="col-oemname"></th>
+                <th class="col-oemnum"></th>
+                <th class="col-vendor"></th>
+                <th class="col-sourceloc"></th>
+                <th class="col-units"></th>
+                <th class="col-instock"></th>
+                <th class="col-price"></th>
+                <th class="col-reorderlevel"></th>
+                <th class="col-rt"></th>
+                <th class="col-qtyreorder"></th>
+                <th class="col-condition"></th>
+                <th class="col-disc"></th>
+                <th class="col-rev"></th>
+                <th class="col-fav"></th>
+                <th class="col-note"></th>
+                <th class="col-reorder"></th>
+            </tr>
             <tr>
                 {# LOCATION (computed) #}
                 {% with col=columns.location %}
@@ -448,7 +482,9 @@
                     <th class="col-condition sb-sortable-header"
                         data-sort-field="condition_status"
                         title="{{ col.full_label|default:'Condition status' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">{{ col.short_label|default:col.full_label|default:'Condition' }}</span>
+                        <span class="sb-header-label">
+                            {{ col.short_label|default:col.full_label|default:'Condition' }}
+                        </span>
                         <span class="sb-sort-arrow {% if sort_field == 'condition_status' %}sb-sort-arrow--active{% endif %}">
                             {% if sort_field == 'condition_status' %}
                                 {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
