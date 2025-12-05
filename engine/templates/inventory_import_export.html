@@ -1,0 +1,88 @@
+{% extends "admin/change_list.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .sb-admin-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .sb-admin-btn-green {
+        background: #2ecc71;
+        color: #fff;
+    }
+    .sb-admin-btn-green:hover {
+        background: #27ae60;
+    }
+    .sb-admin-btn-red {
+        background: #d9534f;
+        color: #fff;
+    }
+    .sb-admin-btn-red:hover {
+        background: #c9302c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Inventory import / export / delete</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="messagelist"><div class="message {{ message.tags }}">{{ message }}</div></div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="module">
+        <h2>Import inventory</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <p>
+                <label for="id_excel_file"><strong>File:</strong></label>
+                <input type="file" name="excel_file" id="id_excel_file" accept=".xlsx,.xls,.csv">
+            </p>
+            <p>
+                <button type="submit" class="sb-admin-btn sb-admin-btn-green">Upload to server</button>
+            </p>
+        </form>
+        <p class="help">
+            Expected columns (CSV/Excel header):<br>
+            For Reorder, Localization, Group, Name, Part Description, Part Number, DCM NUMBER,
+            OEM Name, OEM Number, Vendor, Source Location, Units, Quantity in Stock, Price,
+            Reorder Level, Reorder Time in Days, Quantity in Reorder, Discontinued?
+        </p>
+    </div>
+
+    <div class="module">
+        <h2>Export</h2>
+        <p>
+            <a href="?export=csv" class="sb-admin-btn sb-admin-btn-green">Download CSV from server</a>
+        </p>
+    </div>
+
+    <div class="module sb-delete-panel">
+        <h2 style="color:#a00;">Delete entire inventory</h2>
+        <p><strong>Warning:</strong> This will remove all inventory items permanently.</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="delete_all" value="1">
+            <p>
+                <label for="id_delete_password"><strong>Password (your account):</strong></label>
+                <input type="password" name="password" id="id_delete_password" required>
+            </p>
+            <p>
+                <button type="submit" class="sb-admin-btn sb-admin-btn-red">Delete all items</button>
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}

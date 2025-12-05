@@ -16,7 +16,7 @@ from django.db.models import (
     Subquery,
     F,
 )
-from django.db.models.functions import Lower, Substr, RowNumber
+from django.db.models.functions import Lower, Substr, RowNumber, Cast
 
 from .models import (
     InventoryItem,
@@ -184,6 +184,9 @@ def home_view(request):
     # Czy stosujemy specjalny klucz sortowania dla NAME?
     use_name_sort_key = (sort_field == "name")
 
+    # Total items for header info
+    item_count = InventoryItem.objects.count()
+
     # --- BASE QUERYSET + OPTIONAL ANNOTATIONS ---
     base_qs = InventoryItem.objects.all()
 
@@ -277,11 +280,15 @@ def home_view(request):
             order_by_args.append("group__name")
         order_by_args.extend(["rack", "shelf", "box", "name"])
     elif sort_field == "location":
-        # sort by composite rack/shelf/box
+        # SQLite-friendly: use CAST(box AS INTEGER) to pull leading digits;
+        # strings without digits cast to 0. This mimics numeric-first ordering.
+        base_qs = base_qs.annotate(
+            location_box_num=Cast("box", IntegerField())
+        )
         if sort_dir == "desc":
-            order_by_args.extend(["-rack", "-shelf", "-box", "name"])
+            order_by_args.extend(["-rack", "-shelf", "-location_box_num", "-box", "name"])
         else:
-            order_by_args.extend(["rack", "shelf", "box", "name"])
+            order_by_args.extend(["rack", "shelf", "location_box_num", "box", "name"])
     elif sort_field == "part_description":
         # presence first (has content), then fallback by name
         if sort_dir == "desc":
@@ -477,6 +484,7 @@ def home_view(request):
         "show_last_ellipsis": show_last_ellipsis,
         "rack_filter": rack_filter_int,
         "selected_rack_count": selected_rack_count,
+        "item_count": item_count,
 
         # Column settings from admin
         "columns": columns,                      # field_name → InventoryColumn

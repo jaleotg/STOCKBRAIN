@@ -262,6 +262,16 @@
     background: #27ae60;
 }
 
+.sb-light .sb-header-count {
+    color: #fff;
+}
+
+.sb-light .sb-delete-panel {
+    background: #fff3f3;
+    border-color: #a00;
+    color: #222;
+}
+
 .sb-light .sb-title {
     color: #2c3e50;
 }

@@ -309,6 +309,16 @@
     background: #27ae60;
 }
 
+.sb-dark .sb-header-count {
+    color: #dcdcdc;
+}
+
+.sb-dark .sb-delete-panel {
+    background: #111;
+    border-color: #a00;
+    color: #eee;
+}
+
 /* Row highlighting */
 .sb-dark .sb-row-verify {
     background-color: #7a6400 !important;

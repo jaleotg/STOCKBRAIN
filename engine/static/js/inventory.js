@@ -574,6 +574,32 @@
         } catch (e) {}
     }
 
+    function updateHeaderCountFromCard() {
+        const card = document.querySelector(".sb-card");
+        const counterEl = document.querySelector(".sb-header-count");
+        if (!card || !counterEl) return;
+        const val = card.dataset.totalCount;
+        if (val !== undefined) {
+            counterEl.textContent = `${val} items in base`;
+        }
+    }
+
+    function adjustHeaderCount(delta) {
+        const card = document.querySelector(".sb-card");
+        const counterEl = document.querySelector(".sb-header-count");
+        if (!counterEl) return;
+        let current = card && card.dataset.totalCount ? parseInt(card.dataset.totalCount, 10) : null;
+        if (Number.isNaN(current)) current = null;
+        if (current === null) {
+            const match = counterEl.textContent.match(/^\s*(\d+)/);
+            if (match) current = parseInt(match[1], 10);
+        }
+        if (current === null) return;
+        const next = current + delta;
+        if (card) card.dataset.totalCount = String(next);
+        counterEl.textContent = `${next} items in base`;
+    }
+
     function applyPendingHighlight() {
         let id = null;
         try {
@@ -750,6 +776,7 @@
             okBtn.addEventListener("click", () => {
                 closeSuccess();
                 const url = new URL(window.location.href);
+                adjustHeaderCount(-1);
                 sbLoadInventory(url.toString());
             });
         }
@@ -921,12 +948,14 @@
                         const firstInput = form ? form.querySelector("input, select, textarea") : null;
                         if (firstInput) firstInput.focus();
                         alert("Item saved. You can add the next one.");
+                        adjustHeaderCount(1);
                         return; // stay in modal, do not navigate
                     } else {
                         closeModal(true);
                     }
 
                     sbEnsureNewItemVisible(newId, targetPage);
+                    adjustHeaderCount(1);
                 })
                 .catch(err => {
                     console.error("Create item error:", err);
@@ -1704,6 +1733,7 @@
                 sbInitAddItemModal();
                 sbInitDeleteModal();
                 applyPendingHighlight();
+                updateHeaderCountFromCard();
                 if (typeof opts.onLoaded === "function") {
                     opts.onLoaded();
                 }

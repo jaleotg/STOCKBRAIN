@@ -1,4 +1,7 @@
 from django.contrib import admin, messages
+from django.contrib.auth import authenticate
+from django.http import HttpResponse
+import csv
 from django.shortcuts import redirect
 
 from .models import (
@@ -19,8 +22,8 @@ class InventoryImportExport(InventoryItem):
 
     class Meta:
         proxy = True
-        verbose_name = "Inventory import / export"
-        verbose_name_plural = "Inventory import / export"
+        verbose_name = "Inventory import / export / delete"
+        verbose_name_plural = "Inventory import / export / delete"
 
 
 @admin.register(InventoryImportExport)
@@ -38,24 +41,81 @@ class InventoryImportExportAdmin(admin.ModelAdmin):
         return False
 
     def changelist_view(self, request, extra_context=None):
-        if request.method == "POST" and "excel_file" in request.FILES:
-            uploaded_file = request.FILES["excel_file"]
-            try:
-                # Your importer can return (created, updated) or just a count.
-                result = import_inventory_from_excel(uploaded_file)
-                if isinstance(result, tuple) and len(result) == 2:
-                    created, updated = result
-                    messages.success(
-                        request,
-                        f"Import finished. Created: {created}, updated: {updated} items.",
-                    )
+        # CSV export
+        if request.GET.get("export") == "csv":
+            headers = [
+                "For Reorder",
+                "Localization",
+                "Group",
+                "Name",
+                "Part Description",
+                "Part Number",
+                "DCM NUMBER",
+                "OEM Name",
+                "OEM Number",
+                "Vendor",
+                "Source Location",
+                "Units",
+                "Quantity in Stock",
+                "Price",
+                "Reorder Level",
+                "Reorder Time in Days",
+                "Quantity in Reorder",
+                "Discontinued?",
+            ]
+
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = 'attachment; filename="inventory.csv"'
+            writer = csv.writer(response)
+            writer.writerow(headers)
+
+            for item in InventoryItem.objects.all().order_by("rack", "shelf", "box"):
+                localization = f"{item.rack}-{item.shelf}-{item.box}"
+                writer.writerow([
+                    1 if item.for_reorder else 0,
+                    localization,
+                    item.group_name or "",
+                    item.name or "",
+                    item.part_description or "",
+                    item.part_number or "",
+                    item.dcm_number or "",
+                    item.oem_name or "",
+                    item.oem_number or "",
+                    item.vendor or "",
+                    item.source_location or "",
+                    item.units or "",
+                    item.quantity_in_stock if item.quantity_in_stock is not None else "",
+                    item.price if item.price is not None else "",
+                    item.reorder_level if item.reorder_level is not None else "",
+                    item.reorder_time_days if item.reorder_time_days is not None else "",
+                    item.quantity_in_reorder if item.quantity_in_reorder is not None else "",
+                    1 if item.discontinued else 0,
+                ])
+            return response
+
+        if request.method == "POST":
+            # Delete all inventory (requires password)
+            if request.POST.get("delete_all") == "1":
+                password = request.POST.get("password") or ""
+                user = authenticate(request, username=request.user.username, password=password)
+                if not user:
+                    messages.error(request, "Delete failed: invalid password.")
                 else:
+                    deleted_count = InventoryItem.objects.all().count()
+                    InventoryItem.objects.all().delete()
                     messages.success(
                         request,
-                        f"Import finished. Processed {result} items.",
+                        f"Deleted entire inventory: {deleted_count} items removed."
                     )
-            except Exception as exc:
-                messages.error(request, f"Import failed: {exc}")
+
+            # Import file
+            if "excel_file" in request.FILES:
+                uploaded_file = request.FILES["excel_file"]
+                try:
+                    result = import_inventory_from_excel(uploaded_file)
+                    messages.success(request, f"Import finished: {result}")
+                except Exception as exc:
+                    messages.error(request, f"Import failed: {exc}")
         return super().changelist_view(request, extra_context=extra_context)
 
 

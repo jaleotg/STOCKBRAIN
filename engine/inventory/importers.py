@@ -41,21 +41,92 @@ def import_inventory_from_excel(excel_file):
       'For Reorder', 'Localization', 'Group', 'Name', etc.).
     """
 
-    # 1) Read the sheet with an offset header
-    df = pd.read_excel(excel_file, sheet_name="Inventory List", header=1)
+    # 1) Read file (CSV or Excel) very defensively (no header)
+    name = getattr(excel_file, "name", "").lower()
+    df = None
 
-    # 2) First row in this DataFrame contains the "real" column names
-    header_row = df.iloc[0]
-    df_data = df.iloc[1:].copy()
+    def reset_file(f):
+        if hasattr(f, "seek"):
+            try:
+                f.seek(0)
+            except Exception:
+                pass
+
+    if name.endswith(".csv"):
+        # Try multiple separators, header=None to keep all rows for header detection
+        for sep in [",", ";", "\t", "|"]:
+            reset_file(excel_file)
+            try:
+                tmp = pd.read_csv(excel_file, sep=sep, header=None, dtype=str)
+                if tmp.shape[1] > 1 or not tmp.empty:
+                    df = tmp
+                    break
+            except Exception:
+                continue
+        if df is None:
+            reset_file(excel_file)
+            df = pd.read_csv(excel_file, sep=None, engine="python", header=None, dtype=str)
+    else:
+        try:
+            df = pd.read_excel(excel_file, sheet_name="Inventory List", header=None, dtype=str)
+        except Exception:
+            reset_file(excel_file)
+            try:
+                df = pd.read_excel(excel_file, header=None, dtype=str)
+            except Exception:
+                reset_file(excel_file)
+                df = pd.read_excel(excel_file, dtype=str)
+
+    # Drop columns that are completely empty
+    df = df.dropna(axis=1, how="all")
+
+    # Detect header row: find the first row containing any of expected header tokens
+    expected_tokens = {"localization", "localisation", "location", "for reorder", "group", "name"}
+    header_idx = None
+    for idx, row in df.iterrows():
+        values = [str(v).strip().lower() for v in row.tolist()]
+        if any(tok in values for tok in expected_tokens):
+            header_idx = idx
+            break
+
+    if header_idx is None:
+        # fallback: assume first non-empty row is header
+        header_idx = 0
+
+    header_row = df.iloc[header_idx]
+    df_data = df.iloc[header_idx + 1 :].copy()
     df_data.columns = header_row.values
+
+    # After header assignment, drop columns that remain completely empty
+    df_data = df_data.dropna(axis=1, how="all")
 
     created = 0
     skipped = 0
+    missing_loc = 0
+    rack_invalid = 0
+
+    # Map normalized column names -> actual columns in the file
+    colmap = {str(c).strip().lower(): c for c in df_data.columns}
+
+    def get_value(row, candidates):
+        """
+        Fetch value from row using a list of candidate column names (case/space-insensitive).
+        """
+        for cand in candidates:
+            key = cand.strip().lower()
+            if key in colmap:
+                return row.get(colmap[key])
+        return None
 
     def parse_loc(loc_value):
         """
         Parse 'Localization' into rack, shelf, box.
-        Expected format: '1-B-1' (always with '-' between R, S, B).
+        Expected format examples:
+        '1-B-1', '10-A', '10-C-5-12', '12-A-1/3', '10-D-1-BK'.
+        Rule:
+        - first token -> rack (int if possible)
+        - second token (if present) -> shelf
+        - rest (if any) joined with '-' -> box
         """
         if pd.isna(loc_value):
             return None, None, None
@@ -65,10 +136,13 @@ def import_inventory_from_excel(excel_file):
             return None, None, None
 
         parts = text.split("-")
-        if len(parts) != 3:
+        if not parts:
             return None, None, None
 
-        rack_str, shelf_str, box_str = parts
+        rack_str = parts[0]
+        shelf_str = parts[1] if len(parts) > 1 else "0"
+        # if no explicit box provided, default to "0"
+        box_str = "-".join(parts[2:]) if len(parts) > 2 else "0"
 
         try:
             rack_val = int(rack_str)
@@ -88,13 +162,22 @@ def import_inventory_from_excel(excel_file):
 
     @transaction.atomic
     def _do_import():
-        nonlocal created, skipped
+        nonlocal created, skipped, missing_loc, rack_invalid
 
         for _, row in df_data.iterrows():
             rack, shelf, box = parse_loc(row.get("Localization"))
+            if rack is None and "localization" not in colmap:
+                # Try alternative column names for location
+                loc_val = get_value(row, ["localization", "location", "localisation", "lokalizacja"])
+                rack, shelf, box = parse_loc(loc_val)
 
             # If localization is invalid or missing, skip the row
-            if rack is None or not shelf or not box:
+            if rack is None:
+                loc_raw = row.get("Localization")
+                if pd.isna(loc_raw):
+                    missing_loc += 1
+                else:
+                    rack_invalid += 1
                 skipped += 1
                 continue
 
@@ -102,22 +185,22 @@ def import_inventory_from_excel(excel_file):
                 rack=rack,
                 shelf=shelf,
                 box=box,
-                group_name=row.get("Group") or "",
-                name=row.get("Name") or "",
-                part_description=row.get("Part Description") or "",
-                part_number=row.get("Part Number") or "",
-                dcm_number=row.get("DCM NUMBER") or "",
-                oem_name=row.get("OEM Name") or "",
-                oem_number=row.get("OEM Number") or "",
-                vendor=row.get("Vendor") or "",
-                source_location=row.get("Source Location") or "",
-                units=row.get("Units") or "",
-                quantity_in_stock=parse_int(row.get("Quantity in Stock")),
-                price=parse_decimal(row.get("Price")),
-                reorder_level=parse_int(row.get("Reorder Level")),
-                reorder_time_days=parse_int(row.get("Reorder Time in Days")),
-                quantity_in_reorder=parse_int(row.get("Quantity in Reorder")),
-                discontinued=parse_bool_discontinued(row.get("Discontinued?")),
+                group_name=get_value(row, ["group", "grupa"]) or "",
+                name=get_value(row, ["name"]) or "",
+                part_description=get_value(row, ["part description", "description"]) or "",
+                part_number=get_value(row, ["part number"]) or "",
+                dcm_number=get_value(row, ["dcm number"]) or "",
+                oem_name=get_value(row, ["oem name"]) or "",
+                oem_number=get_value(row, ["oem number"]) or "",
+                vendor=get_value(row, ["vendor"]) or "",
+                source_location=get_value(row, ["source location", "source"]) or "",
+                units=get_value(row, ["units", "unit"]) or "",
+                quantity_in_stock=parse_int(get_value(row, ["quantity in stock", "qty in stock", "stock quantity"])),
+                price=parse_decimal(get_value(row, ["price", "unit price"])),
+                reorder_level=parse_int(get_value(row, ["reorder level"])),
+                reorder_time_days=parse_int(get_value(row, ["reorder time in days", "reorder time", "rt"])),
+                quantity_in_reorder=parse_int(get_value(row, ["quantity in reorder", "reorder quantity"])),
+                discontinued=parse_bool_discontinued(get_value(row, ["discontinued?", "discontinued", "disc"])),
             )
 
             created += 1
@@ -127,4 +210,8 @@ def import_inventory_from_excel(excel_file):
     return {
         "created": created,
         "skipped": skipped,
+        "missing_loc": missing_loc,
+        "rack_invalid": rack_invalid,
+        "columns": list(df_data.columns),
+        "total_rows": len(df_data),
     }
