@@ -17,21 +17,6 @@ ALLOWED_HOSTS = [
     "100.120.14.89" #tailscale
 ]
 
-# ------------------------------------------
-# CSRF
-# ------------------------------------------
-# Trust the same hosts for CSRF (esp. for admin POST logout)
-CSRF_TRUSTED_ORIGINS = [
-    "http://192.168.0.200",
-    "http://192.168.0.200:8000",
-    "http://localhost",
-    "http://localhost:8000",
-    "http://127.0.0.1",
-    "http://127.0.0.1:8000",
-    "http://100.120.14.89",
-    "http://100.120.14.89:8000",
-    "https://100.120.14.89",
-]
 
 # ------------------------------------------
 # INSTALLED APPS
@@ -153,8 +138,7 @@ USE_TZ = True
 
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
-# Admin logout (Django admin) powinien wracać na stronę logowania admina.
-LOGOUT_REDIRECT_URL = "/admin/login/"
+LOGOUT_REDIRECT_URL = "/login/"
 
 # ------------------------------------------
 # STATIC FILES

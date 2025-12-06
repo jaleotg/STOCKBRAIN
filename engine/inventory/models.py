@@ -39,7 +39,9 @@ class InventoryItem(models.Model):
     )
 
     name = models.CharField("Name", max_length=100)
-    part_description = models.CharField("Part Description", max_length=255)
+    # Some descriptions from the import can exceed 255 chars (e.g. long adhesive specs),
+    # so use TextField to avoid truncation/import errors.
+    part_description = models.TextField("Part Description")
     part_number = models.CharField("Part Number", max_length=100, blank=True)
     dcm_number = models.CharField("DCM NUMBER", max_length=100, blank=True)
     oem_name = models.CharField("OEM Name", max_length=100, blank=True)

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import (
@@ -96,6 +97,7 @@ def logout_view(request):
 # ============================================
 
 @login_required
+@ensure_csrf_cookie
 def home_view(request):
     """
     Main inventory view:
@@ -437,13 +439,31 @@ def home_view(request):
     # Wczytanie ustawień i listy kolumn ograniczonych
     restricted_fields = set()
     settings_obj = InventorySettings.objects.first()
-    if settings_obj:
-        restricted_fields = set(
-            settings_obj.restricted_columns.values_list("field_name", flat=True)
-        )
+    if settings_obj is None:
+        # Ensure there is always a settings row, so admin choices take effect.
+        settings_obj = InventorySettings.objects.create()
+    restricted_fields = set(
+        settings_obj.restricted_columns.values_list("field_name", flat=True)
+    )
 
     # Słownik definicji kolumn (pod tooltipy / pełne nazwy)
     columns = {col.field_name: col for col in InventoryColumn.objects.all()}
+    # Historycznie R/S/B były usunięte z InventoryColumn, ale szablon add‑item
+    # wciąż odwołuje się do rack/shelf/box. Gdy brak wpisu w bazie – dodaj
+    # tymczasowe „kolumny” żeby nie wywalać szablonu.
+    from types import SimpleNamespace
+    for _field, _label in [
+        ("rack", "Rack"),
+        ("shelf", "Shelf"),
+        ("box", "Box"),
+    ]:
+        if _field not in columns:
+            columns[_field] = SimpleNamespace(
+                field_name=_field,
+                full_label=_label,
+                short_label="",
+                functional_description="",
+            )
 
     units = Unit.objects.all().order_by("code")
     groups = ItemGroup.objects.all().order_by("name")
