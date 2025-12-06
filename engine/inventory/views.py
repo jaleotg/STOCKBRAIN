@@ -283,10 +283,9 @@ def home_view(request):
             order_by_args.append("group__name")
         order_by_args.extend(["rack", "shelf", "box", "name"])
     elif sort_field == "location":
-        # Natural ordering: rack (int), shelf (letter), numeric parts of box (first, last), then text tail.
-        # Examples handled: "5-2", "5-19", "10-C-5-20", "10-C-5-20-BK".
+        # Natural ordering: rack, shelf, numeric tokens inside box (all), then text tail.
+        # Extract two numeric tokens: leading and last; use flags to push non-numeric last.
         base_qs = base_qs.annotate(
-            # first numeric token from box
             location_box_num=Cast(
                 NullIf(
                     Func(F("box"), Value(r"^([0-9]+).*$"), Value(r"\1"), function="regexp_replace"),
@@ -294,7 +293,6 @@ def home_view(request):
                 ),
                 IntegerField(),
             ),
-            # last numeric token from box (covers patterns z dwoma liczbami)
             location_box_num_last=Cast(
                 NullIf(
                     Func(F("box"), Value(r".*?([0-9]+)(?!.*[0-9]).*$"), Value(r"\1"), function="regexp_replace"),
@@ -302,14 +300,12 @@ def home_view(request):
                 ),
                 IntegerField(),
             ),
-            # remainder after stripping leading number and trailing number (best-effort)
             location_box_tail=Func(
                 Func(F("box"), Value(r"^([0-9]+)"), Value(""), function="regexp_replace"),
                 Value(r"([0-9]+)(?!.*[0-9]).*$"),
                 Value(""),
                 function="regexp_replace",
             ),
-            # flags to push entries without numbers to the end
             location_box_num_missing=Case(
                 When(location_box_num__isnull=True, then=Value(1)),
                 default=Value(0),
