@@ -209,8 +209,8 @@ class InventorySettings(models.Model):
     )
 
     class Meta:
-        verbose_name = "Settings"
-        verbose_name_plural = "Settings"
+        verbose_name = "Column Access"
+        verbose_name_plural = "Column Access"
 
     def __str__(self) -> str:
         return "Inventory settings"
@@ -220,8 +220,8 @@ class Unit(models.Model):
     code = models.CharField(max_length=20, unique=True)
 
     class Meta:
-        verbose_name = "Unit"
-        verbose_name_plural = "Units"
+        verbose_name = "Unit of Measure"
+        verbose_name_plural = "Units of Measure"
 
     def __str__(self) -> str:
         return self.code
@@ -266,8 +266,8 @@ class ItemGroup(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
-        verbose_name = "Group"
-        verbose_name_plural = "Groups"
+        verbose_name = "Group of Items"
+        verbose_name_plural = "Groups of Items"
 
     def __str__(self) -> str:
         return self.name

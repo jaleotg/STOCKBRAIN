@@ -17,7 +17,8 @@ from django.db.models import (
     Subquery,
     F,
 )
-from django.db.models.functions import Lower, Substr, RowNumber, Cast
+from django.db.models.functions import Lower, Substr, RowNumber, Cast, NullIf
+from django.db.models import Func
 
 from .models import (
     InventoryItem,
@@ -282,15 +283,68 @@ def home_view(request):
             order_by_args.append("group__name")
         order_by_args.extend(["rack", "shelf", "box", "name"])
     elif sort_field == "location":
-        # SQLite-friendly: use CAST(box AS INTEGER) to pull leading digits;
-        # strings without digits cast to 0. This mimics numeric-first ordering.
+        # Natural ordering: rack (int), shelf (letter), numeric parts of box (first, last), then text tail.
+        # Examples handled: "5-2", "5-19", "10-C-5-20", "10-C-5-20-BK".
         base_qs = base_qs.annotate(
-            location_box_num=Cast("box", IntegerField())
+            # first numeric token from box
+            location_box_num=Cast(
+                NullIf(
+                    Func(F("box"), Value(r"^([0-9]+).*$"), Value(r"\1"), function="regexp_replace"),
+                    Value(""),
+                ),
+                IntegerField(),
+            ),
+            # last numeric token from box (covers patterns z dwoma liczbami)
+            location_box_num_last=Cast(
+                NullIf(
+                    Func(F("box"), Value(r".*?([0-9]+)(?!.*[0-9]).*$"), Value(r"\1"), function="regexp_replace"),
+                    Value(""),
+                ),
+                IntegerField(),
+            ),
+            # remainder after stripping leading number and trailing number (best-effort)
+            location_box_tail=Func(
+                Func(F("box"), Value(r"^([0-9]+)"), Value(""), function="regexp_replace"),
+                Value(r"([0-9]+)(?!.*[0-9]).*$"),
+                Value(""),
+                function="regexp_replace",
+            ),
+            # flags to push entries without numbers to the end
+            location_box_num_missing=Case(
+                When(location_box_num__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+            location_box_num_last_missing=Case(
+                When(location_box_num_last__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
         )
         if sort_dir == "desc":
-            order_by_args.extend(["-rack", "-shelf", "-location_box_num", "-box", "name"])
+            order_by_args.extend([
+                "-rack",
+                "-shelf",
+                "location_box_num_missing",
+                "-location_box_num",
+                "location_box_num_last_missing",
+                "-location_box_num_last",
+                "-location_box_tail",
+                "-box",
+                "name",
+            ])
         else:
-            order_by_args.extend(["rack", "shelf", "location_box_num", "box", "name"])
+            order_by_args.extend([
+                "rack",
+                "shelf",
+                "location_box_num_missing",
+                "location_box_num",
+                "location_box_num_last_missing",
+                "location_box_num_last",
+                "location_box_tail",
+                "box",
+                "name",
+            ])
     elif sort_field == "part_description":
         # presence first (has content), then fallback by name
         if sort_dir == "desc":
