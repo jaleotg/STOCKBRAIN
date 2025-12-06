@@ -165,7 +165,8 @@
         <table class="sb-table"
                data-current-sort="{{ sort_field }}"
                data-current-dir="{{ sort_dir }}"
-               data-rack-filter="{{ rack_filter|default:'' }}">
+               data-rack-filter="{{ rack_filter|default:'' }}"
+               data-group-filter="{{ group_filter|default:'' }}">
             <thead>
             <tr class="sb-header-filter-row">
                 <th class="col-location">
@@ -176,7 +177,14 @@
                         {% endfor %}
                     </select>
                 </th>
-                <th class="col-group"></th>
+                <th class="col-group">
+                    <select class="sb-filter-group">
+                        <option value="" {% if not group_filter %}selected{% endif %}>------</option>
+                        {% for g in groups %}
+                            <option value="{{ g.id }}" {% if group_filter == g.id %}selected{% endif %}>{{ g.name }}</option>
+                        {% endfor %}
+                    </select>
+                </th>
                 <th class="col-name"></th>
                 <th class="col-partdesc"></th>
                 <th class="col-partnum"></th>

@@ -1622,6 +1622,8 @@
 
                 const currentSort = table.dataset.currentSort || "rack";
                 const currentDir = table.dataset.currentDir || "asc";
+                const currentRackFilter = table.dataset.rackFilter || "";
+                const currentGroupFilter = table.dataset.groupFilter || "";
 
                 const headers = table.querySelectorAll("thead .sb-sortable-header");
                 if (!headers.length) return;
@@ -1635,6 +1637,8 @@
 
                         const rackSelect = document.querySelector(".sb-filter-rack");
                         const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+                        const groupSelect = document.querySelector(".sb-filter-group");
+                        const activeGroup = groupSelect ? groupSelect.value : currentGroupFilter;
 
                         // Dodajemy klas? "loading" do tabeli i klikni?tego naglowka
                         table.classList.add("sb-table-sorting");
@@ -1656,11 +1660,19 @@
                         if (activeRack) {
                             url.searchParams.set("rack_filter", activeRack);
                             url.searchParams.set("page_size", "all");
+                        } else {
+                            url.searchParams.delete("rack_filter");
+                        }
+                        if (activeGroup) {
+                            url.searchParams.set("group_filter", activeGroup);
+                            url.searchParams.set("page_size", "all");
+                        } else {
+                            url.searchParams.delete("group_filter");
                         }
 
                         const ps = document.getElementById("page-size-select");
                         if (ps) {
-                            if (!activeRack) {
+                            if (!activeRack && !activeGroup) {
                                 url.searchParams.set("page_size", ps.value);
                             }
                         }
@@ -1757,6 +1769,8 @@
         let currentDir = table ? (table.dataset.currentDir || "asc") : "asc";
         const rackSelect = document.querySelector(".sb-filter-rack");
         const currentRackFilter = rackSelect ? rackSelect.value : (table ? (table.dataset.rackFilter || "") : "");
+        const groupSelect = document.querySelector(".sb-filter-group");
+        const currentGroupFilter = groupSelect ? groupSelect.value : (table ? (table.dataset.groupFilter || "") : "");
 
         if (table) {
             currentSort = table.dataset.currentSort || "rack";
@@ -1774,6 +1788,20 @@
                 url.searchParams.set("page_size", pageSize);
                 url.searchParams.set("sort", currentSort);
                 url.searchParams.set("dir", currentDir);
+                const rackSelect = document.querySelector(".sb-filter-rack");
+                const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+                const groupSelect = document.querySelector(".sb-filter-group");
+                const activeGroup = groupSelect ? groupSelect.value : currentGroupFilter;
+                if (activeRack) {
+                    url.searchParams.set("rack_filter", activeRack);
+                } else {
+                    url.searchParams.delete("rack_filter");
+                }
+                if (activeGroup) {
+                    url.searchParams.set("group_filter", activeGroup);
+                } else {
+                    url.searchParams.delete("group_filter");
+                }
 
                 sbLoadInventory(url.toString());
             });
@@ -1789,6 +1817,8 @@
 
                 const rackSelect = document.querySelector(".sb-filter-rack");
                 const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+                const groupSelect = document.querySelector(".sb-filter-group");
+                const activeGroup = groupSelect ? groupSelect.value : currentGroupFilter;
 
                 const url = new URL(window.location.href);
                 url.searchParams.set("page", targetPage);
@@ -1797,11 +1827,19 @@
                 if (activeRack) {
                     url.searchParams.set("rack_filter", activeRack);
                     url.searchParams.set("page_size", "all");
+                } else {
+                    url.searchParams.delete("rack_filter");
+                }
+                if (activeGroup) {
+                    url.searchParams.set("group_filter", activeGroup);
+                    url.searchParams.set("page_size", "all");
+                } else {
+                    url.searchParams.delete("group_filter");
                 }
 
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
-                    if (!activeRack) {
+                    if (!activeRack && !activeGroup) {
                         url.searchParams.set("page_size", ps.value);
                     }
                 }

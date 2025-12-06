@@ -138,7 +138,7 @@ def home_view(request):
             except (TypeError, ValueError):
                 page_size = 50
 
-    # --- RACK FILTER ---
+    # --- RACK & GROUP FILTERS ---
     rack_filter = request.GET.get("rack_filter")
     rack_filter_int = None
     if rack_filter:
@@ -146,6 +146,14 @@ def home_view(request):
             rack_filter_int = int(rack_filter)
         except ValueError:
             rack_filter_int = None
+
+    group_filter = request.GET.get("group_filter")
+    group_filter_int = None
+    if group_filter:
+        try:
+            group_filter_int = int(group_filter)
+        except ValueError:
+            group_filter_int = None
 
     # --- SORTING (R, S, Name, Group) ---
     sort_field = request.GET.get("sort", "rack")
@@ -227,8 +235,14 @@ def home_view(request):
             output_field=IntegerField(),
         ),
     )
+    filters_applied = False
     if rack_filter_int is not None:
         base_qs = base_qs.filter(rack=rack_filter_int)
+        filters_applied = True
+    if group_filter_int is not None:
+        base_qs = base_qs.filter(group_id=group_filter_int)
+        filters_applied = True
+    if filters_applied:
         page_size = "all"
 
     if use_name_sort_key:
@@ -553,6 +567,7 @@ def home_view(request):
         "show_first_ellipsis": show_first_ellipsis,
         "show_last_ellipsis": show_last_ellipsis,
         "rack_filter": rack_filter_int,
+        "group_filter": group_filter_int,
         "selected_rack_count": selected_rack_count,
         "item_count": item_count,
 
