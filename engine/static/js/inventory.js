@@ -5,6 +5,7 @@
     // Global flag from Django context: can user edit inventory fields?
     const CAN_EDIT = !!(window && window.CAN_EDIT);
     const HIGHLIGHT_KEY = "sb_new_item_highlight";
+    let progressTimer = null;
 
     const CELL_STATE_CLASSES = {
         focus: "sb-cell-focus",
@@ -708,6 +709,45 @@
         // kontrolny komunikat dokad nastapi przekierowanie
         rememberHighlight(itemId);
         window.location.href = url.toString();
+    }
+
+    /* ================================================
+       PROGRESS BAR (AJAX LOADING)
+    ================================================= */
+    function getProgressEls() {
+        const container = document.querySelector(".sb-progress");
+        const bar = container ? container.querySelector(".sb-progress-bar") : null;
+        return { container, bar };
+    }
+
+    function sbProgressStart() {
+        const { container, bar } = getProgressEls();
+        if (!container || !bar) return;
+        if (progressTimer) {
+            clearInterval(progressTimer);
+            progressTimer = null;
+        }
+        container.style.display = "block";
+        bar.style.width = "8%";
+        let current = 8;
+        progressTimer = setInterval(() => {
+            current = Math.min(current + Math.random() * 12, 90);
+            bar.style.width = `${current}%`;
+        }, 120);
+    }
+
+    function sbProgressFinish() {
+        const { container, bar } = getProgressEls();
+        if (!container || !bar) return;
+        if (progressTimer) {
+            clearInterval(progressTimer);
+            progressTimer = null;
+        }
+        bar.style.width = "100%";
+        setTimeout(() => {
+            bar.style.width = "0%";
+            container.style.display = "none";
+        }, 180);
     }
 
     /* ================================================
@@ -1768,6 +1808,8 @@
             ? { left: oldWrapper.scrollLeft, top: oldWrapper.scrollTop }
             : { left: 0, top: 0 };
 
+        sbProgressStart();
+
         fetch(url, {
             method: "GET",
             headers: {
@@ -1817,12 +1859,14 @@
                 sbInitDeleteModal();
                 applyPendingHighlight();
                 updateHeaderCountFromCard();
+                sbProgressFinish();
                 if (typeof opts.onLoaded === "function") {
                     opts.onLoaded();
                 }
             })
             .catch(err => {
                 console.error("Pagination AJAX error:", err);
+                sbProgressFinish();
                 if (typeof opts.onError === "function") {
                     opts.onError(err);
                 }

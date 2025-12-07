@@ -72,8 +72,8 @@
         {% if can_edit or is_purchase_admin %}
         <div class="sb-add-item-wrapper" style="flex:1; display:flex; justify-content:center;">
             <button type="button" id="sb-add-item-btn" class="sb-add-item-btn">
-                +
-                <span>Add new item</span>
+                <span class="sb-search-icon sb-plus-icon">+</span>
+                <span>item</span>
             </button>
         </div>
         {% endif %}
@@ -179,6 +179,10 @@
     <!-- ===================================== -->
     <!--                TABLE                  -->
     <!-- ===================================== -->
+
+    <div class="sb-progress">
+        <div class="sb-progress-bar"></div>
+    </div>
 
     <div class="sb-table-wrapper">
         <table class="sb-table"
