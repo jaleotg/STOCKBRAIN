@@ -213,22 +213,53 @@
         const table = document.querySelector(".sb-table");
         if (!select || !table) return;
 
+        const currentRackFilter = table.dataset.rackFilter || "";
         const currentSort = table.dataset.currentSort || "rack";
         const currentDir = table.dataset.currentDir || "asc";
+        const currentGroupFilter = table.dataset.groupFilter || "";
+        const currentSearch = table.dataset.search || "";
+
+        function getActiveValue(sel, fallback) {
+            if (sel && sel.value) return sel.value;
+            return fallback || "";
+        }
 
         select.addEventListener("change", function () {
             const url = new URL(window.location.href);
+            const groupSelect = document.querySelector(".sb-filter-group");
+            const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
+            const searchInput = document.getElementById("sb-search-input");
+            const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+
             if (this.value) {
                 url.searchParams.set("rack_filter", this.value);
-                url.searchParams.set("page_size", "all");
             } else {
                 url.searchParams.delete("rack_filter");
-                // wracamy do ustawionego page size
+            }
+            if (activeGroup) {
+                url.searchParams.set("group_filter", activeGroup);
+            } else {
+                url.searchParams.delete("group_filter");
+            }
+            if (activeSearch) {
+                url.searchParams.set("search", activeSearch);
+            } else {
+                url.searchParams.delete("search");
+            }
+
+            // page_size: all jeśli jakikolwiek filtr aktywny
+            const anyFilter = (!!this.value) || (!!activeGroup) || (!!activeSearch);
+            if (anyFilter) {
+                url.searchParams.set("page_size", "all");
+            } else {
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
                     url.searchParams.set("page_size", ps.value);
+                } else {
+                    url.searchParams.delete("page_size");
                 }
             }
+
             url.searchParams.set("page", 1);
             url.searchParams.set("sort", currentSort);
             url.searchParams.set("dir", currentDir);
@@ -242,19 +273,49 @@
         const table = document.querySelector(".sb-table");
         if (!select || !table) return;
 
+        const currentGroupFilter = table.dataset.groupFilter || "";
         const currentSort = table.dataset.currentSort || "rack";
         const currentDir = table.dataset.currentDir || "asc";
+        const currentRackFilter = table.dataset.rackFilter || "";
+        const currentSearch = table.dataset.search || "";
+
+        function getActiveValue(sel, fallback) {
+            if (sel && sel.value) return sel.value;
+            return fallback || "";
+        }
 
         select.addEventListener("change", function () {
             const url = new URL(window.location.href);
+            const rackSelect = document.querySelector(".sb-filter-rack");
+            const activeRack = getActiveValue(rackSelect, currentRackFilter);
+            const searchInput = document.getElementById("sb-search-input");
+            const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+
             if (this.value) {
                 url.searchParams.set("group_filter", this.value);
-                url.searchParams.set("page_size", "all");
             } else {
                 url.searchParams.delete("group_filter");
+            }
+            if (activeRack) {
+                url.searchParams.set("rack_filter", activeRack);
+            } else {
+                url.searchParams.delete("rack_filter");
+            }
+            if (activeSearch) {
+                url.searchParams.set("search", activeSearch);
+            } else {
+                url.searchParams.delete("search");
+            }
+
+            const anyFilter = (!!this.value) || (!!activeRack) || (!!activeSearch);
+            if (anyFilter) {
+                url.searchParams.set("page_size", "all");
+            } else {
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
                     url.searchParams.set("page_size", ps.value);
+                } else {
+                    url.searchParams.delete("page_size");
                 }
             }
             url.searchParams.set("page", 1);
@@ -1624,6 +1685,7 @@
                 const currentDir = table.dataset.currentDir || "asc";
                 const currentRackFilter = table.dataset.rackFilter || "";
                 const currentGroupFilter = table.dataset.groupFilter || "";
+                const currentSearch = table.dataset.search || "";
 
                 const headers = table.querySelectorAll("thead .sb-sortable-header");
                 if (!headers.length) return;
@@ -1636,9 +1698,11 @@
                         e.preventDefault();
 
                         const rackSelect = document.querySelector(".sb-filter-rack");
-                        const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+                        const activeRack = (rackSelect && rackSelect.value) ? rackSelect.value : currentRackFilter;
                         const groupSelect = document.querySelector(".sb-filter-group");
-                        const activeGroup = groupSelect ? groupSelect.value : currentGroupFilter;
+                        const activeGroup = (groupSelect && groupSelect.value) ? groupSelect.value : currentGroupFilter;
+                        const searchInput = document.getElementById("sb-search-input");
+                        const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
 
                         // Dodajemy klas? "loading" do tabeli i klikni?tego naglowka
                         table.classList.add("sb-table-sorting");
@@ -1669,10 +1733,16 @@
                         } else {
                             url.searchParams.delete("group_filter");
                         }
+                        if (activeSearch) {
+                            url.searchParams.set("search", activeSearch);
+                            url.searchParams.set("page_size", "all");
+                        } else {
+                            url.searchParams.delete("search");
+                        }
 
                         const ps = document.getElementById("page-size-select");
                         if (ps) {
-                            if (!activeRack && !activeGroup) {
+                            if (!activeRack && !activeGroup && !activeSearch) {
                                 url.searchParams.set("page_size", ps.value);
                             }
                         }
@@ -1737,6 +1807,7 @@
                 sbInitSorting();
                 sbInitRackFilter();
                 sbInitGroupFilter();
+                sbInitSearch();
                 sbInitInlineDescNoteEditing();
                 sbInitPagination();
                 sbInitQuillModal();
@@ -1771,10 +1842,16 @@
         const currentRackFilter = rackSelect ? rackSelect.value : (table ? (table.dataset.rackFilter || "") : "");
         const groupSelect = document.querySelector(".sb-filter-group");
         const currentGroupFilter = groupSelect ? groupSelect.value : (table ? (table.dataset.groupFilter || "") : "");
+        const currentSearch = table ? (table.dataset.search || "") : "";
 
         if (table) {
             currentSort = table.dataset.currentSort || "rack";
             currentDir = table.dataset.currentDir || "asc";
+        }
+
+        function getActiveValue(sel, fallback) {
+            if (sel && sel.value) return sel.value;
+            return fallback || "";
         }
 
         // --- dropdown Rows per page ---
@@ -1789,9 +1866,11 @@
                 url.searchParams.set("sort", currentSort);
                 url.searchParams.set("dir", currentDir);
                 const rackSelect = document.querySelector(".sb-filter-rack");
-                const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+                const activeRack = getActiveValue(rackSelect, currentRackFilter);
                 const groupSelect = document.querySelector(".sb-filter-group");
-                const activeGroup = groupSelect ? groupSelect.value : currentGroupFilter;
+                const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
+                const searchInput = document.getElementById("sb-search-input");
+                const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
                 if (activeRack) {
                     url.searchParams.set("rack_filter", activeRack);
                 } else {
@@ -1801,6 +1880,11 @@
                     url.searchParams.set("group_filter", activeGroup);
                 } else {
                     url.searchParams.delete("group_filter");
+                }
+                if (activeSearch) {
+                    url.searchParams.set("search", activeSearch);
+                } else {
+                    url.searchParams.delete("search");
                 }
 
                 sbLoadInventory(url.toString());
@@ -1816,9 +1900,11 @@
                 if (!targetPage) return;
 
                 const rackSelect = document.querySelector(".sb-filter-rack");
-                const activeRack = rackSelect ? rackSelect.value : currentRackFilter;
+                const activeRack = getActiveValue(rackSelect, currentRackFilter);
                 const groupSelect = document.querySelector(".sb-filter-group");
-                const activeGroup = groupSelect ? groupSelect.value : currentGroupFilter;
+                const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
+                const searchInput = document.getElementById("sb-search-input");
+                const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
 
                 const url = new URL(window.location.href);
                 url.searchParams.set("page", targetPage);
@@ -1836,10 +1922,16 @@
                 } else {
                     url.searchParams.delete("group_filter");
                 }
+                if (activeSearch) {
+                    url.searchParams.set("search", activeSearch);
+                    url.searchParams.set("page_size", "all");
+                } else {
+                    url.searchParams.delete("search");
+                }
 
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
-                    if (!activeRack && !activeGroup) {
+                    if (!activeRack && !activeGroup && !activeSearch) {
                         url.searchParams.set("page_size", ps.value);
                     }
                 }
@@ -1847,6 +1939,107 @@
                 sbLoadInventory(url.toString());
             });
         });
+    }
+
+    /* ================================================
+       SEARCH BAR
+    ================================================= */
+    function sbInitSearch() {
+        const input = document.getElementById("sb-search-input");
+        if (!input) return;
+
+        const table = document.querySelector(".sb-table");
+        const currentSort = table ? (table.dataset.currentSort || "rack") : "rack";
+        const currentDir = table ? (table.dataset.currentDir || "asc") : "asc";
+        const currentRackFilter = table ? (table.dataset.rackFilter || "") : "";
+        const currentGroupFilter = table ? (table.dataset.groupFilter || "") : "";
+        const currentSearch = table ? (table.dataset.search || "") : "";
+
+        const searchBtn = document.getElementById("sb-search-btn");
+        const advBtn = document.getElementById("sb-advanced-search-btn");
+        const clearBtn = document.getElementById("sb-search-clear-btn");
+        const clearAllBtn = document.getElementById("sb-search-clear-all-btn");
+
+        function getActiveValue(sel, fallback) {
+            if (sel && sel.value) return sel.value;
+            return fallback || "";
+        }
+
+        function buildUrl({ clearSearch = false, clearAll = false } = {}) {
+            const url = new URL(window.location.href);
+            const rackSelect = document.querySelector(".sb-filter-rack");
+            const groupSelect = document.querySelector(".sb-filter-group");
+            const pageSizeSel = document.getElementById("page-size-select");
+
+            const activeRack = clearAll ? "" : getActiveValue(rackSelect, currentRackFilter);
+            const activeGroup = clearAll ? "" : getActiveValue(groupSelect, currentGroupFilter);
+            const searchVal = clearAll || clearSearch ? "" : (input.value || "").trim();
+
+            url.searchParams.set("sort", currentSort);
+            url.searchParams.set("dir", currentDir);
+            url.searchParams.set("page", 1);
+
+            if (activeRack) {
+                url.searchParams.set("rack_filter", activeRack);
+            } else {
+                url.searchParams.delete("rack_filter");
+            }
+            if (activeGroup) {
+                url.searchParams.set("group_filter", activeGroup);
+            } else {
+                url.searchParams.delete("group_filter");
+            }
+            if (searchVal) {
+                url.searchParams.set("search", searchVal);
+            } else {
+                url.searchParams.delete("search");
+            }
+
+            const anyFilter = !!activeRack || !!activeGroup || !!searchVal;
+            if (anyFilter) {
+                url.searchParams.set("page_size", "all");
+            } else if (pageSizeSel && pageSizeSel.value) {
+                url.searchParams.set("page_size", pageSizeSel.value);
+            } else {
+                url.searchParams.delete("page_size");
+            }
+
+            return url;
+        }
+
+        function runSearch() {
+            const url = buildUrl({ clearSearch: false, clearAll: false });
+            sbLoadInventory(url.toString());
+        }
+
+        function clearSearch() {
+            input.value = "";
+            const url = buildUrl({ clearSearch: true, clearAll: false });
+            sbLoadInventory(url.toString());
+        }
+
+        function clearAll() {
+            input.value = "";
+            const url = buildUrl({ clearSearch: true, clearAll: true });
+            sbLoadInventory(url.toString());
+        }
+
+        input.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                runSearch();
+            }
+        });
+
+        if (searchBtn) searchBtn.addEventListener("click", runSearch);
+        if (advBtn) advBtn.addEventListener("click", () => {}); // martwy przycisk
+        if (clearBtn) clearBtn.addEventListener("click", clearSearch);
+        if (clearAllBtn) clearAllBtn.addEventListener("click", clearAll);
+
+        // ustaw wartość startową
+        if (currentSearch && !input.value) {
+            input.value = currentSearch;
+        }
     }
 
 
@@ -1899,6 +2092,7 @@
         sbInitGroupFilter();
         sbInitInlineDescNoteEditing();
         sbInitPagination();
+        sbInitSearch();
         sbInitQuillModal();
         sbInitQuillTriggers();
         sbInitNoteButtons();

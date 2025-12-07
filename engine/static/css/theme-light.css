@@ -262,6 +262,38 @@
     background: #27ae60;
 }
 
+.sb-light .sb-search-primary {
+    background: #2ecc71;
+    color: #fff;
+}
+.sb-light .sb-search-primary:hover {
+    background: #27ae60;
+}
+
+.sb-light .sb-btn-clear {
+    background: #ffd7d7;
+    color: #a00;
+}
+.sb-light .sb-btn-clear:hover {
+    background: #ffc5c5;
+}
+
+.sb-light .sb-btn-clear-strong {
+    background: #d9534f;
+    color: #fff;
+}
+.sb-light .sb-btn-clear-strong:hover {
+    background: #c64541;
+}
+
+.sb-light .sb-adv-search {
+    background: #2ecc71;
+    color: #fff;
+}
+.sb-light .sb-adv-search:hover {
+    background: #27ae60;
+}
+
 .sb-light .sb-header-count {
     color: #fff;
 }

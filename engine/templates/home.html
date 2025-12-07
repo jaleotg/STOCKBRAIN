@@ -16,11 +16,11 @@
     <!-- ===================================== -->
     <!--        TOP BAR: PAGE SIZE + PAGER     -->
     <!-- ===================================== -->
-    <div class="sb-home-controls" style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:10px;">
+    <div class="sb-home-controls" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
 
         <!-- PAGE SIZE DROPDOWN -->
         {% if not rack_filter %}
-            <div class="sb-page-size-control">
+            <div class="sb-page-size-control" style="display:flex; align-items:center; gap:6px;">
                 <label for="page-size-select">
                     Rows per page:
                 </label>
@@ -49,6 +49,25 @@
                 </span>
             </div>
         {% endif %}
+
+        <!-- SEARCH BAR -->
+        <div class="sb-search-control" style="display:flex; align-items:center; gap:6px; flex:1; min-width:280px;">
+            <input type="text"
+                   id="sb-search-input"
+                   class="sb-search-input"
+                   placeholder="Search..."
+                   value="{{ search_query|default:'' }}">
+            <div class="sb-search-buttons" style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="sb-btn sb-search-primary" id="sb-search-btn" aria-label="Search">
+                    <span class="sb-search-icon">&#128269;</span>
+                </button>
+                <button type="button" class="sb-btn sb-adv-search" id="sb-advanced-search-btn">
+                    <span class="sb-search-icon">&#128269;</span>&nbsp;Advanced
+                </button>
+                <button type="button" class="sb-btn sb-btn-clear" id="sb-search-clear-btn">Clear</button>
+                <button type="button" class="sb-btn sb-btn-clear-strong" id="sb-search-clear-all-btn">Clear all</button>
+            </div>
+        </div>
 
         {% if can_edit or is_purchase_admin %}
         <div class="sb-add-item-wrapper" style="flex:1; display:flex; justify-content:center;">
@@ -166,7 +185,8 @@
                data-current-sort="{{ sort_field }}"
                data-current-dir="{{ sort_dir }}"
                data-rack-filter="{{ rack_filter|default:'' }}"
-               data-group-filter="{{ group_filter|default:'' }}">
+               data-group-filter="{{ group_filter|default:'' }}"
+               data-search="{{ search_query|default:'' }}">
             <thead>
             <tr class="sb-header-filter-row">
                 <th class="col-location">

@@ -16,6 +16,7 @@ from django.db.models import (
     OuterRef,
     Subquery,
     F,
+    Q,
 )
 from django.db.models.functions import Lower, Substr, RowNumber, Cast, NullIf
 from django.db.models import Func
@@ -155,6 +156,9 @@ def home_view(request):
         except ValueError:
             group_filter_int = None
 
+    # --- SEARCH (simple text, AND with filters) ---
+    search_query = (request.GET.get("search") or "").strip()
+
     # --- SORTING (R, S, Name, Group) ---
     sort_field = request.GET.get("sort", "rack")
     sort_dir = request.GET.get("dir", "asc")
@@ -241,6 +245,31 @@ def home_view(request):
         filters_applied = True
     if group_filter_int is not None:
         base_qs = base_qs.filter(group_id=group_filter_int)
+        filters_applied = True
+    if search_query:
+        # Proste wyszukiwanie OR po kilku polach, spina się z filtrami (AND).
+        search_q = Q(
+            name__icontains=search_query
+        ) | Q(
+            part_description__icontains=search_query
+        ) | Q(
+            part_number__icontains=search_query
+        ) | Q(
+            dcm_number__icontains=search_query
+        ) | Q(
+            oem_name__icontains=search_query
+        ) | Q(
+            oem_number__icontains=search_query
+        ) | Q(
+            vendor__icontains=search_query
+        ) | Q(
+            source_location__icontains=search_query
+        ) | Q(
+            box__icontains=search_query
+        ) | Q(
+            group_name__icontains=search_query
+        )
+        base_qs = base_qs.filter(search_q)
         filters_applied = True
     if filters_applied:
         page_size = "all"
@@ -340,7 +369,6 @@ def home_view(request):
                 "location_box_num_last_missing",
                 "-location_box_num_last",
                 "-location_box_tail",
-                "-box",
                 "name",
             ])
         else:
@@ -352,7 +380,6 @@ def home_view(request):
                 "location_box_num_last_missing",
                 "location_box_num_last",
                 "location_box_tail",
-                "box",
                 "name",
             ])
     elif sort_field == "part_description":
@@ -584,6 +611,7 @@ def home_view(request):
         "sort_field": sort_field,
         "sort_dir": sort_dir,
         "rack_filter": rack_filter_int,
+        "search_query": search_query,
     }
 
     return render(request, "home.html", context)
