@@ -6,6 +6,7 @@
     const CAN_EDIT = !!(window && window.CAN_EDIT);
     const HIGHLIGHT_KEY = "sb_new_item_highlight";
     let progressTimer = null;
+    let progressStartedAt = 0;
 
     const CELL_STATE_CLASSES = {
         focus: "sb-cell-focus",
@@ -219,6 +220,7 @@
         const currentDir = table.dataset.currentDir || "asc";
         const currentGroupFilter = table.dataset.groupFilter || "";
         const currentSearch = table.dataset.search || "";
+        const currentConditionFilter = table.dataset.conditionFilter || "";
 
         function getActiveValue(sel, fallback) {
             if (sel && sel.value) return sel.value;
@@ -231,9 +233,85 @@
             const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
             const searchInput = document.getElementById("sb-search-input");
             const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+            const conditionSelect = document.querySelector(".sb-filter-condition");
+            const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
 
             if (this.value) {
                 url.searchParams.set("rack_filter", this.value);
+            } else {
+                url.searchParams.delete("rack_filter");
+            }
+            if (activeGroup) {
+                url.searchParams.set("group_filter", activeGroup);
+            } else {
+                url.searchParams.delete("group_filter");
+            }
+            if (activeCondition) {
+                url.searchParams.set("condition_filter", activeCondition);
+            } else {
+                url.searchParams.delete("condition_filter");
+            }
+            if (activeSearch) {
+                url.searchParams.set("search", activeSearch);
+            } else {
+                url.searchParams.delete("search");
+            }
+
+            // page_size: all jeśli jakikolwiek filtr aktywny
+            const anyFilter = (!!this.value) || (!!activeGroup) || (!!activeSearch) || (!!activeCondition);
+            if (anyFilter) {
+                url.searchParams.set("page_size", "all");
+            } else {
+                const ps = document.getElementById("page-size-select");
+                if (ps) {
+                    url.searchParams.set("page_size", ps.value);
+                } else {
+                    url.searchParams.delete("page_size");
+                }
+            }
+
+            url.searchParams.set("page", 1);
+            url.searchParams.set("sort", currentSort);
+            url.searchParams.set("dir", currentDir);
+
+            sbLoadInventory(url.toString());
+        });
+    }
+
+    function sbInitConditionFilter() {
+        const select = document.querySelector(".sb-filter-condition");
+        const table = document.querySelector(".sb-table");
+        if (!select || !table) return;
+
+        const currentConditionFilter = table.dataset.conditionFilter || "";
+        const currentSort = table.dataset.currentSort || "rack";
+        const currentDir = table.dataset.currentDir || "asc";
+        const currentRackFilter = table.dataset.rackFilter || "";
+        const currentGroupFilter = table.dataset.groupFilter || "";
+        const currentSearch = table.dataset.search || "";
+
+        function getActiveValue(sel, fallback) {
+            if (sel && sel.value) return sel.value;
+            return fallback || "";
+        }
+
+        select.addEventListener("change", function () {
+            const url = new URL(window.location.href);
+            const rackSelect = document.querySelector(".sb-filter-rack");
+            const groupSelect = document.querySelector(".sb-filter-group");
+            const searchInput = document.getElementById("sb-search-input");
+
+            const activeRack = getActiveValue(rackSelect, currentRackFilter);
+            const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
+            const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+
+            if (this.value) {
+                url.searchParams.set("condition_filter", this.value);
+            } else {
+                url.searchParams.delete("condition_filter");
+            }
+            if (activeRack) {
+                url.searchParams.set("rack_filter", activeRack);
             } else {
                 url.searchParams.delete("rack_filter");
             }
@@ -248,8 +326,7 @@
                 url.searchParams.delete("search");
             }
 
-            // page_size: all jeśli jakikolwiek filtr aktywny
-            const anyFilter = (!!this.value) || (!!activeGroup) || (!!activeSearch);
+            const anyFilter = (!!this.value) || (!!activeRack) || (!!activeGroup) || (!!activeSearch);
             if (anyFilter) {
                 url.searchParams.set("page_size", "all");
             } else {
@@ -279,6 +356,7 @@
         const currentDir = table.dataset.currentDir || "asc";
         const currentRackFilter = table.dataset.rackFilter || "";
         const currentSearch = table.dataset.search || "";
+        const currentConditionFilter = table.dataset.conditionFilter || "";
 
         function getActiveValue(sel, fallback) {
             if (sel && sel.value) return sel.value;
@@ -291,6 +369,8 @@
             const activeRack = getActiveValue(rackSelect, currentRackFilter);
             const searchInput = document.getElementById("sb-search-input");
             const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+            const conditionSelect = document.querySelector(".sb-filter-condition");
+            const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
 
             if (this.value) {
                 url.searchParams.set("group_filter", this.value);
@@ -302,13 +382,18 @@
             } else {
                 url.searchParams.delete("rack_filter");
             }
+            if (activeCondition) {
+                url.searchParams.set("condition_filter", activeCondition);
+            } else {
+                url.searchParams.delete("condition_filter");
+            }
             if (activeSearch) {
                 url.searchParams.set("search", activeSearch);
             } else {
                 url.searchParams.delete("search");
             }
 
-            const anyFilter = (!!this.value) || (!!activeRack) || (!!activeSearch);
+            const anyFilter = (!!this.value) || (!!activeRack) || (!!activeSearch) || (!!activeCondition);
             if (anyFilter) {
                 url.searchParams.set("page_size", "all");
             } else {
@@ -728,12 +813,23 @@
             progressTimer = null;
         }
         container.style.display = "block";
-        bar.style.width = "8%";
-        let current = 8;
-        progressTimer = setInterval(() => {
-            current = Math.min(current + Math.random() * 12, 90);
-            bar.style.width = `${current}%`;
-        }, 120);
+        progressStartedAt = Date.now();
+        // reset transition to allow immediate paint
+        bar.style.transition = "none";
+        bar.style.width = "0%";
+        // force reflow
+        void bar.offsetWidth;
+        // restore transition
+        bar.style.transition = "width 0.15s ease";
+        // show a visible chunk immediately
+        requestAnimationFrame(() => {
+            bar.style.width = "30%";
+            let current = 30;
+            progressTimer = setInterval(() => {
+                current = Math.min(current + Math.random() * 12, 90);
+                bar.style.width = `${current}%`;
+            }, 120);
+        });
     }
 
     function sbProgressFinish() {
@@ -743,11 +839,20 @@
             clearInterval(progressTimer);
             progressTimer = null;
         }
-        bar.style.width = "100%";
-        setTimeout(() => {
-            bar.style.width = "0%";
-            container.style.display = "none";
-        }, 180);
+        const finalize = () => {
+            bar.style.width = "100%";
+            setTimeout(() => {
+                bar.style.width = "0%";
+                container.style.display = "none";
+            }, 400);
+        };
+
+        const elapsed = Date.now() - progressStartedAt;
+        if (elapsed < 250) {
+            setTimeout(finalize, 250 - elapsed);
+        } else {
+            finalize();
+        }
     }
 
     /* ================================================
@@ -1722,13 +1827,14 @@
                 if (!table) return;
 
                 const currentSort = table.dataset.currentSort || "rack";
-                const currentDir = table.dataset.currentDir || "asc";
-                const currentRackFilter = table.dataset.rackFilter || "";
-                const currentGroupFilter = table.dataset.groupFilter || "";
-                const currentSearch = table.dataset.search || "";
+        const currentDir = table.dataset.currentDir || "asc";
+        const currentRackFilter = table.dataset.rackFilter || "";
+        const currentGroupFilter = table.dataset.groupFilter || "";
+        const currentSearch = table.dataset.search || "";
+        const currentConditionFilter = table.dataset.conditionFilter || "";
 
-                const headers = table.querySelectorAll("thead .sb-sortable-header");
-                if (!headers.length) return;
+        const headers = table.querySelectorAll("thead .sb-sortable-header");
+        if (!headers.length) return;
 
                 headers.forEach(th => {
                     const field = th.dataset.sortField;
@@ -1743,6 +1849,8 @@
                         const activeGroup = (groupSelect && groupSelect.value) ? groupSelect.value : currentGroupFilter;
                         const searchInput = document.getElementById("sb-search-input");
                         const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+                        const conditionSelect = document.querySelector(".sb-filter-condition");
+                        const activeCondition = (conditionSelect && conditionSelect.value) ? conditionSelect.value : currentConditionFilter;
 
                         // Dodajemy klas? "loading" do tabeli i klikni?tego naglowka
                         table.classList.add("sb-table-sorting");
@@ -1773,6 +1881,12 @@
                         } else {
                             url.searchParams.delete("group_filter");
                         }
+                        if (activeCondition) {
+                            url.searchParams.set("condition_filter", activeCondition);
+                            url.searchParams.set("page_size", "all");
+                        } else {
+                            url.searchParams.delete("condition_filter");
+                        }
                         if (activeSearch) {
                             url.searchParams.set("search", activeSearch);
                             url.searchParams.set("page_size", "all");
@@ -1782,7 +1896,7 @@
 
                         const ps = document.getElementById("page-size-select");
                         if (ps) {
-                            if (!activeRack && !activeGroup && !activeSearch) {
+                            if (!activeRack && !activeGroup && !activeSearch && !activeCondition) {
                                 url.searchParams.set("page_size", ps.value);
                             }
                         }
@@ -1849,6 +1963,7 @@
                 sbInitSorting();
                 sbInitRackFilter();
                 sbInitGroupFilter();
+                sbInitConditionFilter();
                 sbInitSearch();
                 sbInitInlineDescNoteEditing();
                 sbInitPagination();
@@ -1887,6 +2002,8 @@
         const groupSelect = document.querySelector(".sb-filter-group");
         const currentGroupFilter = groupSelect ? groupSelect.value : (table ? (table.dataset.groupFilter || "") : "");
         const currentSearch = table ? (table.dataset.search || "") : "";
+        const conditionSelect = document.querySelector(".sb-filter-condition");
+        const currentConditionFilter = conditionSelect ? conditionSelect.value : (table ? (table.dataset.conditionFilter || "") : "");
 
         if (table) {
             currentSort = table.dataset.currentSort || "rack";
@@ -1915,6 +2032,8 @@
                 const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
                 const searchInput = document.getElementById("sb-search-input");
                 const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+                const conditionSelect = document.querySelector(".sb-filter-condition");
+                const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
                 if (activeRack) {
                     url.searchParams.set("rack_filter", activeRack);
                 } else {
@@ -1924,6 +2043,11 @@
                     url.searchParams.set("group_filter", activeGroup);
                 } else {
                     url.searchParams.delete("group_filter");
+                }
+                if (activeCondition) {
+                    url.searchParams.set("condition_filter", activeCondition);
+                } else {
+                    url.searchParams.delete("condition_filter");
                 }
                 if (activeSearch) {
                     url.searchParams.set("search", activeSearch);
@@ -1949,6 +2073,8 @@
                 const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
                 const searchInput = document.getElementById("sb-search-input");
                 const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+                const conditionSelect = document.querySelector(".sb-filter-condition");
+                const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
 
                 const url = new URL(window.location.href);
                 url.searchParams.set("page", targetPage);
@@ -1966,6 +2092,12 @@
                 } else {
                     url.searchParams.delete("group_filter");
                 }
+                if (activeCondition) {
+                    url.searchParams.set("condition_filter", activeCondition);
+                    url.searchParams.set("page_size", "all");
+                } else {
+                    url.searchParams.delete("condition_filter");
+                }
                 if (activeSearch) {
                     url.searchParams.set("search", activeSearch);
                     url.searchParams.set("page_size", "all");
@@ -1975,7 +2107,7 @@
 
                 const ps = document.getElementById("page-size-select");
                 if (ps) {
-                    if (!activeRack && !activeGroup && !activeSearch) {
+                    if (!activeRack && !activeGroup && !activeSearch && !activeCondition) {
                         url.searchParams.set("page_size", ps.value);
                     }
                 }
@@ -1998,6 +2130,7 @@
         const currentRackFilter = table ? (table.dataset.rackFilter || "") : "";
         const currentGroupFilter = table ? (table.dataset.groupFilter || "") : "";
         const currentSearch = table ? (table.dataset.search || "") : "";
+        const currentConditionFilter = table ? (table.dataset.conditionFilter || "") : "";
 
         const searchBtn = document.getElementById("sb-search-btn");
         const advBtn = document.getElementById("sb-advanced-search-btn");
@@ -2018,6 +2151,8 @@
             const activeRack = clearAll ? "" : getActiveValue(rackSelect, currentRackFilter);
             const activeGroup = clearAll ? "" : getActiveValue(groupSelect, currentGroupFilter);
             const searchVal = clearAll || clearSearch ? "" : (input.value || "").trim();
+            const conditionSelect = document.querySelector(".sb-filter-condition");
+            const activeCondition = clearAll ? "" : getActiveValue(conditionSelect, currentConditionFilter);
 
             url.searchParams.set("sort", currentSort);
             url.searchParams.set("dir", currentDir);
@@ -2033,13 +2168,18 @@
             } else {
                 url.searchParams.delete("group_filter");
             }
+            if (activeCondition) {
+                url.searchParams.set("condition_filter", activeCondition);
+            } else {
+                url.searchParams.delete("condition_filter");
+            }
             if (searchVal) {
                 url.searchParams.set("search", searchVal);
             } else {
                 url.searchParams.delete("search");
             }
 
-            const anyFilter = !!activeRack || !!activeGroup || !!searchVal;
+            const anyFilter = !!activeRack || !!activeGroup || !!activeCondition || !!searchVal;
             if (anyFilter) {
                 url.searchParams.set("page_size", "all");
             } else if (pageSizeSel && pageSizeSel.value) {
@@ -2122,6 +2262,7 @@
        INIT
     ================================================= */
     document.addEventListener("DOMContentLoaded", function () {
+        sbProgressStart();
         syncBodyDarkClass();
         markClampedCells();
         sbInitCellFocusTracking();
@@ -2134,6 +2275,7 @@
         sbInitSorting();
         sbInitRackFilter();
         sbInitGroupFilter();
+        sbInitConditionFilter();
         sbInitInlineDescNoteEditing();
         sbInitPagination();
         sbInitSearch();
@@ -2143,5 +2285,12 @@
         sbInitAddItemModal();
         sbInitDeleteModal();
         applyPendingHighlight();
+    });
+
+    window.addEventListener("load", function () {
+        // domknij pasek po pełnym załadowaniu
+        setTimeout(() => {
+            sbProgressFinish();
+        }, 120);
     });
 })();

@@ -180,16 +180,16 @@
     <!--                TABLE                  -->
     <!-- ===================================== -->
 
-    <div class="sb-progress">
-        <div class="sb-progress-bar"></div>
-    </div>
-
     <div class="sb-table-wrapper">
+        <div class="sb-progress">
+            <div class="sb-progress-bar"></div>
+        </div>
         <table class="sb-table"
                data-current-sort="{{ sort_field }}"
                data-current-dir="{{ sort_dir }}"
                data-rack-filter="{{ rack_filter|default:'' }}"
                data-group-filter="{{ group_filter|default:'' }}"
+               data-condition-filter="{{ condition_filter|default:'' }}"
                data-search="{{ search_query|default:'' }}">
             <thead>
             <tr class="sb-header-filter-row">
@@ -235,7 +235,14 @@
                 {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
                     <th class="col-qtyreorder"></th>
                 {% endif %}
-                <th class="col-condition"></th>
+                <th class="col-condition">
+                    <select class="sb-filter-condition">
+                        <option value="" {% if not condition_filter %}selected{% endif %}>------</option>
+                        {% for val,label in condition_choices %}
+                            <option value="{{ val }}" {% if condition_filter == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </th>
                 <th class="col-disc"></th>
                 <th class="col-rev"></th>
                 <th class="col-fav"></th>

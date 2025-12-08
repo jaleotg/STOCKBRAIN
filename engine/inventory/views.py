@@ -159,6 +159,9 @@ def home_view(request):
     # --- SEARCH (simple text, AND with filters) ---
     search_query = (request.GET.get("search") or "").strip()
 
+    # --- CONDITION FILTER ---
+    condition_filter = request.GET.get("condition_filter") or ""
+
     # --- SORTING (R, S, Name, Group) ---
     sort_field = request.GET.get("sort", "rack")
     sort_dir = request.GET.get("dir", "asc")
@@ -245,6 +248,9 @@ def home_view(request):
         filters_applied = True
     if group_filter_int is not None:
         base_qs = base_qs.filter(group_id=group_filter_int)
+        filters_applied = True
+    if condition_filter:
+        base_qs = base_qs.filter(condition_status=condition_filter)
         filters_applied = True
     if search_query:
         # Proste wyszukiwanie OR po kilku polach, spina się z filtrami (AND).
@@ -595,6 +601,7 @@ def home_view(request):
         "show_last_ellipsis": show_last_ellipsis,
         "rack_filter": rack_filter_int,
         "group_filter": group_filter_int,
+        "condition_filter": condition_filter,
         "selected_rack_count": selected_rack_count,
         "item_count": item_count,
 
