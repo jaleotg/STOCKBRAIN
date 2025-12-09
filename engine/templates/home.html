@@ -211,17 +211,27 @@
                 </th>
                 <th class="col-name"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 <th class="col-partdesc"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
-                <th class="col-partnum"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
-                <th class="col-dcm"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
-                <th class="col-oemname"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
-                <th class="col-oemnum"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% if is_purchase_admin or 'part_number' not in restricted_fields %}
+                    <th class="col-partnum"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
+                {% if is_purchase_admin or 'dcm_number' not in restricted_fields %}
+                    <th class="col-dcm"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
+                {% if is_purchase_admin or 'oem_name' not in restricted_fields %}
+                    <th class="col-oemname"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
+                {% if is_purchase_admin or 'oem_number' not in restricted_fields %}
+                    <th class="col-oemnum"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
                 {% if is_purchase_admin or 'vendor' not in restricted_fields %}
                     <th class="col-vendor"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'source_location' not in restricted_fields %}
                     <th class="col-sourceloc"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 {% endif %}
-                <th class="col-units"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% if is_purchase_admin or 'unit' not in restricted_fields %}
+                    <th class="col-units"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
                 {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
                     <th class="col-instock"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 {% endif %}
@@ -231,23 +241,33 @@
                 {% if is_purchase_admin or 'reorder_level' not in restricted_fields %}
                     <th class="col-reorderlevel"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 {% endif %}
-                <th class="col-rt"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% if is_purchase_admin or 'reorder_time_days' not in restricted_fields %}
+                    <th class="col-rt"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
                 {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
                     <th class="col-qtyreorder"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 {% endif %}
-                <th class="col-condition">
-                    <select class="sb-filter-condition">
-                        <option value="" {% if not condition_filter %}selected{% endif %}>------</option>
-                        {% for val,label in condition_choices %}
-                            <option value="{{ val }}" {% if condition_filter == val %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </th>
-                <th class="col-disc"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
-                <th class="col-rev"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% if is_purchase_admin or 'condition_status' not in restricted_fields %}
+                    <th class="col-condition">
+                        <select class="sb-filter-condition">
+                            <option value="" {% if not condition_filter %}selected{% endif %}>------</option>
+                            {% for val,label in condition_choices %}
+                                <option value="{{ val }}" {% if condition_filter == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </th>
+                {% endif %}
+                {% if is_purchase_admin or 'discontinued' not in restricted_fields %}
+                    <th class="col-disc"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
+                {% if is_purchase_admin or 'verify' not in restricted_fields %}
+                    <th class="col-rev"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
                 <th class="col-fav"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 <th class="col-note"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
-                <th class="col-reorder"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% if is_purchase_admin or 'for_reorder' not in restricted_fields %}
+                    <th class="col-reorder"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                {% endif %}
                 {% if can_edit %}
                     <th class="col-trash"></th>
                 {% endif %}
@@ -327,74 +347,82 @@
 
                 {# PART NUMBER #}
                 {% with col=columns.part_number %}
-                    <th class="col-partnum sb-sortable-header"
-                        data-sort-field="part_number"
-                        title="{{ col.full_label|default:'Part Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:col.full_label|default:'Part Number' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'part_number' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'part_number' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'part_number' not in restricted_fields %}
+                        <th class="col-partnum sb-sortable-header"
+                            data-sort-field="part_number"
+                            title="{{ col.full_label|default:'Part Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'Part Number' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'part_number' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'part_number' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# DCM #}
                 {% with col=columns.dcm_number %}
-                    <th class="col-dcm sb-sortable-header"
-                        data-sort-field="dcm_number"
-                        title="{{ col.full_label|default:'DCM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:col.full_label|default:'DCM NUMBER' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'dcm_number' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'dcm_number' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'dcm_number' not in restricted_fields %}
+                        <th class="col-dcm sb-sortable-header"
+                            data-sort-field="dcm_number"
+                            title="{{ col.full_label|default:'DCM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'DCM NUMBER' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'dcm_number' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'dcm_number' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# OEM NAME #}
                 {% with col=columns.oem_name %}
-                    <th class="col-oemname sb-sortable-header"
-                        data-sort-field="oem_name"
-                        title="{{ col.full_label|default:'OEM Name' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:col.full_label|default:'OEM Name' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'oem_name' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'oem_name' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'oem_name' not in restricted_fields %}
+                        <th class="col-oemname sb-sortable-header"
+                            data-sort-field="oem_name"
+                            title="{{ col.full_label|default:'OEM Name' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'OEM Name' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'oem_name' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'oem_name' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# OEM NUMBER #}
                 {% with col=columns.oem_number %}
-                    <th class="col-oemnum sb-sortable-header"
-                        data-sort-field="oem_number"
-                        title="{{ col.full_label|default:'OEM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:col.full_label|default:'OEM Number' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'oem_number' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'oem_number' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'oem_number' not in restricted_fields %}
+                        <th class="col-oemnum sb-sortable-header"
+                            data-sort-field="oem_number"
+                            title="{{ col.full_label|default:'OEM Number' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'OEM Number' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'oem_number' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'oem_number' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# VENDOR – może być restricted #}
@@ -439,20 +467,22 @@
 
                 {# UNITS #}
                 {% with col=columns.unit %}
-                    <th class="col-units sb-sortable-header"
-                        data-sort-field="unit"
-                        title="{{ col.full_label|default:'Units' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:col.full_label|default:'Units' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'unit' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'unit' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'unit' not in restricted_fields %}
+                        <th class="col-units sb-sortable-header"
+                            data-sort-field="unit"
+                            title="{{ col.full_label|default:'Units' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'Units' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'unit' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'unit' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# IN STOCK – może być restricted #}
@@ -515,18 +545,20 @@
 
                 {# RT DAYS #}
                 {% with col=columns.reorder_time_days %}
-                    <th class="col-rt sb-sortable-header"
-                        data-sort-field="reorder_time_days"
-                        title="{{ col.full_label|default:'Reorder Time in Days' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">{{ col.short_label|default:'RT' }}</span>
-                        <span class="sb-sort-arrow {% if sort_field == 'reorder_time_days' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'reorder_time_days' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'reorder_time_days' not in restricted_fields %}
+                        <th class="col-rt sb-sortable-header"
+                            data-sort-field="reorder_time_days"
+                            title="{{ col.full_label|default:'Reorder Time in Days' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">{{ col.short_label|default:'RT' }}</span>
+                            <span class="sb-sort-arrow {% if sort_field == 'reorder_time_days' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'reorder_time_days' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# QTY REORDER – może być restricted #}
@@ -549,52 +581,58 @@
 
                 {# CONDITION #}
                 {% with col=columns.condition_status %}
-                    <th class="col-condition sb-sortable-header"
-                        data-sort-field="condition_status"
-                        title="{{ col.full_label|default:'Condition status' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">
-                            {{ col.short_label|default:col.full_label|default:'Condition' }}
-                        </span>
-                        <span class="sb-sort-arrow {% if sort_field == 'condition_status' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'condition_status' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'condition_status' not in restricted_fields %}
+                        <th class="col-condition sb-sortable-header"
+                            data-sort-field="condition_status"
+                            title="{{ col.full_label|default:'Condition status' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">
+                                {{ col.short_label|default:col.full_label|default:'Condition' }}
+                            </span>
+                            <span class="sb-sort-arrow {% if sort_field == 'condition_status' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'condition_status' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# DISC #}
                 {% with col=columns.discontinued %}
-                    <th class="col-disc sb-sortable-header"
-                        data-sort-field="discontinued"
-                        title="{{ col.full_label|default:'Discontinued' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">{{ col.short_label|default:'Disc.' }}</span>
-                        <span class="sb-sort-arrow {% if sort_field == 'discontinued' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'discontinued' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'discontinued' not in restricted_fields %}
+                        <th class="col-disc sb-sortable-header"
+                            data-sort-field="discontinued"
+                            title="{{ col.full_label|default:'Discontinued' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">{{ col.short_label|default:'Disc.' }}</span>
+                            <span class="sb-sort-arrow {% if sort_field == 'discontinued' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'discontinued' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# REV #}
                 {% with col=columns.verify %}
-                    <th class="col-rev sb-sortable-header"
-                        data-sort-field="verify"
-                        title="{{ col.full_label|default:'To Review / Verify' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">{{ col.short_label|default:'REV.' }}</span>
-                        <span class="sb-sort-arrow {% if sort_field == 'verify' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'verify' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'verify' not in restricted_fields %}
+                        <th class="col-rev sb-sortable-header"
+                            data-sort-field="verify"
+                            title="{{ col.full_label|default:'To Review / Verify' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">{{ col.short_label|default:'REV.' }}</span>
+                            <span class="sb-sort-arrow {% if sort_field == 'verify' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'verify' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {# FAVORITE #}
@@ -631,18 +669,20 @@
 
                 {# REORDER FLAG #}
                 {% with col=columns.for_reorder %}
-                    <th class="col-reorder sb-sortable-header"
-                        data-sort-field="for_reorder"
-                        title="{{ col.full_label|default:'Reorder flag' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
-                        <span class="sb-header-label">{{ col.short_label|default:'Reorder' }}</span>
-                        <span class="sb-sort-arrow {% if sort_field == 'for_reorder' %}sb-sort-arrow--active{% endif %}">
-                            {% if sort_field == 'for_reorder' %}
-                                {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                            {% else %}
-                                ⇅
-                            {% endif %}
-                        </span>
-                    </th>
+                    {% if is_purchase_admin or 'for_reorder' not in restricted_fields %}
+                        <th class="col-reorder sb-sortable-header"
+                            data-sort-field="for_reorder"
+                            title="{{ col.full_label|default:'Reorder flag' }}{% if col.functional_description %} – {{ col.functional_description }}{% endif %}">
+                            <span class="sb-header-label">{{ col.short_label|default:'Reorder' }}</span>
+                            <span class="sb-sort-arrow {% if sort_field == 'for_reorder' %}sb-sort-arrow--active{% endif %}">
+                                {% if sort_field == 'for_reorder' %}
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                {% else %}
+                                    ⇅
+                                {% endif %}
+                            </span>
+                        </th>
+                    {% endif %}
                 {% endwith %}
 
                 {% if can_edit %}
@@ -707,24 +747,32 @@
                     </td>
 
                     <!-- PART NUMBER -->
-                    <td class="col-partnum inline" data-field="part_number" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.part_number }}">{{ item.part_number }}</span>
-                    </td>
+                    {% if is_purchase_admin or 'part_number' not in restricted_fields %}
+                        <td class="col-partnum inline" data-field="part_number" data-id="{{ item.id }}">
+                            <span class="sb-multiline" title="{{ item.part_number }}">{{ item.part_number }}</span>
+                        </td>
+                    {% endif %}
 
                     <!-- DCM -->
-                    <td class="col-dcm inline" data-field="dcm_number" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.dcm_number }}">{{ item.dcm_number }}</span>
-                    </td>
+                    {% if is_purchase_admin or 'dcm_number' not in restricted_fields %}
+                        <td class="col-dcm inline" data-field="dcm_number" data-id="{{ item.id }}">
+                            <span class="sb-multiline" title="{{ item.dcm_number }}">{{ item.dcm_number }}</span>
+                        </td>
+                    {% endif %}
 
                     <!-- OEM NAME -->
-                    <td class="col-oemname inline" data-field="oem_name" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.oem_name }}">{{ item.oem_name }}</span>
-                    </td>
+                    {% if is_purchase_admin or 'oem_name' not in restricted_fields %}
+                        <td class="col-oemname inline" data-field="oem_name" data-id="{{ item.id }}">
+                            <span class="sb-multiline" title="{{ item.oem_name }}">{{ item.oem_name }}</span>
+                        </td>
+                    {% endif %}
 
                     <!-- OEM NUMBER -->
-                    <td class="col-oemnum inline" data-field="oem_number" data-id="{{ item.id }}">
-                        <span class="sb-multiline" title="{{ item.oem_number }}">{{ item.oem_number }}</span>
-                    </td>
+                    {% if is_purchase_admin or 'oem_number' not in restricted_fields %}
+                        <td class="col-oemnum inline" data-field="oem_number" data-id="{{ item.id }}">
+                            <span class="sb-multiline" title="{{ item.oem_number }}">{{ item.oem_number }}</span>
+                        </td>
+                    {% endif %}
 
                     <!-- VENDOR -->
                     {% if is_purchase_admin or 'vendor' not in restricted_fields %}
@@ -741,15 +789,17 @@
                     {% endif %}
 
                     <!-- UNITS -->
-                    <td class="col-units">
-                        <select class="unit-select" data-item-id="{{ item.id }}">
-                            {% for u in units %}
-                                <option value="{{ u.id }}" {% if item.unit_id == u.id %}selected{% endif %}>
-                                    {{ u.code }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </td>
+                    {% if is_purchase_admin or 'unit' not in restricted_fields %}
+                        <td class="col-units">
+                            <select class="unit-select" data-item-id="{{ item.id }}">
+                                {% for u in units %}
+                                    <option value="{{ u.id }}" {% if item.unit_id == u.id %}selected{% endif %}>
+                                        {{ u.code }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    {% endif %}
 
                     <!-- IN STOCK -->
                     {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
@@ -773,9 +823,11 @@
                     {% endif %}
 
                     <!-- RT DAYS -->
-                    <td class="col-rt inline" data-field="reorder_time_days" data-id="{{ item.id }}">
-                        {{ item.reorder_time_days }}
-                    </td>
+                    {% if is_purchase_admin or 'reorder_time_days' not in restricted_fields %}
+                        <td class="col-rt inline" data-field="reorder_time_days" data-id="{{ item.id }}">
+                            {{ item.reorder_time_days }}
+                        </td>
+                    {% endif %}
 
                     <!-- QTY REORDER -->
                     {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
@@ -785,32 +837,38 @@
                     {% endif %}
 
                     <!-- CONDITION DROPDOWN -->
-                    <td class="col-condition">
-                        <select class="condition-select" data-item-id="{{ item.id }}">
-                            <option value="">---</option>
-                            {% for value, label in condition_choices %}
-                                <option value="{{ value }}" {% if item.condition_status == value %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </td>
+                    {% if is_purchase_admin or 'condition_status' not in restricted_fields %}
+                        <td class="col-condition">
+                            <select class="condition-select" data-item-id="{{ item.id }}">
+                                <option value="">---</option>
+                                {% for value, label in condition_choices %}
+                                    <option value="{{ value }}" {% if item.condition_status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    {% endif %}
 
                     <!-- DISC CHECKBOX -->
-                    <td class="col-disc">
-                        <input type="checkbox"
-                               class="disc-checkbox"
-                               data-item-id="{{ item.id }}"
-                               {% if item.discontinued %}checked{% endif %}>
-                    </td>
+                    {% if is_purchase_admin or 'discontinued' not in restricted_fields %}
+                        <td class="col-disc">
+                            <input type="checkbox"
+                                   class="disc-checkbox"
+                                   data-item-id="{{ item.id }}"
+                                   {% if item.discontinued %}checked{% endif %}>
+                        </td>
+                    {% endif %}
 
                     <!-- REV CHECKBOX -->
-                    <td class="col-rev">
-                        <input type="checkbox"
-                               class="rev-checkbox"
-                               data-item-id="{{ item.id }}"
-                               {% if item.verify %}checked{% endif %}>
-                    </td>
+                    {% if is_purchase_admin or 'verify' not in restricted_fields %}
+                        <td class="col-rev">
+                            <input type="checkbox"
+                                   class="rev-checkbox"
+                                   data-item-id="{{ item.id }}"
+                                   {% if item.verify %}checked{% endif %}>
+                        </td>
+                    {% endif %}
 
                     <!-- FAVORITE STAR (per-user) -->
                     {% with fav=item.meta_for_user.0.favorite_color|default:"NONE" %}
@@ -854,11 +912,13 @@
                     {% endwith %}
 
                     <!-- REORDER FLAG -->
-                    <td class="col-reorder">
-                        {% if item.for_reorder %}
-                            <span class="sb-tag sb-tag-warning">YES</span>
-                        {% endif %}
-                    </td>
+                    {% if is_purchase_admin or 'for_reorder' not in restricted_fields %}
+                        <td class="col-reorder">
+                            {% if item.for_reorder %}
+                                <span class="sb-tag sb-tag-warning">YES</span>
+                            {% endif %}
+                        </td>
+                    {% endif %}
                     {% if can_edit %}
                         <td class="col-trash">
                             <button type="button"
@@ -997,31 +1057,39 @@
                 {% endwith %}
 
                 {% with col=columns.part_number %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"Part number" }}</label>
-                    <input type="text" name="part_number">
-                </div>
+                    {% if is_purchase_admin or 'part_number' not in restricted_fields %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"Part number" }}</label>
+                            <input type="text" name="part_number">
+                        </div>
+                    {% endif %}
                 {% endwith %}
 
                 {% with col=columns.dcm_number %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"DCM" }}</label>
-                    <input type="text" name="dcm_number">
-                </div>
+                    {% if is_purchase_admin or 'dcm_number' not in restricted_fields %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"DCM" }}</label>
+                            <input type="text" name="dcm_number">
+                        </div>
+                    {% endif %}
                 {% endwith %}
 
                 {% with col=columns.oem_name %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"OEM Name" }}</label>
-                    <input type="text" name="oem_name">
-                </div>
+                    {% if is_purchase_admin or 'oem_name' not in restricted_fields %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"OEM Name" }}</label>
+                            <input type="text" name="oem_name">
+                        </div>
+                    {% endif %}
                 {% endwith %}
 
                 {% with col=columns.oem_number %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"OEM Number" }}</label>
-                    <input type="text" name="oem_number">
-                </div>
+                    {% if is_purchase_admin or 'oem_number' not in restricted_fields %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"OEM Number" }}</label>
+                            <input type="text" name="oem_number">
+                        </div>
+                    {% endif %}
                 {% endwith %}
 
                 {% if is_purchase_admin or 'vendor' not in restricted_fields %}
@@ -1044,14 +1112,16 @@
 
                 <div class="sb-add-row rsb-row">
                     {% with col=columns.unit %}
-                    <div class="sb-add-field sb-mandatory">
-                        <label>{{ col.full_label|default:col.field_name|default:"Unit" }} <span class="sb-mandatory-badge">mandatory</span></label>
-                        <select name="unit_id" required>
-                            {% for u in units %}
-                                <option value="{{ u.id }}">{{ u.code }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                        {% if is_purchase_admin or 'unit' not in restricted_fields %}
+                            <div class="sb-add-field sb-mandatory">
+                                <label>{{ col.full_label|default:col.field_name|default:"Unit" }} <span class="sb-mandatory-badge">mandatory</span></label>
+                                <select name="unit_id" required>
+                                    {% for u in units %}
+                                        <option value="{{ u.id }}">{{ u.code }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% endif %}
                     {% endwith %}
 
                     {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
@@ -1083,10 +1153,12 @@
                 {% endif %}
 
                 {% with col=columns.reorder_time_days %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"RT days" }}</label>
-                    <input type="number" step="1" name="reorder_time_days">
-                </div>
+                    {% if is_purchase_admin or 'reorder_time_days' not in restricted_fields %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"RT days" }}</label>
+                            <input type="number" step="1" name="reorder_time_days">
+                        </div>
+                    {% endif %}
                 {% endwith %}
 
                 {% if is_purchase_admin or 'quantity_in_reorder' not in restricted_fields %}
@@ -1099,23 +1171,27 @@
                 {% endif %}
 
                 {% with col=columns.condition_status %}
-                <div class="sb-add-field">
-                    <label>{{ col.full_label|default:col.field_name|default:"Condition" }}</label>
-                    <select name="condition_status">
-                        <option value="">---</option>
-                        {% for value, label in condition_choices %}
-                            <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    {% if is_purchase_admin or 'condition_status' not in restricted_fields %}
+                        <div class="sb-add-field">
+                            <label>{{ col.full_label|default:col.field_name|default:"Condition" }}</label>
+                            <select name="condition_status">
+                                <option value="">---</option>
+                                {% for value, label in condition_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
                 {% endwith %}
 
                 <div class="sb-add-row">
                     {% with col=columns.discontinued %}
-                    <label class="sb-add-checkbox">
-                        <input type="checkbox" name="discontinued">
-                        <span>{{ col.full_label|default:col.field_name|default:"Discontinued" }}</span>
-                    </label>
+                        {% if is_purchase_admin or 'discontinued' not in restricted_fields %}
+                            <label class="sb-add-checkbox">
+                                <input type="checkbox" name="discontinued">
+                                <span>{{ col.full_label|default:col.field_name|default:"Discontinued" }}</span>
+                            </label>
+                        {% endif %}
                     {% endwith %}
 
                     {% with col=columns.verify %}

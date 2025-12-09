@@ -535,7 +535,7 @@ def home_view(request):
 
     # Wczytanie ustawień i listy kolumn ograniczonych
     restricted_fields = set()
-    settings_obj = InventorySettings.objects.first()
+    settings_obj = InventorySettings.objects.order_by("-id").first()
     if settings_obj is None:
         # Ensure there is always a settings row, so admin choices take effect.
         settings_obj = InventorySettings.objects.create()
