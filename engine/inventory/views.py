@@ -159,6 +159,30 @@ def home_view(request):
     # --- SEARCH (simple text, AND with filters) ---
     search_query = (request.GET.get("search") or "").strip()
 
+    # zapamiętujemy wybór pól do wyszukiwania w sesji (per user)
+    search_fields_session_key = "inventory_search_fields"
+    if "search_fields" in request.GET:
+        search_fields_param = request.GET.get("search_fields", "")
+        request.session[search_fields_session_key] = search_fields_param
+    else:
+        search_fields_param = request.session.get(search_fields_session_key, "")
+    allowed_search_fields = [
+        "name",
+        "part_description",
+        "part_number",
+        "dcm_number",
+        "oem_name",
+        "oem_number",
+        "vendor",
+        "source_location",
+        "box",
+        "group_name",
+    ]
+    selected_search_fields = [
+        f for f in (s.strip() for s in search_fields_param.split(","))
+        if f in allowed_search_fields
+    ]
+
     # --- CONDITION FILTER ---
     condition_filter = request.GET.get("condition_filter") or ""
 
@@ -253,30 +277,13 @@ def home_view(request):
         base_qs = base_qs.filter(condition_status=condition_filter)
         filters_applied = True
     if search_query:
-        # Proste wyszukiwanie OR po kilku polach, spina się z filtrami (AND).
-        search_q = Q(
-            name__icontains=search_query
-        ) | Q(
-            part_description__icontains=search_query
-        ) | Q(
-            part_number__icontains=search_query
-        ) | Q(
-            dcm_number__icontains=search_query
-        ) | Q(
-            oem_name__icontains=search_query
-        ) | Q(
-            oem_number__icontains=search_query
-        ) | Q(
-            vendor__icontains=search_query
-        ) | Q(
-            source_location__icontains=search_query
-        ) | Q(
-            box__icontains=search_query
-        ) | Q(
-            group_name__icontains=search_query
-        )
-        base_qs = base_qs.filter(search_q)
-        filters_applied = True
+        fields_to_search = selected_search_fields or allowed_search_fields
+        search_q = Q()
+        for field in fields_to_search:
+            search_q |= Q(**{f"{field}__icontains": search_query})
+        if search_q:
+            base_qs = base_qs.filter(search_q)
+            filters_applied = True
     if filters_applied:
         page_size = "all"
 
@@ -619,6 +626,8 @@ def home_view(request):
         "sort_dir": sort_dir,
         "rack_filter": rack_filter_int,
         "search_query": search_query,
+        "search_fields": ",".join(selected_search_fields),
+        "search_fields_list": selected_search_fields,
     }
 
     return render(request, "home.html", context)

@@ -1839,11 +1839,12 @@
                 if (!table) return;
 
                 const currentSort = table.dataset.currentSort || "rack";
-        const currentDir = table.dataset.currentDir || "asc";
-        const currentRackFilter = table.dataset.rackFilter || "";
-        const currentGroupFilter = table.dataset.groupFilter || "";
-        const currentSearch = table.dataset.search || "";
-        const currentConditionFilter = table.dataset.conditionFilter || "";
+                const currentDir = table.dataset.currentDir || "asc";
+                const currentRackFilter = table.dataset.rackFilter || "";
+                const currentGroupFilter = table.dataset.groupFilter || "";
+                const currentSearch = table.dataset.search || "";
+                const currentSearchFields = table.dataset.searchFields || "";
+                const currentConditionFilter = table.dataset.conditionFilter || "";
 
         const headers = table.querySelectorAll("thead .sb-sortable-header");
         if (!headers.length) return;
@@ -1861,6 +1862,17 @@
                         const activeGroup = (groupSelect && groupSelect.value) ? groupSelect.value : currentGroupFilter;
                         const searchInput = document.getElementById("sb-search-input");
                         const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
+                        const activeSearchFields = (function () {
+                            const icons = document.querySelectorAll(".sb-filter-icon[data-search-field]");
+                            const active = Array.from(icons)
+                                .filter(icon => !icon.classList.contains("is-muted"))
+                                .map(icon => icon.dataset.searchField)
+                                .filter(Boolean);
+                            if (!active.length && currentSearchFields) {
+                                return currentSearchFields.split(",").map(s => s.trim()).filter(Boolean);
+                            }
+                            return active;
+                        })();
                         const conditionSelect = document.querySelector(".sb-filter-condition");
                         const activeCondition = (conditionSelect && conditionSelect.value) ? conditionSelect.value : currentConditionFilter;
 
@@ -1904,6 +1916,11 @@
                             url.searchParams.set("page_size", "all");
                         } else {
                             url.searchParams.delete("search");
+                        }
+                        if (activeSearchFields.length) {
+                            url.searchParams.set("search_fields", activeSearchFields.join(","));
+                        } else {
+                            url.searchParams.delete("search_fields");
                         }
 
                         const ps = document.getElementById("page-size-select");
@@ -2015,6 +2032,7 @@
         const groupSelect = document.querySelector(".sb-filter-group");
         const currentGroupFilter = groupSelect ? groupSelect.value : (table ? (table.dataset.groupFilter || "") : "");
         const currentSearch = table ? (table.dataset.search || "") : "";
+        const currentSearchFields = table ? (table.dataset.searchFields || "") : "";
         const conditionSelect = document.querySelector(".sb-filter-condition");
         const currentConditionFilter = conditionSelect ? conditionSelect.value : (table ? (table.dataset.conditionFilter || "") : "");
 
@@ -2026,6 +2044,18 @@
         function getActiveValue(sel, fallback) {
             if (sel && sel.value) return sel.value;
             return fallback || "";
+        }
+
+        function getActiveSearchFields() {
+            const icons = document.querySelectorAll(".sb-filter-icon[data-search-field]");
+            const active = Array.from(icons)
+                .filter(icon => !icon.classList.contains("is-muted"))
+                .map(icon => icon.dataset.searchField)
+                .filter(Boolean);
+            if (!active.length && currentSearchFields) {
+                return currentSearchFields.split(",").map(s => s.trim()).filter(Boolean);
+            }
+            return active;
         }
 
         // --- dropdown Rows per page ---
@@ -2047,6 +2077,7 @@
                 const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
                 const conditionSelect = document.querySelector(".sb-filter-condition");
                 const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
+                const activeSearchFields = getActiveSearchFields();
                 if (activeRack) {
                     url.searchParams.set("rack_filter", activeRack);
                 } else {
@@ -2066,6 +2097,11 @@
                     url.searchParams.set("search", activeSearch);
                 } else {
                     url.searchParams.delete("search");
+                }
+                if (activeSearchFields.length) {
+                    url.searchParams.set("search_fields", activeSearchFields.join(","));
+                } else {
+                    url.searchParams.delete("search_fields");
                 }
 
                 sbLoadInventory(url.toString());
@@ -2088,6 +2124,7 @@
                 const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
                 const conditionSelect = document.querySelector(".sb-filter-condition");
                 const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
+                const activeSearchFields = getActiveSearchFields();
 
                 const url = new URL(window.location.href);
                 url.searchParams.set("page", targetPage);
@@ -2116,6 +2153,11 @@
                     url.searchParams.set("page_size", "all");
                 } else {
                     url.searchParams.delete("search");
+                }
+                if (activeSearchFields.length) {
+                    url.searchParams.set("search_fields", activeSearchFields.join(","));
+                } else {
+                    url.searchParams.delete("search_fields");
                 }
 
                 const ps = document.getElementById("page-size-select");
@@ -2160,12 +2202,19 @@
             const rackSelect = document.querySelector(".sb-filter-rack");
             const groupSelect = document.querySelector(".sb-filter-group");
             const pageSizeSel = document.getElementById("page-size-select");
+            const searchIcons = Array.from(document.querySelectorAll(".sb-filter-icon[data-search-field]"));
 
             const activeRack = clearAll ? "" : getActiveValue(rackSelect, currentRackFilter);
             const activeGroup = clearAll ? "" : getActiveValue(groupSelect, currentGroupFilter);
             const searchVal = clearAll || clearSearch ? "" : (input.value || "").trim();
             const conditionSelect = document.querySelector(".sb-filter-condition");
             const activeCondition = clearAll ? "" : getActiveValue(conditionSelect, currentConditionFilter);
+            const activeSearchFields = clearAll
+                ? []
+                : searchIcons
+                      .filter(icon => !icon.classList.contains("is-muted"))
+                      .map(icon => icon.dataset.searchField)
+                      .filter(Boolean);
 
             url.searchParams.set("sort", currentSort);
             url.searchParams.set("dir", currentDir);
@@ -2190,6 +2239,11 @@
                 url.searchParams.set("search", searchVal);
             } else {
                 url.searchParams.delete("search");
+            }
+            if (activeSearchFields.length) {
+                url.searchParams.set("search_fields", activeSearchFields.join(","));
+            } else {
+                url.searchParams.delete("search_fields");
             }
 
             const anyFilter = !!activeRack || !!activeGroup || !!activeCondition || !!searchVal;
@@ -2229,7 +2283,7 @@
         });
 
         if (searchBtn) searchBtn.addEventListener("click", runSearch);
-        if (advBtn) advBtn.addEventListener("click", () => {}); // martwy przycisk
+        if (advBtn) advBtn.addEventListener("click", runSearch);
         if (clearBtn) clearBtn.addEventListener("click", clearSearch);
         if (clearAllBtn) clearAllBtn.addEventListener("click", clearAll);
 

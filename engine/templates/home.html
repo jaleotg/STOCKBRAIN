@@ -62,7 +62,7 @@
                     <span class="sb-search-icon">&#128269;</span>
                 </button>
                 <button type="button" class="sb-btn sb-adv-search" id="sb-advanced-search-btn">
-                    <span class="sb-search-icon">&#128269;</span>&nbsp;Advanced
+                    <span class="sb-search-icon">&#128269;</span>&nbsp;All
                 </button>
                 <button type="button" class="sb-btn sb-btn-clear" id="sb-search-clear-btn">Clear</button>
                 <button type="button" class="sb-btn sb-btn-clear-strong" id="sb-search-clear-all-btn">Clear all</button>
@@ -190,7 +190,8 @@
                data-rack-filter="{{ rack_filter|default:'' }}"
                data-group-filter="{{ group_filter|default:'' }}"
                data-condition-filter="{{ condition_filter|default:'' }}"
-               data-search="{{ search_query|default:'' }}">
+               data-search="{{ search_query|default:'' }}"
+               data-search-fields="{{ search_fields|default:'' }}">
             <thead>
             <tr class="sb-header-filter-row">
                 <th class="col-location">
@@ -209,25 +210,25 @@
                         {% endfor %}
                     </select>
                 </th>
-                <th class="col-name"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
-                <th class="col-partdesc"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                <th class="col-name"><span class="sb-filter-icon{% if search_fields_list and 'name' not in search_fields_list %} is-muted{% endif %}" data-search-field="name" aria-label="Toggle search"></span></th>
+                <th class="col-partdesc"><span class="sb-filter-icon{% if search_fields_list and 'part_description' not in search_fields_list %} is-muted{% endif %}" data-search-field="part_description" aria-label="Toggle search"></span></th>
                 {% if is_purchase_admin or 'part_number' not in restricted_fields %}
-                    <th class="col-partnum"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-partnum"><span class="sb-filter-icon{% if search_fields_list and 'part_number' not in search_fields_list %} is-muted{% endif %}" data-search-field="part_number" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'dcm_number' not in restricted_fields %}
-                    <th class="col-dcm"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-dcm"><span class="sb-filter-icon{% if search_fields_list and 'dcm_number' not in search_fields_list %} is-muted{% endif %}" data-search-field="dcm_number" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'oem_name' not in restricted_fields %}
-                    <th class="col-oemname"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-oemname"><span class="sb-filter-icon{% if search_fields_list and 'oem_name' not in search_fields_list %} is-muted{% endif %}" data-search-field="oem_name" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'oem_number' not in restricted_fields %}
-                    <th class="col-oemnum"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-oemnum"><span class="sb-filter-icon{% if search_fields_list and 'oem_number' not in search_fields_list %} is-muted{% endif %}" data-search-field="oem_number" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'vendor' not in restricted_fields %}
-                    <th class="col-vendor"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-vendor"><span class="sb-filter-icon{% if search_fields_list and 'vendor' not in search_fields_list %} is-muted{% endif %}" data-search-field="vendor" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'source_location' not in restricted_fields %}
-                    <th class="col-sourceloc"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-sourceloc"><span class="sb-filter-icon{% if search_fields_list and 'source_location' not in search_fields_list %} is-muted{% endif %}" data-search-field="source_location" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'unit' not in restricted_fields %}
                     <th class="col-units"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
