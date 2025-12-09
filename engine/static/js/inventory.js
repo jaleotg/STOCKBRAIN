@@ -146,6 +146,127 @@
     const csrftoken = getCookie("csrftoken") || "";
 
     /* ================================================
+       FILTER HELPERS
+    ================================================= */
+    function getTableFilters() {
+        const table = document.querySelector(".sb-table");
+        if (!table) return {};
+        return {
+            rack: table.dataset.rackFilter || "",
+            group: table.dataset.groupFilter || "",
+            condition: table.dataset.conditionFilter || "",
+            unit: table.dataset.unitFilter || "",
+            instock: table.dataset.instockFilter || "",
+            price: table.dataset.priceFilter || "",
+            disc: table.dataset.discFilter || "",
+            rev: table.dataset.revFilter || "",
+            fav: table.dataset.favFilter || "",
+            reorder: table.dataset.reorderFilter || "",
+            search: table.dataset.search || "",
+            searchFields: table.dataset.searchFields || "",
+            sort: table.dataset.currentSort || "rack",
+            dir: table.dataset.currentDir || "asc",
+        };
+    }
+
+    function readSelectValue(selector, fallback) {
+        if (selector && selector.value) return selector.value;
+        return fallback || "";
+    }
+
+    function getActiveSearchFields(clearAll = false) {
+        if (clearAll) return [];
+        const icons = document.querySelectorAll(".sb-filter-icon[data-search-field]");
+        const active = Array.from(icons)
+            .filter(icon => !icon.classList.contains("is-muted"))
+            .map(icon => icon.dataset.searchField)
+            .filter(Boolean);
+        if (active.length) return active;
+        const defaults = getTableFilters().searchFields;
+        if (defaults) {
+            return defaults.split(",").map(s => s.trim()).filter(Boolean);
+        }
+        return [];
+    }
+
+    function collectActiveFilters({ clearAll = false, clearSearch = false } = {}) {
+        const defaults = getTableFilters();
+        const rackSelect = document.querySelector(".sb-filter-rack");
+        const groupSelect = document.querySelector(".sb-filter-group");
+        const conditionSelect = document.querySelector(".sb-filter-condition");
+        const unitSelect = document.querySelector(".sb-filter-unit");
+        const instockSelect = document.querySelector(".sb-filter-instock");
+        const priceSelect = document.querySelector(".sb-filter-price");
+        const discSelect = document.querySelector(".sb-filter-disc");
+        const revSelect = document.querySelector(".sb-filter-rev");
+        const favSelect = document.querySelector(".sb-filter-fav");
+        const reorderSelect = document.querySelector(".sb-filter-reorder");
+        const searchInput = document.getElementById("sb-search-input");
+
+        const filters = {
+            rack: clearAll ? "" : readSelectValue(rackSelect, defaults.rack),
+            group: clearAll ? "" : readSelectValue(groupSelect, defaults.group),
+            condition: clearAll ? "" : readSelectValue(conditionSelect, defaults.condition),
+            unit: clearAll ? "" : readSelectValue(unitSelect, defaults.unit),
+            instock: clearAll ? "" : readSelectValue(instockSelect, defaults.instock),
+            price: clearAll ? "" : readSelectValue(priceSelect, defaults.price),
+            disc: clearAll ? "" : readSelectValue(discSelect, defaults.disc),
+            rev: clearAll ? "" : readSelectValue(revSelect, defaults.rev),
+            fav: clearAll ? "" : readSelectValue(favSelect, defaults.fav),
+            reorder: clearAll ? "" : readSelectValue(reorderSelect, defaults.reorder),
+            search: clearAll || clearSearch ? "" : (searchInput ? searchInput.value.trim() : defaults.search),
+            searchFields: getActiveSearchFields(clearAll),
+            sort: defaults.sort,
+            dir: defaults.dir,
+        };
+        return filters;
+    }
+
+    function applyFiltersToUrl(url, filters) {
+        url.searchParams.set("sort", filters.sort || "rack");
+        url.searchParams.set("dir", filters.dir || "asc");
+        url.searchParams.set("page", 1);
+
+        const entries = [
+            ["rack_filter", filters.rack],
+            ["group_filter", filters.group],
+            ["condition_filter", filters.condition],
+            ["unit_filter", filters.unit],
+            ["instock_filter", filters.instock],
+            ["price_filter", filters.price],
+            ["disc_filter", filters.disc],
+            ["rev_filter", filters.rev],
+            ["fav_filter", filters.fav],
+            ["reorder_filter", filters.reorder],
+            ["search", filters.search],
+        ];
+        entries.forEach(([key, val]) => {
+            if (val) url.searchParams.set(key, val);
+            else url.searchParams.delete(key);
+        });
+
+        if (filters.searchFields && filters.searchFields.length) {
+            url.searchParams.set("search_fields", filters.searchFields.join(","));
+        } else {
+            url.searchParams.delete("search_fields");
+        }
+
+        const anyFilter = Object.keys(filters).some(key => {
+            if (["searchFields", "sort", "dir"].includes(key)) return false;
+            return !!filters[key];
+        });
+
+        const pageSizeSel = document.getElementById("page-size-select");
+        if (anyFilter) {
+            url.searchParams.set("page_size", "all");
+        } else if (pageSizeSel && pageSizeSel.value) {
+            url.searchParams.set("page_size", pageSizeSel.value);
+        } else {
+            url.searchParams.delete("page_size");
+        }
+    }
+
+    /* ================================================
        AJAX: UPDATE UNIT (FK) - only if CAN_EDIT
     ================================================= */
     function sbInitUnitDropdowns() {
@@ -215,65 +336,11 @@
         const table = document.querySelector(".sb-table");
         if (!select || !table) return;
 
-        const currentRackFilter = table.dataset.rackFilter || "";
-        const currentSort = table.dataset.currentSort || "rack";
-        const currentDir = table.dataset.currentDir || "asc";
-        const currentGroupFilter = table.dataset.groupFilter || "";
-        const currentSearch = table.dataset.search || "";
-        const currentConditionFilter = table.dataset.conditionFilter || "";
-
-        function getActiveValue(sel, fallback) {
-            if (sel && sel.value) return sel.value;
-            return fallback || "";
-        }
-
         select.addEventListener("change", function () {
             const url = new URL(window.location.href);
-            const groupSelect = document.querySelector(".sb-filter-group");
-            const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
-            const searchInput = document.getElementById("sb-search-input");
-            const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
-            const conditionSelect = document.querySelector(".sb-filter-condition");
-            const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
-
-            if (this.value) {
-                url.searchParams.set("rack_filter", this.value);
-            } else {
-                url.searchParams.delete("rack_filter");
-            }
-            if (activeGroup) {
-                url.searchParams.set("group_filter", activeGroup);
-            } else {
-                url.searchParams.delete("group_filter");
-            }
-            if (activeCondition) {
-                url.searchParams.set("condition_filter", activeCondition);
-            } else {
-                url.searchParams.delete("condition_filter");
-            }
-            if (activeSearch) {
-                url.searchParams.set("search", activeSearch);
-            } else {
-                url.searchParams.delete("search");
-            }
-
-            // page_size: all jeśli jakikolwiek filtr aktywny
-            const anyFilter = (!!this.value) || (!!activeGroup) || (!!activeSearch) || (!!activeCondition);
-            if (anyFilter) {
-                url.searchParams.set("page_size", "all");
-            } else {
-                const ps = document.getElementById("page-size-select");
-                if (ps) {
-                    url.searchParams.set("page_size", ps.value);
-                } else {
-                    url.searchParams.delete("page_size");
-                }
-            }
-
-            url.searchParams.set("page", 1);
-            url.searchParams.set("sort", currentSort);
-            url.searchParams.set("dir", currentDir);
-
+            const filters = collectActiveFilters();
+            filters.rack = this.value || "";
+            applyFiltersToUrl(url, filters);
             sbLoadInventory(url.toString());
         });
     }
@@ -283,65 +350,25 @@
         const table = document.querySelector(".sb-table");
         if (!select || !table) return;
 
-        const currentConditionFilter = table.dataset.conditionFilter || "";
-        const currentSort = table.dataset.currentSort || "rack";
-        const currentDir = table.dataset.currentDir || "asc";
-        const currentRackFilter = table.dataset.rackFilter || "";
-        const currentGroupFilter = table.dataset.groupFilter || "";
-        const currentSearch = table.dataset.search || "";
+        select.addEventListener("change", function () {
+            const url = new URL(window.location.href);
+            const filters = collectActiveFilters();
+            filters.condition = this.value || "";
+            applyFiltersToUrl(url, filters);
+            sbLoadInventory(url.toString());
+        });
+    }
 
-        function getActiveValue(sel, fallback) {
-            if (sel && sel.value) return sel.value;
-            return fallback || "";
-        }
+    function sbInitSimpleFilter(selector, key) {
+        const select = document.querySelector(selector);
+        const table = document.querySelector(".sb-table");
+        if (!select || !table) return;
 
         select.addEventListener("change", function () {
             const url = new URL(window.location.href);
-            const rackSelect = document.querySelector(".sb-filter-rack");
-            const groupSelect = document.querySelector(".sb-filter-group");
-            const searchInput = document.getElementById("sb-search-input");
-
-            const activeRack = getActiveValue(rackSelect, currentRackFilter);
-            const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
-            const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
-
-            if (this.value) {
-                url.searchParams.set("condition_filter", this.value);
-            } else {
-                url.searchParams.delete("condition_filter");
-            }
-            if (activeRack) {
-                url.searchParams.set("rack_filter", activeRack);
-            } else {
-                url.searchParams.delete("rack_filter");
-            }
-            if (activeGroup) {
-                url.searchParams.set("group_filter", activeGroup);
-            } else {
-                url.searchParams.delete("group_filter");
-            }
-            if (activeSearch) {
-                url.searchParams.set("search", activeSearch);
-            } else {
-                url.searchParams.delete("search");
-            }
-
-            const anyFilter = (!!this.value) || (!!activeRack) || (!!activeGroup) || (!!activeSearch);
-            if (anyFilter) {
-                url.searchParams.set("page_size", "all");
-            } else {
-                const ps = document.getElementById("page-size-select");
-                if (ps) {
-                    url.searchParams.set("page_size", ps.value);
-                } else {
-                    url.searchParams.delete("page_size");
-                }
-            }
-
-            url.searchParams.set("page", 1);
-            url.searchParams.set("sort", currentSort);
-            url.searchParams.set("dir", currentDir);
-
+            const filters = collectActiveFilters();
+            filters[key] = this.value || "";
+            applyFiltersToUrl(url, filters);
             sbLoadInventory(url.toString());
         });
     }
@@ -363,63 +390,11 @@
         const table = document.querySelector(".sb-table");
         if (!select || !table) return;
 
-        const currentGroupFilter = table.dataset.groupFilter || "";
-        const currentSort = table.dataset.currentSort || "rack";
-        const currentDir = table.dataset.currentDir || "asc";
-        const currentRackFilter = table.dataset.rackFilter || "";
-        const currentSearch = table.dataset.search || "";
-        const currentConditionFilter = table.dataset.conditionFilter || "";
-
-        function getActiveValue(sel, fallback) {
-            if (sel && sel.value) return sel.value;
-            return fallback || "";
-        }
-
         select.addEventListener("change", function () {
             const url = new URL(window.location.href);
-            const rackSelect = document.querySelector(".sb-filter-rack");
-            const activeRack = getActiveValue(rackSelect, currentRackFilter);
-            const searchInput = document.getElementById("sb-search-input");
-            const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
-            const conditionSelect = document.querySelector(".sb-filter-condition");
-            const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
-
-            if (this.value) {
-                url.searchParams.set("group_filter", this.value);
-            } else {
-                url.searchParams.delete("group_filter");
-            }
-            if (activeRack) {
-                url.searchParams.set("rack_filter", activeRack);
-            } else {
-                url.searchParams.delete("rack_filter");
-            }
-            if (activeCondition) {
-                url.searchParams.set("condition_filter", activeCondition);
-            } else {
-                url.searchParams.delete("condition_filter");
-            }
-            if (activeSearch) {
-                url.searchParams.set("search", activeSearch);
-            } else {
-                url.searchParams.delete("search");
-            }
-
-            const anyFilter = (!!this.value) || (!!activeRack) || (!!activeSearch) || (!!activeCondition);
-            if (anyFilter) {
-                url.searchParams.set("page_size", "all");
-            } else {
-                const ps = document.getElementById("page-size-select");
-                if (ps) {
-                    url.searchParams.set("page_size", ps.value);
-                } else {
-                    url.searchParams.delete("page_size");
-                }
-            }
-            url.searchParams.set("page", 1);
-            url.searchParams.set("sort", currentSort);
-            url.searchParams.set("dir", currentDir);
-
+            const filters = collectActiveFilters();
+            filters.group = this.value || "";
+            applyFiltersToUrl(url, filters);
             sbLoadInventory(url.toString());
         });
     }
@@ -1830,110 +1805,45 @@
             });
         });
     }
-                /* ================================================
-               SORTING (R, S, NAME, GROUP) + LOADING SPINNER
-            ================================================= */
-
-            function sbInitSorting() {
-                const table = document.querySelector(".sb-table");
-                if (!table) return;
-
-                const currentSort = table.dataset.currentSort || "rack";
-                const currentDir = table.dataset.currentDir || "asc";
-                const currentRackFilter = table.dataset.rackFilter || "";
-                const currentGroupFilter = table.dataset.groupFilter || "";
-                const currentSearch = table.dataset.search || "";
-                const currentSearchFields = table.dataset.searchFields || "";
-                const currentConditionFilter = table.dataset.conditionFilter || "";
+    /* ================================================
+       SORTING (HEADERS) + LOADING SPINNER
+    ================================================= */
+    function sbInitSorting() {
+        const table = document.querySelector(".sb-table");
+        if (!table) return;
 
         const headers = table.querySelectorAll("thead .sb-sortable-header");
         if (!headers.length) return;
 
-                headers.forEach(th => {
-                    const field = th.dataset.sortField;
-                    if (!field) return;
+        headers.forEach(th => {
+            const field = th.dataset.sortField;
+            if (!field) return;
 
-                    th.addEventListener("click", function (e) {
-                        e.preventDefault();
+            th.addEventListener("click", function (e) {
+                e.preventDefault();
 
-                        const rackSelect = document.querySelector(".sb-filter-rack");
-                        const activeRack = (rackSelect && rackSelect.value) ? rackSelect.value : currentRackFilter;
-                        const groupSelect = document.querySelector(".sb-filter-group");
-                        const activeGroup = (groupSelect && groupSelect.value) ? groupSelect.value : currentGroupFilter;
-                        const searchInput = document.getElementById("sb-search-input");
-                        const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
-                        const activeSearchFields = (function () {
-                            const icons = document.querySelectorAll(".sb-filter-icon[data-search-field]");
-                            const active = Array.from(icons)
-                                .filter(icon => !icon.classList.contains("is-muted"))
-                                .map(icon => icon.dataset.searchField)
-                                .filter(Boolean);
-                            if (!active.length && currentSearchFields) {
-                                return currentSearchFields.split(",").map(s => s.trim()).filter(Boolean);
-                            }
-                            return active;
-                        })();
-                        const conditionSelect = document.querySelector(".sb-filter-condition");
-                        const activeCondition = (conditionSelect && conditionSelect.value) ? conditionSelect.value : currentConditionFilter;
+                const baseFilters = getTableFilters();
 
-                        // Dodajemy klas? "loading" do tabeli i klikni?tego naglowka
-                        table.classList.add("sb-table-sorting");
-                        headers.forEach(h => h.classList.remove("sb-sort-loading"));
-                        th.classList.add("sb-sort-loading");
+                // Dodajemy klasę "loading" do tabeli i klikniętego nagłówka
+                table.classList.add("sb-table-sorting");
+                headers.forEach(h => h.classList.remove("sb-sort-loading"));
+                th.classList.add("sb-sort-loading");
 
-                        let nextDir = "asc";
-                        if (field === currentSort) {
-                            nextDir = currentDir === "asc" ? "desc" : "asc";
-                        }
+                let nextDir = "asc";
+                if (field === baseFilters.sort) {
+                    nextDir = baseFilters.dir === "asc" ? "desc" : "asc";
+                }
 
-                        const url = new URL(window.location.href);
-                        url.searchParams.set("sort", field);
-                        url.searchParams.set("dir", nextDir);
+                const url = new URL(window.location.href);
+                const filters = collectActiveFilters();
+                filters.sort = field;
+                filters.dir = nextDir;
+                applyFiltersToUrl(url, filters);
 
-                        // Przy zmianie sortowania wracamy na stron? 1
-                        url.searchParams.set("page", 1);
-
-                        if (activeRack) {
-                            url.searchParams.set("rack_filter", activeRack);
-                            url.searchParams.set("page_size", "all");
-                        } else {
-                            url.searchParams.delete("rack_filter");
-                        }
-                        if (activeGroup) {
-                            url.searchParams.set("group_filter", activeGroup);
-                            url.searchParams.set("page_size", "all");
-                        } else {
-                            url.searchParams.delete("group_filter");
-                        }
-                        if (activeCondition) {
-                            url.searchParams.set("condition_filter", activeCondition);
-                            url.searchParams.set("page_size", "all");
-                        } else {
-                            url.searchParams.delete("condition_filter");
-                        }
-                        if (activeSearch) {
-                            url.searchParams.set("search", activeSearch);
-                            url.searchParams.set("page_size", "all");
-                        } else {
-                            url.searchParams.delete("search");
-                        }
-                        if (activeSearchFields.length) {
-                            url.searchParams.set("search_fields", activeSearchFields.join(","));
-                        } else {
-                            url.searchParams.delete("search_fields");
-                        }
-
-                        const ps = document.getElementById("page-size-select");
-                        if (ps) {
-                            if (!activeRack && !activeGroup && !activeSearch && !activeCondition) {
-                                url.searchParams.set("page_size", ps.value);
-                            }
-                        }
-
-                        sbLoadInventory(url.toString());
-                    });
-                });
-            }
+                sbLoadInventory(url.toString());
+            });
+        });
+    }
 
 
     /* ================================================
@@ -1993,6 +1903,13 @@
                 sbInitRackFilter();
                 sbInitGroupFilter();
                 sbInitConditionFilter();
+                sbInitSimpleFilter(".sb-filter-unit", "unit");
+                sbInitSimpleFilter(".sb-filter-instock", "instock");
+                sbInitSimpleFilter(".sb-filter-price", "price");
+                sbInitSimpleFilter(".sb-filter-disc", "disc");
+                sbInitSimpleFilter(".sb-filter-rev", "rev");
+                sbInitSimpleFilter(".sb-filter-fav", "fav");
+                sbInitSimpleFilter(".sb-filter-reorder", "reorder");
                 sbInitFilterIcons(newCard);
                 sbInitSearch();
                 sbInitInlineDescNoteEditing();
@@ -2004,6 +1921,7 @@
                 sbInitDeleteModal();
                 applyPendingHighlight();
                 updateHeaderCountFromCard();
+                sbSyncUrlWithState();
                 sbProgressFinish();
                 if (typeof opts.onLoaded === "function") {
                     opts.onLoaded();
@@ -2025,38 +1943,7 @@
     ================================================= */
     function sbInitPagination() {
         const table = document.querySelector(".sb-table");
-        let currentSort = table ? (table.dataset.currentSort || "rack") : "rack";
-        let currentDir = table ? (table.dataset.currentDir || "asc") : "asc";
-        const rackSelect = document.querySelector(".sb-filter-rack");
-        const currentRackFilter = rackSelect ? rackSelect.value : (table ? (table.dataset.rackFilter || "") : "");
-        const groupSelect = document.querySelector(".sb-filter-group");
-        const currentGroupFilter = groupSelect ? groupSelect.value : (table ? (table.dataset.groupFilter || "") : "");
-        const currentSearch = table ? (table.dataset.search || "") : "";
-        const currentSearchFields = table ? (table.dataset.searchFields || "") : "";
-        const conditionSelect = document.querySelector(".sb-filter-condition");
-        const currentConditionFilter = conditionSelect ? conditionSelect.value : (table ? (table.dataset.conditionFilter || "") : "");
-
-        if (table) {
-            currentSort = table.dataset.currentSort || "rack";
-            currentDir = table.dataset.currentDir || "asc";
-        }
-
-        function getActiveValue(sel, fallback) {
-            if (sel && sel.value) return sel.value;
-            return fallback || "";
-        }
-
-        function getActiveSearchFields() {
-            const icons = document.querySelectorAll(".sb-filter-icon[data-search-field]");
-            const active = Array.from(icons)
-                .filter(icon => !icon.classList.contains("is-muted"))
-                .map(icon => icon.dataset.searchField)
-                .filter(Boolean);
-            if (!active.length && currentSearchFields) {
-                return currentSearchFields.split(",").map(s => s.trim()).filter(Boolean);
-            }
-            return active;
-        }
+        const defaults = getTableFilters();
 
         // --- dropdown Rows per page ---
         const sizeSelect = document.getElementById("page-size-select");
@@ -2064,46 +1951,11 @@
             sizeSelect.addEventListener("change", function () {
                 const pageSize = this.value;
                 const url = new URL(window.location.href);
-
-                url.searchParams.set("page", 1);
+                const filters = collectActiveFilters();
+                filters.sort = defaults.sort;
+                filters.dir = defaults.dir;
+                applyFiltersToUrl(url, filters);
                 url.searchParams.set("page_size", pageSize);
-                url.searchParams.set("sort", currentSort);
-                url.searchParams.set("dir", currentDir);
-                const rackSelect = document.querySelector(".sb-filter-rack");
-                const activeRack = getActiveValue(rackSelect, currentRackFilter);
-                const groupSelect = document.querySelector(".sb-filter-group");
-                const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
-                const searchInput = document.getElementById("sb-search-input");
-                const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
-                const conditionSelect = document.querySelector(".sb-filter-condition");
-                const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
-                const activeSearchFields = getActiveSearchFields();
-                if (activeRack) {
-                    url.searchParams.set("rack_filter", activeRack);
-                } else {
-                    url.searchParams.delete("rack_filter");
-                }
-                if (activeGroup) {
-                    url.searchParams.set("group_filter", activeGroup);
-                } else {
-                    url.searchParams.delete("group_filter");
-                }
-                if (activeCondition) {
-                    url.searchParams.set("condition_filter", activeCondition);
-                } else {
-                    url.searchParams.delete("condition_filter");
-                }
-                if (activeSearch) {
-                    url.searchParams.set("search", activeSearch);
-                } else {
-                    url.searchParams.delete("search");
-                }
-                if (activeSearchFields.length) {
-                    url.searchParams.set("search_fields", activeSearchFields.join(","));
-                } else {
-                    url.searchParams.delete("search_fields");
-                }
-
                 sbLoadInventory(url.toString());
             });
         }
@@ -2116,56 +1968,12 @@
                 const targetPage = this.dataset.page;
                 if (!targetPage) return;
 
-                const rackSelect = document.querySelector(".sb-filter-rack");
-                const activeRack = getActiveValue(rackSelect, currentRackFilter);
-                const groupSelect = document.querySelector(".sb-filter-group");
-                const activeGroup = getActiveValue(groupSelect, currentGroupFilter);
-                const searchInput = document.getElementById("sb-search-input");
-                const activeSearch = searchInput ? searchInput.value.trim() : currentSearch;
-                const conditionSelect = document.querySelector(".sb-filter-condition");
-                const activeCondition = getActiveValue(conditionSelect, currentConditionFilter);
-                const activeSearchFields = getActiveSearchFields();
-
                 const url = new URL(window.location.href);
+                const filters = collectActiveFilters();
+                filters.sort = defaults.sort;
+                filters.dir = defaults.dir;
+                applyFiltersToUrl(url, filters);
                 url.searchParams.set("page", targetPage);
-                url.searchParams.set("sort", currentSort);
-                url.searchParams.set("dir", currentDir);
-                if (activeRack) {
-                    url.searchParams.set("rack_filter", activeRack);
-                    url.searchParams.set("page_size", "all");
-                } else {
-                    url.searchParams.delete("rack_filter");
-                }
-                if (activeGroup) {
-                    url.searchParams.set("group_filter", activeGroup);
-                    url.searchParams.set("page_size", "all");
-                } else {
-                    url.searchParams.delete("group_filter");
-                }
-                if (activeCondition) {
-                    url.searchParams.set("condition_filter", activeCondition);
-                    url.searchParams.set("page_size", "all");
-                } else {
-                    url.searchParams.delete("condition_filter");
-                }
-                if (activeSearch) {
-                    url.searchParams.set("search", activeSearch);
-                    url.searchParams.set("page_size", "all");
-                } else {
-                    url.searchParams.delete("search");
-                }
-                if (activeSearchFields.length) {
-                    url.searchParams.set("search_fields", activeSearchFields.join(","));
-                } else {
-                    url.searchParams.delete("search_fields");
-                }
-
-                const ps = document.getElementById("page-size-select");
-                if (ps) {
-                    if (!activeRack && !activeGroup && !activeSearch && !activeCondition) {
-                        url.searchParams.set("page_size", ps.value);
-                    }
-                }
 
                 sbLoadInventory(url.toString());
             });
@@ -2192,69 +2000,13 @@
         const clearBtn = document.getElementById("sb-search-clear-btn");
         const clearAllBtn = document.getElementById("sb-search-clear-all-btn");
 
-        function getActiveValue(sel, fallback) {
-            if (sel && sel.value) return sel.value;
-            return fallback || "";
-        }
-
         function buildUrl({ clearSearch = false, clearAll = false } = {}) {
             const url = new URL(window.location.href);
-            const rackSelect = document.querySelector(".sb-filter-rack");
-            const groupSelect = document.querySelector(".sb-filter-group");
-            const pageSizeSel = document.getElementById("page-size-select");
-            const searchIcons = Array.from(document.querySelectorAll(".sb-filter-icon[data-search-field]"));
-
-            const activeRack = clearAll ? "" : getActiveValue(rackSelect, currentRackFilter);
-            const activeGroup = clearAll ? "" : getActiveValue(groupSelect, currentGroupFilter);
-            const searchVal = clearAll || clearSearch ? "" : (input.value || "").trim();
-            const conditionSelect = document.querySelector(".sb-filter-condition");
-            const activeCondition = clearAll ? "" : getActiveValue(conditionSelect, currentConditionFilter);
-            const activeSearchFields = clearAll
-                ? []
-                : searchIcons
-                      .filter(icon => !icon.classList.contains("is-muted"))
-                      .map(icon => icon.dataset.searchField)
-                      .filter(Boolean);
-
-            url.searchParams.set("sort", currentSort);
-            url.searchParams.set("dir", currentDir);
-            url.searchParams.set("page", 1);
-
-            if (activeRack) {
-                url.searchParams.set("rack_filter", activeRack);
-            } else {
-                url.searchParams.delete("rack_filter");
-            }
-            if (activeGroup) {
-                url.searchParams.set("group_filter", activeGroup);
-            } else {
-                url.searchParams.delete("group_filter");
-            }
-            if (activeCondition) {
-                url.searchParams.set("condition_filter", activeCondition);
-            } else {
-                url.searchParams.delete("condition_filter");
-            }
-            if (searchVal) {
-                url.searchParams.set("search", searchVal);
-            } else {
-                url.searchParams.delete("search");
-            }
-            if (activeSearchFields.length) {
-                url.searchParams.set("search_fields", activeSearchFields.join(","));
-            } else {
-                url.searchParams.delete("search_fields");
-            }
-
-            const anyFilter = !!activeRack || !!activeGroup || !!activeCondition || !!searchVal;
-            if (anyFilter) {
-                url.searchParams.set("page_size", "all");
-            } else if (pageSizeSel && pageSizeSel.value) {
-                url.searchParams.set("page_size", pageSizeSel.value);
-            } else {
-                url.searchParams.delete("page_size");
-            }
-
+            const filters = collectActiveFilters({ clearAll, clearSearch });
+            filters.search = clearAll || clearSearch ? "" : (input.value || "").trim();
+            filters.sort = currentSort;
+            filters.dir = currentDir;
+            applyFiltersToUrl(url, filters);
             return url;
         }
 
@@ -2325,6 +2077,68 @@
         } catch (e) {}
     };
 
+    // =================================================
+    // SYNC URL Z AKTUALNYM STANEM (filtry, page_size, szukanie)
+    // =================================================
+    function sbSyncUrlWithState() {
+        const table = document.querySelector(".sb-table");
+        if (!table) return;
+
+        const url = new URL(window.location.href);
+        const rackFilter = table.dataset.rackFilter || "";
+        const groupFilter = table.dataset.groupFilter || "";
+        const conditionFilter = table.dataset.conditionFilter || "";
+        const unitFilter = table.dataset.unitFilter || "";
+        const instockFilter = table.dataset.instockFilter || "";
+        const priceFilter = table.dataset.priceFilter || "";
+        const discFilter = table.dataset.discFilter || "";
+        const revFilter = table.dataset.revFilter || "";
+        const favFilter = table.dataset.favFilter || "";
+        const reorderFilter = table.dataset.reorderFilter || "";
+        const searchVal = table.dataset.search || "";
+        const searchFields = table.dataset.searchFields || "";
+        const sortField = table.dataset.currentSort || "rack";
+        const sortDir = table.dataset.currentDir || "asc";
+        const pageParam = url.searchParams.get("page");
+        const pageSizeSel = document.getElementById("page-size-select");
+        const pageSizeVal = pageSizeSel ? pageSizeSel.value : "";
+
+        url.searchParams.set("sort", sortField);
+        url.searchParams.set("dir", sortDir);
+        if (!pageParam) {
+            url.searchParams.set("page", 1);
+        }
+        if (rackFilter) url.searchParams.set("rack_filter", rackFilter);
+        else url.searchParams.delete("rack_filter");
+        if (groupFilter) url.searchParams.set("group_filter", groupFilter);
+        else url.searchParams.delete("group_filter");
+        if (conditionFilter) url.searchParams.set("condition_filter", conditionFilter);
+        else url.searchParams.delete("condition_filter");
+        if (unitFilter) url.searchParams.set("unit_filter", unitFilter);
+        else url.searchParams.delete("unit_filter");
+        if (instockFilter) url.searchParams.set("instock_filter", instockFilter);
+        else url.searchParams.delete("instock_filter");
+        if (priceFilter) url.searchParams.set("price_filter", priceFilter);
+        else url.searchParams.delete("price_filter");
+        if (discFilter) url.searchParams.set("disc_filter", discFilter);
+        else url.searchParams.delete("disc_filter");
+        if (revFilter) url.searchParams.set("rev_filter", revFilter);
+        else url.searchParams.delete("rev_filter");
+        if (favFilter) url.searchParams.set("fav_filter", favFilter);
+        else url.searchParams.delete("fav_filter");
+        if (reorderFilter) url.searchParams.set("reorder_filter", reorderFilter);
+        else url.searchParams.delete("reorder_filter");
+        if (searchVal) url.searchParams.set("search", searchVal);
+        else url.searchParams.delete("search");
+        if (searchFields) url.searchParams.set("search_fields", searchFields);
+        else url.searchParams.delete("search_fields");
+        if (pageSizeVal) url.searchParams.set("page_size", pageSizeVal);
+
+        if (url.toString() !== window.location.href) {
+            window.history.replaceState({}, "", url.toString());
+        }
+    }
+
     /* ================================================
        INIT
     ================================================= */
@@ -2343,6 +2157,13 @@
         sbInitRackFilter();
         sbInitGroupFilter();
         sbInitConditionFilter();
+        sbInitSimpleFilter(".sb-filter-unit", "unit");
+        sbInitSimpleFilter(".sb-filter-instock", "instock");
+        sbInitSimpleFilter(".sb-filter-price", "price");
+        sbInitSimpleFilter(".sb-filter-disc", "disc");
+        sbInitSimpleFilter(".sb-filter-rev", "rev");
+        sbInitSimpleFilter(".sb-filter-fav", "fav");
+        sbInitSimpleFilter(".sb-filter-reorder", "reorder");
         sbInitFilterIcons();
         sbInitInlineDescNoteEditing();
         sbInitPagination();
@@ -2353,6 +2174,7 @@
         sbInitAddItemModal();
         sbInitDeleteModal();
         applyPendingHighlight();
+        sbSyncUrlWithState();
     });
 
     window.addEventListener("load", function () {

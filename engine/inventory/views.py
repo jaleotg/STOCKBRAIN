@@ -40,7 +40,7 @@ def user_can_edit_or_json_error(request):
     return None
 
 
-# Do wyboru ilości rekordów na stronę
+# Do wyboru ilości rekordów na stronę (domyślnie 100)
 PAGE_SIZE_CHOICES = [50, 100, 200, 500, "all"]
 
 
@@ -126,18 +126,18 @@ def home_view(request):
                     request.session[session_key] = page_size_int
                     page_size = page_size_int
                 else:
-                    page_size = 50
+                    page_size = 100
             except ValueError:
-                page_size = 50
+                page_size = 100
     else:
-        stored = request.session.get(session_key, 50)
+        stored = request.session.get(session_key, 100)
         if stored == "all":
             page_size = "all"
         else:
             try:
                 page_size = int(stored)
             except (TypeError, ValueError):
-                page_size = 50
+                page_size = 100
 
     # --- RACK & GROUP FILTERS ---
     rack_filter = request.GET.get("rack_filter")
@@ -185,6 +185,15 @@ def home_view(request):
 
     # --- CONDITION FILTER ---
     condition_filter = request.GET.get("condition_filter") or ""
+
+    # --- ADDITIONAL FILTERS ---
+    unit_filter_code = (request.GET.get("unit_filter") or "").strip()
+    instock_filter = request.GET.get("instock_filter") or ""
+    price_filter = request.GET.get("price_filter") or ""
+    disc_filter = request.GET.get("disc_filter") or ""
+    rev_filter = request.GET.get("rev_filter") or ""
+    fav_filter = request.GET.get("fav_filter") or ""
+    reorder_filter = request.GET.get("reorder_filter") or ""
 
     # --- SORTING (R, S, Name, Group) ---
     sort_field = request.GET.get("sort", "rack")
@@ -275,6 +284,73 @@ def home_view(request):
         filters_applied = True
     if condition_filter:
         base_qs = base_qs.filter(condition_status=condition_filter)
+        filters_applied = True
+    if unit_filter_code:
+        code_up = unit_filter_code.upper()
+        unit_exists = Unit.objects.filter(code__iexact=code_up).exists()
+        if unit_exists:
+            # Dopuszczamy FK, kod oraz typowe warianty tekstowe z importu (np. ROLLS, METER)
+            synonyms = {
+                "ROLL": ["ROLL", "ROLLS"],
+                "M": ["M", "METER", "METERS"],
+                "CM": ["CM"],
+                "MM": ["MM"],
+                "LTR": ["LTR", "LITRE", "LITERS", "LITRES"],
+                "ML": ["ML"],
+                "PCS": ["PCS", "PC", "PIECES"],
+                "PAIR": ["PAIR", "PAIRS"],
+                "SET": ["SET", "SETS"],
+                "KIT": ["KIT", "KITS"],
+                "ORGANISER": ["ORGANISER", "ORGANIZER"],
+                "BOX": ["BOX", "BOXES"],
+                "CAN": ["CAN", "CANS"],
+                "KGM": ["KGM", "KG", "KGS", "KILOGRAM", "KILOGRAMS"],
+            }
+            accepted_units = synonyms.get(code_up, [code_up])
+            base_qs = base_qs.filter(
+                Q(unit__code__iexact=code_up) |
+                Q(units__in=accepted_units) |
+                Q(units__iexact=code_up)
+            )
+            filters_applied = True
+        else:
+            # nieznany kod jednostki – ignorujemy filtr, by nie pokazywać pustych wyników
+            unit_filter_code = ""
+    if instock_filter == "yes":
+        base_qs = base_qs.filter(quantity_in_stock__gte=1)
+        filters_applied = True
+    elif instock_filter == "no":
+        base_qs = base_qs.filter(Q(quantity_in_stock__lt=1) | Q(quantity_in_stock__isnull=True))
+        filters_applied = True
+    if price_filter == "yes":
+        base_qs = base_qs.filter(Q(price__gt=0) & Q(price__isnull=False))
+        filters_applied = True
+    elif price_filter == "no":
+        base_qs = base_qs.filter(Q(price__isnull=True) | Q(price__lte=0))
+        filters_applied = True
+    if disc_filter == "yes":
+        base_qs = base_qs.filter(discontinued=True)
+        filters_applied = True
+    elif disc_filter == "no":
+        base_qs = base_qs.filter(discontinued=False)
+        filters_applied = True
+    if rev_filter == "yes":
+        base_qs = base_qs.filter(verify=True)
+        filters_applied = True
+    elif rev_filter == "no":
+        base_qs = base_qs.filter(verify=False)
+        filters_applied = True
+    if fav_filter == "yes":
+        base_qs = base_qs.filter(fav_present_int=1)
+        filters_applied = True
+    elif fav_filter == "no":
+        base_qs = base_qs.filter(fav_present_int=0)
+        filters_applied = True
+    if reorder_filter == "yes":
+        base_qs = base_qs.filter(for_reorder_ann=1)
+        filters_applied = True
+    elif reorder_filter == "no":
+        base_qs = base_qs.filter(for_reorder_ann=0)
         filters_applied = True
     if search_query:
         fields_to_search = selected_search_fields or allowed_search_fields
@@ -609,6 +685,13 @@ def home_view(request):
         "rack_filter": rack_filter_int,
         "group_filter": group_filter_int,
         "condition_filter": condition_filter,
+        "unit_filter": unit_filter_code,
+        "instock_filter": instock_filter,
+        "price_filter": price_filter,
+        "disc_filter": disc_filter,
+        "rev_filter": rev_filter,
+        "fav_filter": fav_filter,
+        "reorder_filter": reorder_filter,
         "selected_rack_count": selected_rack_count,
         "item_count": item_count,
 

@@ -1,7 +1,7 @@
 import pandas as pd
 from decimal import Decimal, InvalidOperation
 from django.db import transaction
-from .models import InventoryItem
+from .models import InventoryItem, Unit
 
 
 def parse_int(value):
@@ -164,6 +164,9 @@ def import_inventory_from_excel(excel_file):
     def _do_import():
         nonlocal created, skipped, missing_loc, rack_invalid
 
+        # Preload existing unit codes for quick lookup
+        unit_by_code = {u.code.upper(): u for u in Unit.objects.all()}
+
         for _, row in df_data.iterrows():
             rack, shelf, box = parse_loc(row.get("Localization"))
             if rack is None and "localization" not in colmap:
@@ -181,6 +184,10 @@ def import_inventory_from_excel(excel_file):
                 skipped += 1
                 continue
 
+            raw_unit = get_value(row, ["units", "unit"])
+            canonical_unit, raw_upper = normalize_unit(raw_unit)
+            unit_fk = unit_by_code.get(canonical_unit)
+
             InventoryItem.objects.create(
                 rack=rack,
                 shelf=shelf,
@@ -194,7 +201,8 @@ def import_inventory_from_excel(excel_file):
                 oem_number=get_value(row, ["oem number"]) or "",
                 vendor=get_value(row, ["vendor"]) or "",
                 source_location=get_value(row, ["source location", "source"]) or "",
-                units=get_value(row, ["units", "unit"]) or "",
+                units=canonical_unit or (raw_upper or ""),
+                unit=unit_fk,
                 quantity_in_stock=parse_int(get_value(row, ["quantity in stock", "qty in stock", "stock quantity"])),
                 price=parse_decimal(get_value(row, ["price", "unit price"])),
                 reorder_level=parse_int(get_value(row, ["reorder level"])),
@@ -215,3 +223,36 @@ def import_inventory_from_excel(excel_file):
         "columns": list(df_data.columns),
         "total_rows": len(df_data),
     }
+
+# Helper to normalise unit names from import to our canonical codes
+UNIT_SYNONYMS = {
+    "ROLL": ["ROLL", "ROLLS"],
+    "M": ["M", "METER", "METERS"],
+    "CM": ["CM"],
+    "MM": ["MM"],
+    "LTR": ["LTR", "LITRE", "LITRES", "LITER", "LITERS"],
+    "ML": ["ML"],
+    "PCS": ["PCS", "PC", "PIECE", "PIECES"],
+    "PAIR": ["PAIR", "PAIRS"],
+    "SET": ["SET", "SETS"],
+    "KIT": ["KIT", "KITS"],
+    "ORGANISER": ["ORGANISER", "ORGANIZER"],
+    "BOX": ["BOX", "BOXES"],
+    "CAN": ["CAN", "CANS"],
+    "KGM": ["KGM", "KG", "KGS", "KILOGRAM", "KILOGRAMS"],
+    "METER": ["METER", "METERS"],
+}
+
+def normalize_unit(raw):
+    if raw is None:
+        return None, None
+    if pd.isna(raw):
+        return None, None
+    text = str(raw).strip()
+    if not text:
+        return None, None
+    upper = text.upper()
+    for canonical, aliases in UNIT_SYNONYMS.items():
+        if upper == canonical or upper in aliases:
+            return canonical, upper
+    return upper, upper

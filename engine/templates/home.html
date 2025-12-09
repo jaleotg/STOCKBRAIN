@@ -190,6 +190,13 @@
                data-rack-filter="{{ rack_filter|default:'' }}"
                data-group-filter="{{ group_filter|default:'' }}"
                data-condition-filter="{{ condition_filter|default:'' }}"
+               data-unit-filter="{{ unit_filter|default:'' }}"
+               data-instock-filter="{{ instock_filter|default:'' }}"
+               data-price-filter="{{ price_filter|default:'' }}"
+               data-disc-filter="{{ disc_filter|default:'' }}"
+               data-rev-filter="{{ rev_filter|default:'' }}"
+               data-fav-filter="{{ fav_filter|default:'' }}"
+               data-reorder-filter="{{ reorder_filter|default:'' }}"
                data-search="{{ search_query|default:'' }}"
                data-search-fields="{{ search_fields|default:'' }}">
             <thead>
@@ -231,13 +238,32 @@
                     <th class="col-sourceloc"><span class="sb-filter-icon{% if search_fields_list and 'source_location' not in search_fields_list %} is-muted{% endif %}" data-search-field="source_location" aria-label="Toggle search"></span></th>
                 {% endif %}
                 {% if is_purchase_admin or 'unit' not in restricted_fields %}
-                    <th class="col-units"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-units">
+                        <select class="sb-filter-unit">
+                            <option value="" {% if not unit_filter %}selected{% endif %}>------</option>
+                            {% for u in units %}
+                                <option value="{{ u.code }}" {% if unit_filter|lower == u.code|lower %}selected{% endif %}>{{ u.code }}</option>
+                            {% endfor %}
+                        </select>
+                    </th>
                 {% endif %}
                 {% if is_purchase_admin or 'quantity_in_stock' not in restricted_fields %}
-                    <th class="col-instock"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-instock">
+                        <select class="sb-filter-instock">
+                            <option value="" {% if not instock_filter %}selected{% endif %}>------</option>
+                            <option value="yes" {% if instock_filter == 'yes' %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if instock_filter == 'no' %}selected{% endif %}>No</option>
+                        </select>
+                    </th>
                 {% endif %}
                 {% if is_purchase_admin or 'price' not in restricted_fields %}
-                    <th class="col-price"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-price">
+                        <select class="sb-filter-price">
+                            <option value="" {% if not price_filter %}selected{% endif %}>------</option>
+                            <option value="yes" {% if price_filter == 'yes' %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if price_filter == 'no' %}selected{% endif %}>No</option>
+                        </select>
+                    </th>
                 {% endif %}
                 {% if is_purchase_admin or 'reorder_level' not in restricted_fields %}
                     <th class="col-reorderlevel"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
@@ -259,15 +285,39 @@
                     </th>
                 {% endif %}
                 {% if is_purchase_admin or 'discontinued' not in restricted_fields %}
-                    <th class="col-disc"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-disc">
+                        <select class="sb-filter-disc">
+                            <option value="" {% if not disc_filter %}selected{% endif %}>------</option>
+                            <option value="yes" {% if disc_filter == 'yes' %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if disc_filter == 'no' %}selected{% endif %}>No</option>
+                        </select>
+                    </th>
                 {% endif %}
                 {% if is_purchase_admin or 'verify' not in restricted_fields %}
-                    <th class="col-rev"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-rev">
+                        <select class="sb-filter-rev">
+                            <option value="" {% if not rev_filter %}selected{% endif %}>------</option>
+                            <option value="yes" {% if rev_filter == 'yes' %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if rev_filter == 'no' %}selected{% endif %}>No</option>
+                        </select>
+                    </th>
                 {% endif %}
-                <th class="col-fav"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                <th class="col-fav">
+                    <select class="sb-filter-fav">
+                        <option value="" {% if not fav_filter %}selected{% endif %}>------</option>
+                        <option value="yes" {% if fav_filter == 'yes' %}selected{% endif %}>Yes</option>
+                        <option value="no" {% if fav_filter == 'no' %}selected{% endif %}>No</option>
+                    </select>
+                </th>
                 <th class="col-note"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
                 {% if is_purchase_admin or 'for_reorder' not in restricted_fields %}
-                    <th class="col-reorder"><span class="sb-filter-icon" aria-label="Toggle search"></span></th>
+                    <th class="col-reorder">
+                        <select class="sb-filter-reorder">
+                            <option value="" {% if not reorder_filter %}selected{% endif %}>------</option>
+                            <option value="yes" {% if reorder_filter == 'yes' %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if reorder_filter == 'no' %}selected{% endif %}>No</option>
+                        </select>
+                    </th>
                 {% endif %}
                 {% if can_edit %}
                     <th class="col-trash"></th>
