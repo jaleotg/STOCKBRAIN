@@ -346,6 +346,18 @@
         });
     }
 
+    function sbInitFilterIcons(context) {
+        const scope = context || document;
+        const icons = scope.querySelectorAll(".sb-filter-icon");
+        if (!icons.length) return;
+
+        icons.forEach(icon => {
+            icon.addEventListener("click", () => {
+                icon.classList.toggle("is-muted");
+            });
+        });
+    }
+
     function sbInitGroupFilter() {
         const select = document.querySelector(".sb-filter-group");
         const table = document.querySelector(".sb-table");
@@ -1964,6 +1976,7 @@
                 sbInitRackFilter();
                 sbInitGroupFilter();
                 sbInitConditionFilter();
+                sbInitFilterIcons(newCard);
                 sbInitSearch();
                 sbInitInlineDescNoteEditing();
                 sbInitPagination();
@@ -2276,6 +2289,7 @@
         sbInitRackFilter();
         sbInitGroupFilter();
         sbInitConditionFilter();
+        sbInitFilterIcons();
         sbInitInlineDescNoteEditing();
         sbInitPagination();
         sbInitSearch();

@@ -236,6 +236,30 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
+.sb-filter-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: rgba(20, 121, 255, 0.08);
+    color: #0d6efd;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.sb-filter-icon::before {
+    content: "\1F50D";
+}
+
+.sb-filter-icon.is-muted {
+    opacity: 0.35;
+    background: rgba(0, 0, 0, 0.06);
+}
+
 /* ============================================================
    FROZEN LEFT COLUMNS (Location / Rck / Sh / Box)
 ============================================================ */
