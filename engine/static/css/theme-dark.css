@@ -199,6 +199,12 @@
     color: #eee;
     border: 1px solid #555;
 }
+
+/* Inline editors */
+.sb-dark .sb-inline-input,
+.sb-dark .sb-inline-textarea {
+    color: #fff;
+}
 .sb-dark .sb-add-field input:focus,
 .sb-dark .sb-add-field textarea:focus,
 .sb-dark .sb-add-field select:focus {

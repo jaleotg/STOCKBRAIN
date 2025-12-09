@@ -1,7 +1,7 @@
 import pandas as pd
 from decimal import Decimal, InvalidOperation
 from django.db import transaction
-from .models import InventoryItem, Unit
+from .models import InventoryItem, Unit, ItemGroup
 
 
 def parse_int(value):
@@ -166,6 +166,8 @@ def import_inventory_from_excel(excel_file):
 
         # Preload existing unit codes for quick lookup
         unit_by_code = {u.code.upper(): u for u in Unit.objects.all()}
+        # Preload existing groups
+        group_by_name = {g.name.strip(): g for g in ItemGroup.objects.all()}
 
         for _, row in df_data.iterrows():
             rack, shelf, box = parse_loc(row.get("Localization"))
@@ -188,11 +190,23 @@ def import_inventory_from_excel(excel_file):
             canonical_unit, raw_upper = normalize_unit(raw_unit)
             unit_fk = unit_by_code.get(canonical_unit)
 
+            # Group handling: create/link ItemGroup based on name
+            raw_group = get_value(row, ["group", "grupa"]) or ""
+            group_name_clean = (str(raw_group).strip() if raw_group is not None else "")
+            group_fk = None
+            if group_name_clean:
+                existing = group_by_name.get(group_name_clean)
+                if not existing:
+                    existing, _ = ItemGroup.objects.get_or_create(name=group_name_clean)
+                    group_by_name[group_name_clean] = existing
+                group_fk = existing
+
             InventoryItem.objects.create(
                 rack=rack,
                 shelf=shelf,
                 box=box,
-                group_name=get_value(row, ["group", "grupa"]) or "",
+                group_name=group_name_clean,
+                group=group_fk,
                 name=get_value(row, ["name"]) or "",
                 part_description=get_value(row, ["part description", "description"]) or "",
                 part_number=get_value(row, ["part number"]) or "",
