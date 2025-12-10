@@ -2011,6 +2011,7 @@
         const clearBtn = document.getElementById("sb-search-clear-btn");
         const clearAllBtn = document.getElementById("sb-search-clear-all-btn");
         const pageSizeSel = document.getElementById("page-size-select");
+        const focusToggle = document.getElementById("sb-focus-toggle-btn");
 
         function buildUrl({ clearSearch = false, clearAll = false, forceAll = false } = {}) {
             const url = new URL(window.location.href);
@@ -2063,6 +2064,12 @@
         if (advBtn) advBtn.addEventListener("click", () => runSearch(true));
         if (clearBtn) clearBtn.addEventListener("click", clearSearch);
         if (clearAllBtn) clearAllBtn.addEventListener("click", clearAll);
+        if (focusToggle) {
+            focusToggle.addEventListener("click", () => {
+                const isInactive = focusToggle.classList.toggle("is-inactive");
+                focusToggle.setAttribute("aria-pressed", (!isInactive).toString());
+            });
+        }
 
         // ustaw wartość startową
         if (currentSearch && !input.value) {

@@ -248,6 +248,34 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
+.sb-focus-toggle {
+    background: #2ecc71;
+    color: #fff;
+    border: 1px solid #0d6efd;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+}
+.sb-focus-toggle.is-inactive {
+    background: #ccc;
+    border-color: #ccc;
+    color: #555;
+}
+.sb-focus-icon {
+    width: 18px;
+    height: 18px;
+}
+.sb-focus-icon .focus-frame {
+    stroke: #0d6efd;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+.sb-focus-toggle.is-inactive .focus-frame {
+    stroke: #777;
+}
+
 .sb-filter-icon {
     display: inline-flex;
     align-items: center;
