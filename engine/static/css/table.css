@@ -80,6 +80,36 @@
     box-shadow: 0 0 0 2px #28a745 inset;
 }
 
+.sb-table tr.sb-row-focus td {
+    box-shadow: 0 -2px #2c7be5 inset, 0 2px #2c7be5 inset;
+}
+.sb-table td.sb-col-focus {
+    box-shadow: -2px 0 #2c7be5 inset, 2px 0 #2c7be5 inset;
+}
+.sb-table tr.sb-row-focus td.sb-col-focus {
+    box-shadow: 0 -2px #2c7be5 inset, 0 2px #2c7be5 inset, -2px 0 #2c7be5 inset, 2px 0 #2c7be5 inset;
+}
+
+.sb-table tr.sb-row-edited td {
+    box-shadow: 0 -2px #d9534f inset, 0 2px #d9534f inset;
+}
+.sb-table td.sb-col-edited {
+    box-shadow: -2px 0 #d9534f inset, 2px 0 #d9534f inset;
+}
+.sb-table tr.sb-row-edited td.sb-col-edited {
+    box-shadow: 0 -2px #d9534f inset, 0 2px #d9534f inset, -2px 0 #d9534f inset, 2px 0 #d9534f inset;
+}
+
+.sb-table tr.sb-row-saved td {
+    box-shadow: 0 -2px #28a745 inset, 0 2px #28a745 inset;
+}
+.sb-table td.sb-col-saved {
+    box-shadow: -2px 0 #28a745 inset, 2px 0 #28a745 inset;
+}
+.sb-table tr.sb-row-saved td.sb-col-saved {
+    box-shadow: 0 -2px #28a745 inset, 0 2px #28a745 inset, -2px 0 #28a745 inset, 2px 0 #28a745 inset;
+}
+
 /* striped + hover */
 
 /* Frozen columns zebra & hover – keep in sync with row background */

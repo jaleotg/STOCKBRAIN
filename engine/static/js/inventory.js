@@ -13,10 +13,61 @@
         edited: "sb-cell-edited",
         saved: "sb-cell-saved",
     };
+    let focusModeEnabled = true;
+    let lastCrossColClass = null;
+    let lastCrossRow = null;
 
     let activeCellState = { cell: null, type: null };
 
+    const ROW_CROSS_CLASS = {
+        focus: "sb-row-focus",
+        edited: "sb-row-edited",
+        saved: "sb-row-saved",
+    };
+    const COL_CROSS_CLASS = {
+        focus: "sb-col-focus",
+        edited: "sb-col-edited",
+        saved: "sb-col-saved",
+    };
+
+    function getPrimaryColClass(cell) {
+        if (!cell) return null;
+        const cls = Array.from(cell.classList || []).find(c => c.startsWith("col-"));
+        return cls || null;
+    }
+
+    function clearFocusCross() {
+        if (lastCrossRow) {
+            lastCrossRow.classList.remove("sb-row-focus", "sb-row-edited", "sb-row-saved");
+            lastCrossRow = null;
+        }
+        if (lastCrossColClass) {
+            document.querySelectorAll("." + lastCrossColClass).forEach(el => {
+                el.classList.remove("sb-col-focus", "sb-col-edited", "sb-col-saved");
+            });
+            lastCrossColClass = null;
+        }
+    }
+
+    function applyFocusCross(cell, stateKey) {
+        if (!focusModeEnabled || !cell) return;
+        clearFocusCross();
+        const row = cell.closest("tr");
+        const colCls = getPrimaryColClass(cell);
+        if (row && ROW_CROSS_CLASS[stateKey]) {
+            row.classList.add(ROW_CROSS_CLASS[stateKey]);
+            lastCrossRow = row;
+        }
+        if (colCls && COL_CROSS_CLASS[stateKey]) {
+            document.querySelectorAll("." + colCls).forEach(el => {
+                el.classList.add(COL_CROSS_CLASS[stateKey]);
+            });
+            lastCrossColClass = colCls;
+        }
+    }
+
     function clearActiveCellState() {
+        clearFocusCross();
         if (activeCellState.cell) {
             activeCellState.cell.classList.remove(
                 CELL_STATE_CLASSES.focus,
@@ -34,6 +85,8 @@
         clearActiveCellState();
         cell.classList.add(CELL_STATE_CLASSES[type]);
         activeCellState = { cell, type };
+
+        applyFocusCross(cell, type);
     }
 
     /* ================================================
@@ -2068,6 +2121,12 @@
             focusToggle.addEventListener("click", () => {
                 const isInactive = focusToggle.classList.toggle("is-inactive");
                 focusToggle.setAttribute("aria-pressed", (!isInactive).toString());
+                focusModeEnabled = !isInactive;
+                if (!focusModeEnabled) {
+                    clearFocusCross();
+                } else if (activeCellState.cell && activeCellState.type) {
+                    applyFocusCross(activeCellState.cell, activeCellState.type);
+                }
             });
         }
 
