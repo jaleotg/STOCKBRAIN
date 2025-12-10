@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Database Tools{% endblock %}
+
+{% block content %}
+<div class="sb-card">
+    <h2 class="sb-title">Database Tools</h2>
+    <p>Operations below apply to the entire database (all tables). Use with caution.</p>
+
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post" action="" style="margin-bottom:20px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="export">
+        <button type="submit" class="sb-btn sb-btn-primary">Export (JSON dump)</button>
+    </form>
+
+    <form method="post" action="" enctype="multipart/form-data" style="margin-bottom:20px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="import">
+        <label>Import JSON dump (replaces entire DB):
+            <input type="file" name="import_file" accept="application/json">
+        </label>
+        <button type="submit" class="sb-btn sb-btn-secondary">Import &amp; Replace</button>
+    </form>
+
+    <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="sb-btn sb-btn-danger"
+                onclick="return confirm('This will wipe ALL tables. Continue?');">
+            Delete ALL data
+        </button>
+    </form>
+</div>
+{% endblock %}

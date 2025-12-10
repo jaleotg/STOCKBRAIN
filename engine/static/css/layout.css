@@ -84,6 +84,17 @@ body {
     font-weight: 700;
 }
 
+.sb-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.sb-btn-primary { background: #28a745; color: #fff; }
+.sb-btn-secondary { background: #2c7be5; color: #fff; }
+.sb-btn-danger { background: #d9534f; color: #fff; }
+
 
 /* =========================================
    MAIN CONTENT + CARDS

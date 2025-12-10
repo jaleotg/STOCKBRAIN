@@ -13,6 +13,7 @@ from inventory.views import (
     create_item,
     delete_item,
 )
+from datatools.views import db_tools
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -25,6 +26,7 @@ urlpatterns = [
     path("", home_view, name="home"),
     path("home/", home_view, name="home_alias"),
     path("work-log/", work_log_view, name="work_log"),
+    path("admin/db-tools/", db_tools, name="db_tools"),
 
     # AJAX API endpoints (InventoryItem)
     path("api/update-unit/", update_unit, name="update_unit"),
