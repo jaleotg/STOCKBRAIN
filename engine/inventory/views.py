@@ -178,10 +178,13 @@ def home_view(request):
         "box",
         "group_name",
     ]
-    selected_search_fields = [
-        f for f in (s.strip() for s in search_fields_param.split(","))
-        if f in allowed_search_fields
-    ]
+    if search_fields_param.lower() in ("all", "__all__"):
+        selected_search_fields = allowed_search_fields
+    else:
+        selected_search_fields = [
+            f for f in (s.strip() for s in search_fields_param.split(","))
+            if f in allowed_search_fields
+        ]
 
     # --- CONDITION FILTER ---
     condition_filter = request.GET.get("condition_filter") or ""
@@ -353,11 +356,11 @@ def home_view(request):
         base_qs = base_qs.filter(for_reorder_ann=0)
         filters_applied = True
     if search_query:
-        fields_to_search = selected_search_fields or allowed_search_fields
+        fields_to_search = selected_search_fields
         search_q = Q()
         for field in fields_to_search:
             search_q |= Q(**{f"{field}__icontains": search_query})
-        if search_q:
+        if search_q and fields_to_search:
             base_qs = base_qs.filter(search_q)
             filters_applied = True
     if filters_applied:

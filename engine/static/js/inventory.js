@@ -181,15 +181,10 @@
             .filter(icon => !icon.classList.contains("is-muted"))
             .map(icon => icon.dataset.searchField)
             .filter(Boolean);
-        if (active.length) return active;
-        const defaults = getTableFilters().searchFields;
-        if (defaults) {
-            return defaults.split(",").map(s => s.trim()).filter(Boolean);
-        }
-        return [];
+        return active;
     }
 
-    function collectActiveFilters({ clearAll = false, clearSearch = false } = {}) {
+    function collectActiveFilters({ clearAll = false, clearSearch = false, forceAll = false } = {}) {
         const defaults = getTableFilters();
         const rackSelect = document.querySelector(".sb-filter-rack");
         const groupSelect = document.querySelector(".sb-filter-group");
@@ -215,7 +210,7 @@
             fav: clearAll ? "" : readSelectValue(favSelect, defaults.fav),
             reorder: clearAll ? "" : readSelectValue(reorderSelect, defaults.reorder),
             search: clearAll || clearSearch ? "" : (searchInput ? searchInput.value.trim() : defaults.search),
-            searchFields: getActiveSearchFields(clearAll),
+            searchFields: forceAll ? ["__all__"] : getActiveSearchFields(clearAll),
             sort: defaults.sort,
             dir: defaults.dir,
         };
@@ -1999,19 +1994,23 @@
         const advBtn = document.getElementById("sb-advanced-search-btn");
         const clearBtn = document.getElementById("sb-search-clear-btn");
         const clearAllBtn = document.getElementById("sb-search-clear-all-btn");
+        const pageSizeSel = document.getElementById("page-size-select");
 
-        function buildUrl({ clearSearch = false, clearAll = false } = {}) {
+        function buildUrl({ clearSearch = false, clearAll = false, forceAll = false } = {}) {
             const url = new URL(window.location.href);
-            const filters = collectActiveFilters({ clearAll, clearSearch });
+            const filters = collectActiveFilters({ clearAll, clearSearch, forceAll });
             filters.search = clearAll || clearSearch ? "" : (input.value || "").trim();
             filters.sort = currentSort;
             filters.dir = currentDir;
             applyFiltersToUrl(url, filters);
+            if (clearAll) {
+                url.searchParams.set("page_size", "100");
+            }
             return url;
         }
 
-        function runSearch() {
-            const url = buildUrl({ clearSearch: false, clearAll: false });
+        function runSearch(forceAll = false) {
+            const url = buildUrl({ clearSearch: false, clearAll: false, forceAll });
             sbLoadInventory(url.toString());
         }
 
@@ -2023,6 +2022,16 @@
 
         function clearAll() {
             input.value = "";
+            // reset dropdowns UI
+            const selects = document.querySelectorAll(".sb-header-filter-row select");
+            selects.forEach(sel => { sel.value = ""; });
+            // reset search field toggles to active
+            document.querySelectorAll(".sb-filter-icon[data-search-field]").forEach(icon => {
+                icon.classList.remove("is-muted");
+            });
+            // reset page size to 100 in UI
+            if (pageSizeSel) pageSizeSel.value = "100";
+
             const url = buildUrl({ clearSearch: true, clearAll: true });
             sbLoadInventory(url.toString());
         }
@@ -2034,8 +2043,8 @@
             }
         });
 
-        if (searchBtn) searchBtn.addEventListener("click", runSearch);
-        if (advBtn) advBtn.addEventListener("click", runSearch);
+        if (searchBtn) searchBtn.addEventListener("click", () => runSearch(false));
+        if (advBtn) advBtn.addEventListener("click", () => runSearch(true));
         if (clearBtn) clearBtn.addEventListener("click", clearSearch);
         if (clearAllBtn) clearAllBtn.addEventListener("click", clearAll);
 
