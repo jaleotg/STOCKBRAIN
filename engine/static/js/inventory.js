@@ -603,6 +603,7 @@
         const cycle = ["NONE", "RED", "GREEN", "YELLOW", "BLUE"];
         function setStarAppearance(el, color) {
             el.dataset.color = color;
+            const row = el.closest(".sb-row");
 
             el.classList.remove(
                 "sb-fav-red",
@@ -630,6 +631,21 @@
 
             el.innerHTML = svg;
             el.classList.add(cls);
+
+            // Kolor wiersza = kolor gwiazdki (tylko gdy aktywna)
+            if (row) {
+                row.classList.remove("sb-row-fav-red", "sb-row-fav-green", "sb-row-fav-yellow", "sb-row-fav-blue");
+                row.style.color = ""; // reset
+                if (color === "RED") {
+                    row.classList.add("sb-row-fav-red");
+                } else if (color === "GREEN") {
+                    row.classList.add("sb-row-fav-green");
+                } else if (color === "YELLOW") {
+                    row.classList.add("sb-row-fav-yellow");
+                } else if (color === "BLUE") {
+                    row.classList.add("sb-row-fav-blue");
+                }
+            }
         }
 
         stars.forEach(star => {

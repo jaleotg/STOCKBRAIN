@@ -387,3 +387,13 @@
     background-color: #7a6400 !important;
     color: #999 !important;
 }
+
+/* Favorite row colors in dark */
+.sb-dark .sb-row-fav-red { color: #ff6b5b; }
+.sb-dark .sb-row-fav-green { color: #6ddf8d; }
+.sb-dark .sb-row-fav-yellow { color: #ffd75e; }
+.sb-dark .sb-row-fav-blue { color: #66b3ff; }
+.sb-dark .sb-row-fav-red td { color: #ff6b5b !important; font-weight: 800; }
+.sb-dark .sb-row-fav-green td { color: #6ddf8d !important; font-weight: 800; }
+.sb-dark .sb-row-fav-yellow td { color: #ffd75e !important; font-weight: 800; }
+.sb-dark .sb-row-fav-blue td { color: #66b3ff !important; font-weight: 800; }

@@ -869,6 +869,16 @@
 .sb-fav-blue { color: #007aff; }
 .sb-fav-none { color: #aaa; }
 
+/* Row color follows star (active only) */
+.sb-row-fav-red { color: #ff3b30; }
+.sb-row-fav-green { color: #34c759; }
+.sb-row-fav-yellow { color: #d1a800; }
+.sb-row-fav-blue { color: #007aff; }
+.sb-row-fav-red td { color: #ff3b30 !important; font-weight: 800; }
+.sb-row-fav-green td { color: #34c759 !important; font-weight: 800; }
+.sb-row-fav-yellow td { color: #d1a800 !important; font-weight: 800; }
+.sb-row-fav-blue td { color: #007aff !important; font-weight: 800; }
+
 /* Hover */
 .col-fav .sb-favorite:hover {
     transform: scale(1.15);
