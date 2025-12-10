@@ -95,6 +95,19 @@ def logout_view(request):
 
 
 # ============================================
+# WORK LOG (simple placeholder)
+# ============================================
+
+@login_required
+def work_log_view(request):
+    return render(
+        request,
+        "work_log.html",
+        {"item_count": InventoryItem.objects.count()},
+    )
+
+
+# ============================================
 # HOME (TABLE + PAGINATION + DROPDOWNS + USER META + SORTING)
 # ============================================
 

@@ -4,6 +4,7 @@ from inventory.views import (
     login_view,
     logout_view,
     home_view,
+    work_log_view,
     update_unit,
     update_group,
     update_field,
@@ -23,6 +24,7 @@ urlpatterns = [
     # Home — oba adresy działają
     path("", home_view, name="home"),
     path("home/", home_view, name="home_alias"),
+    path("work-log/", work_log_view, name="work_log"),
 
     # AJAX API endpoints (InventoryItem)
     path("api/update-unit/", update_unit, name="update_unit"),

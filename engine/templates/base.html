@@ -32,22 +32,32 @@
 
     <!-- HEADER -->
     <header class="sb-header">
-        <div class="sb-header-title">
-            DesertBrain
-            <span class="sb-header-count">
-                {{ item_count|default:"0" }} items in base
-            </span>
+        <div class="sb-header-left">
+            <div class="sb-header-title">
+                DesertBrain
+                <span class="sb-header-count">
+                    {{ item_count|default:"0" }} items in base
+                </span>
+            </div>
+            {% url 'home' as home_url %}
+            {% url 'home_alias' as home_alias_url %}
+            {% url 'work_log' as work_log_url %}
+            {% with current_name=request.resolver_match.url_name|default:'' %}
+            <nav class="sb-header-nav">
+                <a href="{{ home_url }}"
+                   class="sb-link {% if current_name == 'home' or current_name == 'home_alias' %}sb-link-active{% endif %}">Inventory</a>
+                <a href="{{ work_log_url }}"
+                   class="sb-link {% if current_name == 'work_log' %}sb-link-active{% endif %}">Work Log</a>
+                {% if request.user.is_staff %}
+                    <a href="{% url 'admin:index' %}"
+                       target="_blank" rel="noopener"
+                       class="sb-link">Admin</a>
+                {% endif %}
+            </nav>
+            {% endwith %}
         </div>
 
         <div class="sb-header-right">
-
-            {# ADMIN MENU – only for staff users #}
-            {% if request.user.is_staff %}
-                <a href="{% url 'admin:index' %}" class="sb-link" style="margin-right:15px;">
-                    Admin
-                </a>
-            {% endif %}
-
             <button
                 type="button"
                 class="sb-theme-btn"

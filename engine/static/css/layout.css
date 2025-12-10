@@ -28,6 +28,12 @@ body {
     justify-content: space-between;
 }
 
+.sb-header-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
 .sb-header-title {
     letter-spacing: 0.04em;
     line-height: 1.2;
@@ -41,6 +47,13 @@ body {
 }
 
 .sb-header-right {
+    font-size: 14px;
+}
+
+.sb-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     font-size: 14px;
 }
 
@@ -64,6 +77,11 @@ body {
 
 .sb-header .sb-link:hover {
     text-decoration: underline;
+}
+
+.sb-header .sb-link-active {
+    color: #28a745 !important;
+    font-weight: 700;
 }
 
 
