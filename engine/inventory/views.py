@@ -20,6 +20,8 @@ from django.db.models import (
 )
 from django.db.models.functions import Lower, Substr, RowNumber, Cast, NullIf
 from django.db.models import Func
+from django.utils import timezone
+from django.http import HttpResponseForbidden, Http404
 
 from .models import (
     InventoryItem,
@@ -30,6 +32,7 @@ from .models import (
     FAVORITE_COLOR_CHOICES,
     InventorySettings,
 )
+from worklog.models import WorkLog, WorkLogEntry
 
 
 def user_can_edit_or_json_error(request):
@@ -100,11 +103,99 @@ def logout_view(request):
 
 @login_required
 def work_log_view(request):
+    worklogs_qs = (
+        WorkLog.objects.filter(author=request.user)
+        .prefetch_related(
+            Prefetch(
+                "entries",
+                queryset=WorkLogEntry.objects.select_related("vehicle_location"),
+            )
+        )
+        .order_by("-created_at")
+    )
+
+    now = timezone.now()
+    worklogs = []
+    for wl in worklogs_qs:
+        locations = sorted(
+            {entry.vehicle_location.name for entry in wl.entries.all()}
+        )
+        can_edit = (now - wl.created_at).total_seconds() < 24 * 60 * 60
+        worklogs.append(
+            {
+                "id": wl.id,
+                "number": wl.wl_number,
+                "locations": ", ".join(locations) if locations else "—",
+                "created": wl.created_at,
+                "updated": wl.updated_at,
+                "can_edit": can_edit,
+            }
+        )
+
     return render(
         request,
         "work_log.html",
-        {"item_count": InventoryItem.objects.count()},
+        {
+            "item_count": InventoryItem.objects.count(),
+            "worklogs": worklogs,
+        },
     )
+
+
+@login_required
+def work_log_detail(request, pk):
+    """Read-only detail of a single worklog for the current user."""
+    try:
+        wl = (
+            WorkLog.objects.select_related("author")
+            .prefetch_related(
+                Prefetch(
+                    "entries",
+                    queryset=WorkLogEntry.objects.select_related(
+                        "vehicle_location", "state", "part", "unit"
+                    ),
+                )
+            )
+            .get(pk=pk)
+        )
+    except WorkLog.DoesNotExist:
+        raise Http404
+
+    if wl.author != request.user and not request.user.is_staff:
+        return HttpResponseForbidden("Not allowed")
+
+    entries = []
+    for entry in wl.entries.all():
+        entries.append(
+            {
+                "vehicle": entry.vehicle_location.name,
+                "state": entry.state.short_name,
+                "job_description": entry.job_description,
+                "part": entry.part.name if entry.part else "",
+                "part_description": entry.part_description,
+                "quantity": entry.quantity,
+                "unit": entry.unit.code if entry.unit else "",
+                "time_hours": entry.time_hours,
+                "notes": entry.notes,
+            }
+        )
+
+    data = {
+        "ok": True,
+        "worklog": {
+            "number": wl.wl_number,
+            "due_date": wl.due_date,
+            "created_at": wl.created_at,
+            "updated_at": wl.updated_at,
+            "start_time": wl.start_time,
+            "end_time": wl.end_time,
+            "notes": wl.notes,
+            "author": wl.author.username,
+            "user_full": f"{wl.author.first_name} {wl.author.last_name}".strip() or wl.author.username,
+            "entries": entries,
+        },
+    }
+    return JsonResponse(data)
 
 
 # ============================================

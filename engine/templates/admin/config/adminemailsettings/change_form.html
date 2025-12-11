@@ -1,0 +1,33 @@
+{% extends "admin/change_form.html" %}
+
+{% load i18n admin_urls static admin_modify %}
+
+{% block submit_buttons_bottom %}
+    {{ block.super }}
+    <div class="submit-row">
+        <button type="button" id="gmail-preset" class="default">
+            Gmail preset
+        </button>
+        <button type="submit" class="default" name="_send_test" value="1">
+            Send test e-mail
+        </button>
+    </div>
+    <script>
+        (function() {
+            const btn = document.getElementById("gmail-preset");
+            if (!btn) return;
+            btn.addEventListener("click", function () {
+                const host = document.getElementById("id_smtp_host");
+                const port = document.getElementById("id_smtp_port");
+                const tls = document.getElementById("id_use_tls");
+                const ssl = document.getElementById("id_use_ssl");
+                const timeout = document.getElementById("id_timeout");
+                if (host) host.value = "smtp.gmail.com";
+                if (port) port.value = "587";
+                if (tls) tls.checked = true;
+                if (ssl) ssl.checked = false;
+                if (timeout && !timeout.value) timeout.value = "30";
+            });
+        })();
+    </script>
+{% endblock %}

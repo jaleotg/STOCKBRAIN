@@ -177,3 +177,19 @@ class WorkLogEntry(models.Model):
 
     def __str__(self):
         return f"{self.worklog} - {self.vehicle_location}"
+
+
+class WorklogEmailSettings(models.Model):
+    recipient_email = models.EmailField(help_text="Docelowy adres e-mail do wysyłki worklogów")
+    users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="worklog_email_rules",
+        help_text="Użytkownicy, których worklogi będą oznaczone do wysyłki",
+    )
+
+    class Meta:
+        verbose_name = "Worklog E-mail Rule"
+        verbose_name_plural = "Worklog E-mail Rules"
+
+    def __str__(self):
+        return self.recipient_email

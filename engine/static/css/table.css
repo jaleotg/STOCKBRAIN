@@ -969,7 +969,11 @@
 .col-fav,
 .col-note {
     text-align: center;
-    min-width: 120px;
+    min-width: 50px;
+}
+
+.col-fav {
+    width: 50px;
 }
 
 .col-note {
@@ -1047,3 +1051,69 @@
         transform: rotate(360deg);
     }
 }
+
+/* ============================================================
+   WORK LOG STYLES
+   ============================================================ */
+
+.sb-wl-table {
+    text-align: center;
+}
+
+.sb-wl-table .wl-col-number { width: 140px; }
+.sb-wl-table .wl-col-created { width: 160px; }
+.sb-wl-table .wl-col-updated { width: 180px; }
+.sb-wl-table .wl-col-edit { width: 5ch; }
+
+.wl-empty-row {
+    text-align: center;
+}
+
+.sb-wl-header-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+    font-size: 0.92em;
+    position: relative;
+}
+
+.sb-wl-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: currentColor;
+    opacity: 0.15;
+}
+
+.sb-wl-header-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.sb-wl-section {
+    margin-top: 16px;
+}
+
+.sb-wl-notes {
+    margin-top: 12px;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.sb-wl-entries-table {
+    text-align: center;
+}
+
+.sb-wl-entries-table .wl-veh { width: 60px; }
+.sb-wl-entries-table .wl-job { min-width: 220px; }
+.sb-wl-entries-table .wl-part { min-width: 180px; }
+.sb-wl-entries-table .col-time {
+    width: 6ch;
+    max-width: 6ch;
+    white-space: nowrap;
+}
+.sb-wl-entries-table .wl-notes-col { min-width: 180px; }

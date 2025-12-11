@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import VehicleLocation, StandardWorkHours, JobState, WorkLog, WorkLogEntry
+from .models import (
+    VehicleLocation,
+    StandardWorkHours,
+    JobState,
+    WorkLog,
+    WorkLogEntry,
+    WorklogEmailSettings,
+)
 
 
 @admin.register(VehicleLocation)
@@ -48,3 +55,23 @@ class WorkLogEntryAdmin(admin.ModelAdmin):
     list_display = ("worklog", "vehicle_location", "state", "time_hours", "part")
     list_filter = ("state", "vehicle_location", "worklog")
     search_fields = ("job_description", "part_description", "notes", "worklog__wl_number")
+
+
+@admin.register(WorklogEmailSettings)
+class WorklogEmailSettingsAdmin(admin.ModelAdmin):
+    list_display = ("recipient_email",)
+    filter_horizontal = ("users",)
+
+    def has_add_permission(self, request):
+        # singleton – brak dodawania kolejnych wpisów
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        # przekieruj bezpośrednio do jedynego obiektu (tworząc go, jeśli brak)
+        obj = WorklogEmailSettings.objects.first()
+        if not obj:
+            obj = WorklogEmailSettings.objects.create(recipient_email="")
+        return self.change_view(request, object_id=str(obj.pk), extra_context=extra_context)

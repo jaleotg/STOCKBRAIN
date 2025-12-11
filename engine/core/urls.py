@@ -5,6 +5,7 @@ from inventory.views import (
     logout_view,
     home_view,
     work_log_view,
+    work_log_detail,
     update_unit,
     update_group,
     update_field,
@@ -26,6 +27,7 @@ urlpatterns = [
     path("", home_view, name="home"),
     path("home/", home_view, name="home_alias"),
     path("work-log/", work_log_view, name="work_log"),
+    path("api/work-log/<int:pk>/", work_log_detail, name="work_log_detail"),
     path("admin/db-tools/", db_tools, name="db_tools"),
 
     # AJAX API endpoints (InventoryItem)
