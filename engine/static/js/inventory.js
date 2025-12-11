@@ -1234,14 +1234,7 @@
             cancelBtn.dataset.sbBound = "1";
         }
 
-        if (!modal.dataset.sbOverlayBound) {
-            modal.addEventListener("click", function (e) {
-                if (e.target === modal) {
-                    closeModal(true);
-                }
-            });
-            modal.dataset.sbOverlayBound = "1";
-        }
+        // Do not close modal when clicking outside dialog
 
         saveBtns.forEach(sbtn => {
             if (sbtn.dataset.sbBound) return;

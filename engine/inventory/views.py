@@ -4,7 +4,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db import transaction
 from django.db.models import (
     Prefetch,
     Case,
@@ -32,7 +34,9 @@ from .models import (
     FAVORITE_COLOR_CHOICES,
     InventorySettings,
 )
-from worklog.models import WorkLog, WorkLogEntry
+from worklog.models import WorkLog, WorkLogEntry, VehicleLocation, JobState
+from decimal import Decimal, InvalidOperation
+from datetime import datetime
 
 
 def user_can_edit_or_json_error(request):
@@ -103,12 +107,21 @@ def logout_view(request):
 
 @login_required
 def work_log_view(request):
+    # defaults from StandardWorkHours
+    default_start = ""
+    default_end = ""
+    from worklog.models import StandardWorkHours  # lazy import to avoid circulars
+    cfg = StandardWorkHours.objects.first()
+    if cfg:
+        default_start = cfg.start_time.isoformat(timespec="minutes")
+        default_end = cfg.end_time.isoformat(timespec="minutes")
+
     worklogs_qs = (
         WorkLog.objects.filter(author=request.user)
         .prefetch_related(
             Prefetch(
                 "entries",
-                queryset=WorkLogEntry.objects.select_related("vehicle_location"),
+                queryset=WorkLogEntry.objects.select_related("vehicle_location", "state"),
             )
         )
         .order_by("-created_at")
@@ -120,12 +133,16 @@ def work_log_view(request):
         locations = sorted(
             {entry.vehicle_location.name for entry in wl.entries.all()}
         )
+        states = sorted(
+            {entry.state.short_name for entry in wl.entries.all() if entry.state}
+        )
         can_edit = (now - wl.created_at).total_seconds() < 24 * 60 * 60
         worklogs.append(
             {
                 "id": wl.id,
                 "number": wl.wl_number,
                 "locations": ", ".join(locations) if locations else "—",
+                "states": ", ".join(states) if states else "—",
                 "created": wl.created_at,
                 "updated": wl.updated_at,
                 "can_edit": can_edit,
@@ -138,6 +155,17 @@ def work_log_view(request):
         {
             "item_count": InventoryItem.objects.count(),
             "worklogs": worklogs,
+            "wl_vehicle_options": list(
+                VehicleLocation.objects.values("id", "name").order_by("name")
+            ),
+            "wl_state_options": list(
+                JobState.objects.values("id", "short_name", "full_name").order_by("short_name")
+            ),
+            "wl_unit_options": list(
+                Unit.objects.values("id", "code").order_by("code")
+            ),
+            "wl_default_start": default_start,
+            "wl_default_end": default_end,
         },
     )
 
@@ -196,6 +224,133 @@ def work_log_detail(request, pk):
         },
     }
     return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def create_work_log(request):
+    """Create a work log with entries from the add-work-log modal."""
+    due_date_str = request.POST.get("due_date", "").strip()
+    start_time_str = request.POST.get("start_time", "").strip()
+    end_time_str = request.POST.get("end_time", "").strip()
+    notes = request.POST.get("notes", "").strip()
+
+    vehicles = request.POST.getlist("entry_vehicle[]")
+    jobs = request.POST.getlist("entry_job[]")
+    states = request.POST.getlist("entry_state[]")
+    times = request.POST.getlist("entry_time[]")
+    parts = request.POST.getlist("entry_part[]")
+    part_descs = request.POST.getlist("entry_part_desc[]")
+    units = request.POST.getlist("entry_unit[]")
+    qtys = request.POST.getlist("entry_qty[]")
+    entry_notes = request.POST.getlist("entry_notes[]")
+
+    # basic checks
+    if not due_date_str:
+        return JsonResponse({"ok": False, "error": "Due date is required."}, status=400)
+    try:
+        due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Invalid due date format (YYYY-MM-DD)."}, status=400)
+
+    def parse_time(val):
+        val = (val or "").strip()
+        if not val:
+            return None
+        try:
+            return datetime.strptime(val, "%H:%M").time()
+        except ValueError:
+            return None
+
+    start_time = parse_time(start_time_str)
+    end_time = parse_time(end_time_str)
+
+    # entries validation
+    n = len(vehicles)
+    if not n:
+        return JsonResponse({"ok": False, "error": "At least one entry is required."}, status=400)
+    if not (len(jobs) == len(states) == len(times) == len(parts) == len(part_descs) == len(units) == len(qtys) == len(entry_notes) == n):
+        return JsonResponse({"ok": False, "error": "Entries payload is inconsistent."}, status=400)
+
+    try:
+        with transaction.atomic():
+            wl = WorkLog.objects.create(
+                due_date=due_date,
+                author=request.user,
+                start_time=start_time,
+                end_time=end_time,
+                notes=notes,
+            )
+
+            for idx in range(n):
+                # Required lookups
+                veh_id = vehicles[idx].strip()
+                state_id = states[idx].strip()
+                job_text = jobs[idx].strip()
+                time_val = times[idx].strip()
+
+                if not (veh_id and state_id and job_text and time_val):
+                    raise ValidationError("Each entry needs vehicle, state, job, and time.")
+
+                try:
+                    vehicle_obj = VehicleLocation.objects.get(pk=int(veh_id))
+                except (VehicleLocation.DoesNotExist, ValueError):
+                    raise ValidationError(f"Invalid vehicle/location at row {idx+1}.")
+
+                try:
+                    state_obj = JobState.objects.get(pk=int(state_id))
+                except (JobState.DoesNotExist, ValueError):
+                    raise ValidationError(f"Invalid state at row {idx+1}.")
+
+                try:
+                    time_hours = Decimal(time_val)
+                except (InvalidOperation, ValueError):
+                    raise ValidationError(f"Invalid time value at row {idx+1}.")
+
+                # Optional lookups
+                part_obj = None
+                part_val = parts[idx].strip()
+                if part_val:
+                    try:
+                        part_obj = InventoryItem.objects.get(pk=int(part_val))
+                    except (InventoryItem.DoesNotExist, ValueError):
+                        part_obj = None  # treat as free text only
+
+                unit_obj = None
+                unit_val = units[idx].strip()
+                if unit_val:
+                    try:
+                        unit_obj = Unit.objects.get(pk=int(unit_val))
+                    except (Unit.DoesNotExist, ValueError):
+                        unit_obj = None
+
+                qty_val = qtys[idx].strip()
+                qty_dec = None
+                if qty_val:
+                    try:
+                        qty_dec = Decimal(qty_val)
+                    except (InvalidOperation, ValueError):
+                        raise ValidationError(f"Invalid quantity at row {idx+1}.")
+
+                WorkLogEntry.objects.create(
+                    worklog=wl,
+                    vehicle_location=vehicle_obj,
+                    job_description=job_text,
+                    state=state_obj,
+                    part=part_obj,
+                    part_description=part_descs[idx].strip(),
+                    unit=unit_obj,
+                    quantity=qty_dec,
+                    time_hours=time_hours,
+                    notes=entry_notes[idx].strip(),
+                )
+
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
+    except Exception as exc:
+        return JsonResponse({"ok": False, "error": f"Save failed: {exc}"}, status=500)
+
+    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
 
 
 # ============================================

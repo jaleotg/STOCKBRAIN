@@ -95,7 +95,7 @@ class EditCondition(models.Model):
     )
     editable_time_since_created = models.PositiveIntegerField(
         default=0,
-        help_text="Time window (minutes) to allow editing after creation. 0 = no time limit.",
+        help_text="Time window (hours) to allow editing after creation. 0 = no time limit.",
     )
 
     class Meta:

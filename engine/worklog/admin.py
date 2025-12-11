@@ -40,6 +40,7 @@ class JobStateAdmin(admin.ModelAdmin):
 @admin.register(EditCondition)
 class EditConditionAdmin(admin.ModelAdmin):
     list_display = ("only_last_wl_editable", "editable_time_since_created")
+    fields = ("only_last_wl_editable", "editable_time_since_created")
 
     def has_add_permission(self, request):
         if EditCondition.objects.exists():

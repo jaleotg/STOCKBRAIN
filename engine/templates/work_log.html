@@ -2,14 +2,31 @@
 {% block title %}Work Log | DesertBrain{% endblock %}
 
 {% block content %}
+{{ wl_vehicle_options|json_script:"wl-vehicle-options" }}
+{{ wl_state_options|json_script:"wl-state-options" }}
+{{ wl_unit_options|json_script:"wl-unit-options" }}
+<div id="wl-defaults"
+     data-default-start="{{ wl_default_start|default:'' }}"
+     data-default-end="{{ wl_default_end|default:'' }}"></div>
+{{ wl_vehicle_options|json_script:"wl-vehicle-options" }}
+{{ wl_state_options|json_script:"wl-state-options" }}
+{{ wl_unit_options|json_script:"wl-unit-options" }}
+
 <div class="sb-card">
-    <h2 class="sb-title">Work log list</h2>
+    <div class="sb-title-row">
+        <h2 class="sb-title">Work log list</h2>
+        <button type="button" id="sb-wl-add-btn" class="sb-add-item-btn">
+            <span class="sb-search-icon sb-plus-icon">+</span>
+            <span>work log</span>
+        </button>
+    </div>
     <div class="sb-table-wrapper">
         <table class="sb-table sb-wl-table">
             <thead>
             <tr>
                 <th class="wl-col-number">WL #</th>
                 <th>Locations</th>
+                <th>State</th>
                 <th class="wl-col-created">Created</th>
                 <th class="wl-col-updated">Last edited</th>
                 <th class="wl-col-edit">Edit</th>
@@ -24,10 +41,11 @@
                                class="sb-link wl-link"
                                data-wl-id="{{ wl.number }}"
                                data-wl-pk="{{ wl.id }}">
-                                {{ wl.number }}
+                               {{ wl.number }}
                             </a>
                         </td>
                         <td>{{ wl.locations }}</td>
+                        <td>{{ wl.states }}</td>
                         <td>{{ wl.created|date:"Y-m-d H:i" }}</td>
                         <td>{{ wl.updated|date:"Y-m-d H:i" }}</td>
                         <td>
@@ -46,7 +64,7 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="5" class="wl-empty-row">No work logs yet.</td>
+                    <td colspan="6" class="wl-empty-row">No work logs yet.</td>
                 </tr>
             {% endif %}
             </tbody>
@@ -90,10 +108,14 @@
                     <table class="sb-table sb-wl-entries-table">
                         <thead>
                         <tr>
-                            <th class="wl-veh">Vehicle</th>
-                            <th class="wl-job">Job description</th>
+                            <th class="wl-veh">Vehicle <span class="sb-required-asterisk">*</span></th>
+                            <th class="wl-job">Job description <span class="sb-required-asterisk">*</span></th>
+                            <th>State <span class="sb-required-asterisk">*</span></th>
+                            <th class="col-time">Time <span class="sb-required-asterisk">*</span></th>
                             <th class="wl-part">Part Utilize</th>
-                            <th class="col-time">Time</th>
+                            <th>Part description</th>
+                            <th>Unit</th>
+                            <th>Qty</th>
                             <th class="wl-notes-col">Notes</th>
                         </tr>
                         </thead>
@@ -113,8 +135,81 @@
     </div>
 </div>
 
+<div id="wl-add-modal" class="sb-modal">
+    <div class="sb-modal-dialog">
+        <div class="sb-modal-header">
+            <h2 class="sb-modal-title">Add Work Log</h2>
+            <button type="button" class="sb-modal-close" id="wl-add-close">✕</button>
+        </div>
+        <form id="wl-add-form">
+            <div class="sb-modal-body">
+                <div class="sb-inline-fields">
+                    <div class="sb-add-field">
+                        <label for="wl-add-due">Due date</label>
+                        <input type="text"
+                               id="wl-add-due"
+                               name="due_date"
+                               placeholder="YYYY-MM-DD"
+                               pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
+                               inputmode="numeric"
+                               title="Use format YYYY-MM-DD"
+                               required>
+                    </div>
+                    <div class="sb-add-field">
+                        <label for="wl-add-start">Start time</label>
+                        <input type="time" id="wl-add-start" name="start_time">
+                    </div>
+                    <div class="sb-add-field">
+                        <label for="wl-add-end">End time</label>
+                        <input type="time" id="wl-add-end" name="end_time">
+                    </div>
+                </div>
+                <div class="sb-wl-section">
+                    <strong>Entries</strong>
+                    <div class="sb-table-wrapper">
+                        <table class="sb-table sb-wl-entries-table" id="wl-add-entries-table">
+                            <thead>
+                            <tr>
+                                <th class="wl-veh">Vehicle <span class="sb-required-asterisk">*</span></th>
+                                <th class="wl-job">Job description <span class="sb-required-asterisk">*</span></th>
+                                <th>State <span class="sb-required-asterisk">*</span></th>
+                                <th class="col-time">Time <span class="sb-required-asterisk">*</span></th>
+                                <th class="wl-part">Part Utilize</th>
+                                <th>Part description</th>
+                                <th>Unit</th>
+                                <th>Qty</th>
+                                <th class="wl-notes-col">Notes</th>
+                                <th class="wl-col-edit">Del</th>
+                            </tr>
+                            </thead>
+                            <tbody id="wl-add-entries-body"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="sb-btn sb-btn-secondary" id="wl-add-entry-btn">Add entry</button>
+                </div>
+                <div class="sb-add-field sb-wl-notes">
+                    <label for="wl-add-notes">Notes</label>
+                    <textarea id="wl-add-notes" name="notes" rows="3" placeholder="Optional"></textarea>
+                </div>
+            </div>
+            <div class="sb-modal-footer">
+                <button type="button" class="sb-btn sb-btn-secondary" id="wl-add-cancel">Cancel</button>
+                <button type="submit" class="sb-btn sb-btn-primary" id="wl-add-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 (function() {
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+        return "";
+    }
+    const csrftoken = getCookie("csrftoken") || "";
+
     const modal = document.getElementById("wl-modal");
     const closeButtons = [document.getElementById("wl-modal-close"), document.getElementById("wl-modal-close-2")];
     function hideModal() { modal.style.display = "none"; }
@@ -144,7 +239,7 @@
         if (!entries.length) {
             const tr = document.createElement("tr");
             const td = document.createElement("td");
-            td.colSpan = 5;
+            td.colSpan = 9;
             td.className = "wl-empty-row";
             td.textContent = "No entries.";
             tr.appendChild(td);
@@ -155,8 +250,12 @@
                 const cells = [
                     {val: en.vehicle || ""},
                     {val: en.job_description || ""},
-                    {val: en.part_description || ""},
+                    {val: en.state || ""},
                     {val: en.time_hours || "", cls: "col-time"},
+                    {val: en.part || ""},
+                    {val: en.part_description || ""},
+                    {val: en.unit || ""},
+                    {val: en.quantity || ""},
                     {val: en.notes || ""},
                 ];
                 cells.forEach((cell) => {
@@ -200,6 +299,226 @@
     document.querySelectorAll(".wl-link").forEach((a) => {
         a.addEventListener("click", onLinkClick);
     });
+
+    // Add modal form
+    const addModal = document.getElementById("wl-add-modal");
+    const addBtn = document.getElementById("sb-wl-add-btn");
+    const addClose = document.getElementById("wl-add-close");
+    const addCancel = document.getElementById("wl-add-cancel");
+    const addForm = document.getElementById("wl-add-form");
+    const addEntryBtn = document.getElementById("wl-add-entry-btn");
+    const entriesBodyAdd = document.getElementById("wl-add-entries-body");
+    const vehicleOptions = JSON.parse(document.getElementById("wl-vehicle-options").textContent);
+    const stateOptions = JSON.parse(document.getElementById("wl-state-options").textContent);
+    const unitOptions = JSON.parse(document.getElementById("wl-unit-options").textContent);
+    const defaultsHolder = document.getElementById("wl-defaults");
+
+    function hideAddModal() {
+        addModal.style.display = "none";
+    }
+    function showAddModal() {
+        addModal.style.display = "flex";
+        if (!entriesBodyAdd.children.length) {
+            addEntryRow();
+        }
+        // set defaults
+        const dueInput = document.getElementById("wl-add-due");
+        const startInput = document.getElementById("wl-add-start");
+        const endInput = document.getElementById("wl-add-end");
+        const today = new Date();
+        const todayStr = today.toISOString().slice(0,10); // YYYY-MM-DD
+        if (dueInput && !dueInput.value) dueInput.value = todayStr;
+        if (startInput && !startInput.value) startInput.value = defaultsHolder.dataset.defaultStart || "";
+        if (endInput && !endInput.value) endInput.value = defaultsHolder.dataset.defaultEnd || "";
+    }
+
+    // Custom validation messages (force English)
+    const dueFormatInput = document.getElementById("wl-add-due");
+    if (dueFormatInput) {
+        dueFormatInput.addEventListener("invalid", (e) => {
+            e.target.setCustomValidity("Please use format YYYY-MM-DD");
+        });
+        dueFormatInput.addEventListener("input", (e) => {
+            e.target.setCustomValidity("");
+        });
+        dueFormatInput.addEventListener("change", (e) => {
+            e.target.setCustomValidity("");
+        });
+    }
+    // Helper to attach English validation messages
+    function attachValidation(el) {
+        if (!el) return;
+        el.addEventListener("invalid", (e) => {
+            const fieldType = el.type || el.tagName.toLowerCase();
+            if (el === dueFormatInput) return; // handled above
+            if (el.required && !el.value) {
+                e.target.setCustomValidity("This field is required.");
+            } else if (fieldType === "number") {
+                e.target.setCustomValidity("Please enter a valid number.");
+            } else if (fieldType === "time") {
+                e.target.setCustomValidity("Please enter a valid time.");
+            } else {
+                e.target.setCustomValidity("");
+            }
+        });
+        el.addEventListener("input", (e) => e.target.setCustomValidity(""));
+        el.addEventListener("change", (e) => e.target.setCustomValidity(""));
+    }
+
+    if (addForm) {
+        const inputs = addForm.querySelectorAll("input, select, textarea");
+        inputs.forEach(attachValidation);
+    }
+
+    function buildSelect(options, placeholder) {
+        const sel = document.createElement("select");
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = placeholder;
+        sel.appendChild(opt);
+        options.forEach((o) => {
+            const optEl = document.createElement("option");
+            optEl.value = o.id;
+            optEl.textContent = o.name || o.short_name || o.code;
+            sel.appendChild(optEl);
+        });
+        return sel;
+    }
+
+    function addEntryRow() {
+        const tr = document.createElement("tr");
+
+        // Vehicle
+        const tdVeh = document.createElement("td");
+        const selVeh = buildSelect(vehicleOptions, "Select");
+        selVeh.name = "entry_vehicle[]";
+        selVeh.required = true;
+        attachValidation(selVeh);
+        tdVeh.appendChild(selVeh);
+        tr.appendChild(tdVeh);
+
+        // Job description
+        const tdJob = document.createElement("td");
+        const jobInput = document.createElement("textarea");
+        jobInput.name = "entry_job[]";
+        jobInput.rows = 2;
+        jobInput.required = true;
+        attachValidation(jobInput);
+        tdJob.appendChild(jobInput);
+        tr.appendChild(tdJob);
+
+        // State
+        const tdState = document.createElement("td");
+        const selState = buildSelect(stateOptions, "Select");
+        selState.name = "entry_state[]";
+        selState.required = true;
+        attachValidation(selState);
+        tdState.appendChild(selState);
+        tr.appendChild(tdState);
+
+        // Time
+        const tdTime = document.createElement("td");
+        const timeInput = document.createElement("input");
+        timeInput.type = "number";
+        timeInput.step = "0.25";
+        timeInput.min = "0";
+        timeInput.name = "entry_time[]";
+        timeInput.required = true;
+        attachValidation(timeInput);
+        tdTime.className = "col-time";
+        tdTime.appendChild(timeInput);
+        tr.appendChild(tdTime);
+
+        // Part
+        const tdPart = document.createElement("td");
+        const partInput = document.createElement("input");
+        partInput.type = "text";
+        partInput.name = "entry_part[]";
+        partInput.placeholder = "Part name/id";
+        attachValidation(partInput);
+        tdPart.appendChild(partInput);
+        tr.appendChild(tdPart);
+
+        // Part description
+        const tdPartDesc = document.createElement("td");
+        const partDescInput = document.createElement("input");
+        partDescInput.type = "text";
+        partDescInput.name = "entry_part_desc[]";
+        attachValidation(partDescInput);
+        tdPartDesc.appendChild(partDescInput);
+        tr.appendChild(tdPartDesc);
+
+        // Unit
+        const tdUnit = document.createElement("td");
+        const unitSel = buildSelect(unitOptions, "Unit");
+        unitSel.name = "entry_unit[]";
+        attachValidation(unitSel);
+        tdUnit.appendChild(unitSel);
+        tr.appendChild(tdUnit);
+
+        // Qty
+        const tdQty = document.createElement("td");
+        const qtyInput = document.createElement("input");
+        qtyInput.type = "number";
+        qtyInput.step = "0.01";
+        qtyInput.min = "0";
+        qtyInput.name = "entry_qty[]";
+        attachValidation(qtyInput);
+        tdQty.appendChild(qtyInput);
+        tr.appendChild(tdQty);
+
+        // Notes
+        const tdNotes = document.createElement("td");
+        const notesInput = document.createElement("textarea");
+        notesInput.name = "entry_notes[]";
+        notesInput.rows = 2;
+        tdNotes.appendChild(notesInput);
+        tr.appendChild(tdNotes);
+
+        // Delete
+        const tdDel = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "sb-btn sb-btn-secondary";
+        delBtn.textContent = "✕";
+        delBtn.addEventListener("click", () => tr.remove());
+        tdDel.appendChild(delBtn);
+        tr.appendChild(tdDel);
+
+        entriesBodyAdd.appendChild(tr);
+    }
+
+    [addClose, addCancel].forEach((btn) => {
+        if (btn) btn.addEventListener("click", hideAddModal);
+    });
+    if (addEntryBtn) addEntryBtn.addEventListener("click", addEntryRow);
+    if (addForm) {
+        addForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const fd = new FormData(addForm);
+            fetch("/api/work-log/create/", {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken },
+                body: fd,
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) {
+                        throw new Error(data.error || "Save failed");
+                    }
+                    hideAddModal();
+                    // reload to show new entry
+                    window.location.reload();
+                })
+                .catch(err => {
+                    alert("Save work log failed: " + err.message);
+                });
+        });
+    }
+    if (addBtn) {
+        addBtn.addEventListener("click", showAddModal);
+    }
+    // Clicking outside should not close the modal.
 })();
 </script>
 {% endblock %}

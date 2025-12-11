@@ -1096,6 +1096,26 @@
     margin-top: 16px;
 }
 
+.sb-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sb-inline-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.sb-required-asterisk {
+    color: #ff4d4f;
+    margin-left: 4px;
+    font-weight: 700;
+}
+
+
 .sb-wl-notes {
     margin-top: 12px;
 }
