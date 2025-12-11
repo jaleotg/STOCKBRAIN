@@ -82,6 +82,34 @@ class StandardWorkHours(models.Model):
         super().save(*args, **kwargs)
 
 
+class EditCondition(models.Model):
+    singleton = models.PositiveSmallIntegerField(
+        default=1,
+        unique=True,
+        editable=False,
+        help_text="Singleton guard to keep only one record.",
+    )
+    only_last_wl_editable = models.BooleanField(
+        default=True,
+        help_text="If yes, only the author's last Work Log can be edited.",
+    )
+    editable_time_since_created = models.PositiveIntegerField(
+        default=0,
+        help_text="Time window (minutes) to allow editing after creation. 0 = no time limit.",
+    )
+
+    class Meta:
+        verbose_name = "Edit Condition"
+        verbose_name_plural = "Edit Condition"
+
+    def save(self, *args, **kwargs):
+        self.singleton = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Edit Condition"
+
+
 class JobState(models.Model):
     short_name = models.CharField(max_length=64, unique=True, help_text="Short code")
     full_name = models.CharField(max_length=255, help_text="Full name")

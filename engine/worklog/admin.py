@@ -6,6 +6,7 @@ from .models import (
     WorkLog,
     WorkLogEntry,
     WorklogEmailSettings,
+    EditCondition,
 )
 
 
@@ -35,6 +36,24 @@ class JobStateAdmin(admin.ModelAdmin):
     list_display = ("short_name", "full_name")
     search_fields = ("short_name", "full_name", "description")
 
+
+@admin.register(EditCondition)
+class EditConditionAdmin(admin.ModelAdmin):
+    list_display = ("only_last_wl_editable", "editable_time_since_created")
+
+    def has_add_permission(self, request):
+        if EditCondition.objects.exists():
+            return False
+        return super().has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        obj = EditCondition.objects.first()
+        if not obj:
+            obj = EditCondition.objects.create()
+        return self.change_view(request, object_id=str(obj.pk), extra_context=extra_context)
 
 class WorkLogEntryInline(admin.TabularInline):
     model = WorkLogEntry

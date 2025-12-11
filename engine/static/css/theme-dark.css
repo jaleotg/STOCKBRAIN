@@ -54,8 +54,15 @@
 
 .sb-dark .sb-table thead th {
     background-color: #3a3a3a;
-    border-bottom: 2px solid #555;
+    border-bottom: 2px solid #777;
     color: #ddd;
+}
+
+.sb-dark .sb-table td,
+.sb-dark .sb-table th {
+    border-color: #777;
+    border-left-color: #888;
+    border-right-color: #888;
 }
 
 .sb-dark .sb-table td {
@@ -63,7 +70,12 @@
        żeby zebra i hover z tr były widoczne */
     background-color: transparent;
     color: #ddd;
-    border-color: #555;
+}
+
+/* Wyraźniejsze pionowe linie wierszy (body) */
+.sb-dark .sb-table tbody td {
+    border-left-color: #888;
+    border-right-color: #888;
 }
 
 .sb-dark .sb-table td.col-location {
