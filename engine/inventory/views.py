@@ -183,7 +183,8 @@ def work_log_view(request):
     filter_due = request.GET.get("due_range", "last_90")
     filter_loc = request.GET.get("loc", "").strip()
     filter_state = request.GET.get("state", "").strip()
-    allowed_keys = {"due_range", "loc", "state"}
+    filter_future = request.GET.get("future", "show").strip() or "show"
+    allowed_keys = {"due_range", "loc", "state", "future"}
     extra_keys = set(request.GET.keys()) - allowed_keys
     if extra_keys:
         clean_params = {}
@@ -274,12 +275,17 @@ def work_log_view(request):
     )
 
     if date_start and date_end:
-        worklogs_qs = worklogs_qs.filter(due_date__gte=date_start, due_date__lte=date_end)
+        range_q = Q(due_date__gte=date_start, due_date__lte=date_end)
+        if filter_future == "show":
+            range_q = range_q | Q(due_date__gt=now)
+        worklogs_qs = worklogs_qs.filter(range_q)
 
     if filter_loc:
         worklogs_qs = worklogs_qs.filter(entries__vehicle_location_id=filter_loc)
     if filter_state:
         worklogs_qs = worklogs_qs.filter(entries__state_id=filter_state)
+    if filter_future == "hide":
+        worklogs_qs = worklogs_qs.filter(due_date__lte=now)
 
     now_dt = timezone.now()
     worklogs = []
@@ -330,6 +336,7 @@ def work_log_view(request):
             "due_range_selected": filter_due,
             "filter_loc": filter_loc,
             "filter_state": filter_state,
+            "filter_future": filter_future,
             "wl_user_options": [],
             "filter_user": "",
         },

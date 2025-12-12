@@ -25,6 +25,11 @@
                         </option>
                     {% endfor %}
                 </select>
+                <label for="wl-filter-future">Future</label>
+                <select id="wl-filter-future" name="future" onchange="this.form.submit()">
+                    <option value="show" {% if filter_future == "show" %}selected{% endif %}>Show</option>
+                    <option value="hide" {% if filter_future == "hide" %}selected{% endif %}>Hide</option>
+                </select>
                 <label for="wl-filter-loc">Location</label>
                 <select id="wl-filter-loc" name="loc" onchange="this.form.submit()">
                     <option value="">-----</option>
