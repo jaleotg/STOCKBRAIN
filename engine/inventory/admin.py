@@ -1,5 +1,7 @@
 from django.contrib import admin, messages
 from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.http import HttpResponse
 import csv
 from django.shortcuts import redirect
@@ -10,6 +12,7 @@ from .models import (
     InventorySettings,
     Unit,
     ItemGroup,
+    UserProfile,
 )
 from .importers import import_inventory_from_excel
 
@@ -117,6 +120,30 @@ class InventoryImportExportAdmin(admin.ModelAdmin):
                 except Exception as exc:
                     messages.error(request, f"Import failed: {exc}")
         return super().changelist_view(request, extra_context=extra_context)
+
+
+# -------------------------------
+# User profile (preferred name) inline in Users
+# -------------------------------
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    extra = 0
+    fields = ("preferred_name",)
+    verbose_name = "Preferred name"
+    verbose_name_plural = "Preferred name"
+
+
+class UserAdmin(BaseUserAdmin):
+    inlines = [UserProfileInline]
+
+
+User = get_user_model()
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+admin.site.register(User, UserAdmin)
 
 
 @admin.register(InventoryColumn)

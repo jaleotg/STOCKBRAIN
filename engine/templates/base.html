@@ -55,9 +55,18 @@
                         Work log
                     </a>
                     <div class="sb-dropdown-menu">
-                        <a href="{{ work_log_url }}" class="sb-dropdown-item {% if current_name == 'work_log' %}sb-dd-active{% endif %}">List</a>
+                        <div class="sb-dropdown-row">
+                            <a href="{{ work_log_url }}" class="sb-dropdown-item sb-dropdown-item-main {% if current_name == 'work_log' %}sb-dd-active{% endif %}">List</a>
+                            <button type="button"
+                                    id="sb-wl-add-inline"
+                                    class="sb-dd-add-btn"
+                                    title="Add work log">
+                                <span class="sb-plus-icon">+</span>
+                                <span class="sb-dd-add-label">add</span>
+                            </button>
+                        </div>
                         <a href="{{ wl_locations_url }}" class="sb-dropdown-item {% if current_name == 'work_log_locations' %}sb-dd-active{% endif %}">Vehicles &amp; Locations</a>
-                        {% if request.user.is_staff %}
+                        {% if has_work_log_master %}
                             <a href="{{ wl_master_url }}" class="sb-dropdown-item {% if current_name == 'work_log_master' %}sb-dd-active{% endif %}">Master</a>
                         {% endif %}
                     </div>
@@ -156,9 +165,19 @@
             </div>
             <form id="sb-user-form">
                 <div class="sb-modal-body">
+                    <div class="sb-inline-fields">
+                        <div class="sb-add-field">
+                            <label>Username</label>
+                            <input type="text" id="sb-user-username" readonly>
+                        </div>
+                        <div class="sb-add-field">
+                            <label for="sb-user-preferred">Preferred (how you want to be called)</label>
+                            <input type="text" id="sb-user-preferred" name="preferred_name">
+                        </div>
+                    </div>
                     <div class="sb-add-field">
-                        <label>Username</label>
-                        <input type="text" id="sb-user-username" readonly>
+                        <label>E-mail</label>
+                        <input type="email" id="sb-user-email" name="email" required>
                     </div>
                     <div class="sb-inline-fields">
                         <div class="sb-add-field">
@@ -170,13 +189,32 @@
                             <input type="text" id="sb-user-last" readonly>
                         </div>
                     </div>
-                    <div class="sb-add-field">
-                        <label for="sb-user-email">E-mail</label>
-                        <input type="email" id="sb-user-email" name="email" required>
-                    </div>
-                    <div class="sb-add-field">
-                        <label for="sb-user-preferred">Preferred (how you want to be called)</label>
-                        <input type="text" id="sb-user-preferred" name="preferred_name">
+                    <hr class="sb-user-divider">
+                    <div class="sb-inline-fields">
+                        <div class="sb-add-field">
+                            <label for="sb-user-oldpw">Current password</label>
+                            <input type="password"
+                                   id="sb-user-oldpw"
+                                   name="old_password"
+                                   placeholder="Leave blank to keep"
+                                   autocomplete="current-password">
+                        </div>
+                        <div class="sb-add-field">
+                            <label for="sb-user-newpw">New password</label>
+                            <input type="password"
+                                   id="sb-user-newpw"
+                                   name="new_password"
+                                   placeholder="Leave blank to keep"
+                                   autocomplete="new-password">
+                        </div>
+                        <div class="sb-add-field">
+                            <label for="sb-user-newpw2">Confirm new password</label>
+                            <input type="password"
+                                   id="sb-user-newpw2"
+                                   name="new_password_confirm"
+                                   placeholder="Repeat new password"
+                                   autocomplete="new-password">
+                        </div>
                     </div>
                     <div id="sb-user-error" class="sb-validation" style="display:none;"></div>
                 </div>

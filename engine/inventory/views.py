@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -39,6 +39,7 @@ from .models import (
 )
 from worklog.models import WorkLog, WorkLogEntry, VehicleLocation, JobState, EditCondition
 from worklog.docx_utils import render_worklog_docx, generate_and_store_docx
+from worklog.models import WorkLogEntryStateChange
 from worklog.email_utils import send_worklog_docx_email
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
@@ -128,6 +129,9 @@ def user_profile(request):
     if request.method == "POST":
         email = (request.POST.get("email") or "").strip()
         preferred = (request.POST.get("preferred_name") or "").strip()
+        old_pw = (request.POST.get("old_password") or "").strip()
+        new_pw = (request.POST.get("new_password") or "").strip()
+        new_pw_confirm = (request.POST.get("new_password_confirm") or "").strip()
         if email:
             try:
                 validate_email(email)
@@ -138,6 +142,18 @@ def user_profile(request):
         if profile:
             profile.preferred_name = preferred
             profile.save(update_fields=["preferred_name"])
+        if new_pw:
+            if not old_pw:
+                return JsonResponse({"ok": False, "error": "Current password is required to change password."}, status=400)
+            if not request.user.check_password(old_pw):
+                return JsonResponse({"ok": False, "error": "Current password is incorrect."}, status=400)
+            if new_pw != new_pw_confirm:
+                return JsonResponse({"ok": False, "error": "New passwords do not match."}, status=400)
+            if len(new_pw) < 6:
+                return JsonResponse({"ok": False, "error": "New password must be at least 6 characters."}, status=400)
+            request.user.set_password(new_pw)
+            request.user.save(update_fields=["password"])
+            update_session_auth_hash(request, request.user)
         return JsonResponse({"ok": True})
 
     return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
@@ -296,6 +312,8 @@ def work_log_view(request):
         "work_log.html",
         {
             "item_count": InventoryItem.objects.count(),
+            "is_master": False,
+            "hide_add": False,
             "worklogs": worklogs,
             "wl_vehicle_options": list(
                 VehicleLocation.objects.values("id", "name").order_by("name")
@@ -312,30 +330,306 @@ def work_log_view(request):
             "due_range_selected": filter_due,
             "filter_loc": filter_loc,
             "filter_state": filter_state,
+            "wl_user_options": [],
+            "filter_user": "",
         },
     )
 
 
 @login_required
 def work_log_locations_view(request):
+    # Filters
+    filter_loc = request.GET.get("loc", "").strip()
+    filter_user = request.GET.get("user", "").strip()
+    filter_state = request.GET.get("state", "").strip()
+    sort = request.GET.get("sort", "due")
+    direction = request.GET.get("dir", "desc")
+
+    order_map = {
+        "due": "worklog__due_date",
+        "created": "worklog__created_at",
+    }
+    order_field = order_map.get(sort, "worklog__due_date")
+    if direction == "desc":
+        order_field = f"-{order_field}"
+
+    entries_qs = (
+        WorkLogEntry.objects.select_related(
+            "vehicle_location",
+            "state",
+            "worklog",
+            "worklog__author",
+        )
+        .prefetch_related(
+            Prefetch(
+                "state_changes",
+                queryset=WorkLogEntryStateChange.objects.select_related(
+                    "old_state", "new_state", "changed_by"
+                ).order_by("-changed_at"),
+            )
+        )
+        .order_by(order_field)
+    )
+
+    if filter_loc:
+        entries_qs = entries_qs.filter(vehicle_location_id=filter_loc)
+    if filter_user:
+        entries_qs = entries_qs.filter(worklog__author_id=filter_user)
+    if filter_state:
+        entries_qs = entries_qs.filter(state_id=filter_state)
+
+    entries = []
+    for en in entries_qs:
+        history_lines = []
+        for sc in en.state_changes.all():
+            old_label = sc.old_state.short_name if sc.old_state else "—"
+            new_label = sc.new_state.short_name if sc.new_state else "—"
+            who = sc.changed_by.username if sc.changed_by else "unknown"
+            when = sc.changed_at.strftime("%Y-%m-%d %H:%M")
+            history_lines.append(f"{when}: {old_label} → {new_label} by {who}")
+        history_str = "\n".join(history_lines) if history_lines else "No changes yet"
+        entries.append(
+            {
+                "id": en.id,
+                "state_id": en.state.id if en.state else "",
+                "vehicle": en.vehicle_location.name if en.vehicle_location else "—",
+                "job": en.job_description or "—",
+                "state": en.state.short_name if en.state else "—",
+                "note": en.notes or "—",
+                "due": en.worklog.due_date,
+                "created": en.worklog.created_at,
+                "wl_number": en.worklog.wl_number,
+                "author": en.worklog.author.username,
+                "history": history_str,
+            }
+        )
+
+    loc_options = list(
+        WorkLogEntry.objects.filter(vehicle_location__isnull=False)
+        .values("vehicle_location_id", "vehicle_location__name")
+        .order_by("vehicle_location__name")
+        .distinct()
+    )
+    user_options = list(
+        WorkLog.objects.all()
+        .values("author_id", "author__username")
+        .order_by("author__username")
+        .distinct()
+    )
+    state_options = list(
+        WorkLogEntry.objects.filter(state__isnull=False)
+        .values("state_id", "state__short_name")
+        .order_by("state__short_name")
+        .distinct()
+    )
+
     return render(
         request,
         "work_log_locations.html",
         {
             "item_count": InventoryItem.objects.count(),
+            "entries": entries,
+            "filter_loc": filter_loc,
+            "filter_user": filter_user,
+            "filter_state": filter_state,
+            "loc_options": loc_options,
+            "user_options": user_options,
+            "state_options": state_options,
+            "sort": sort,
+            "dir": direction,
         },
     )
+
+
+@login_required
+@require_POST
+def change_worklog_entry_state(request, pk):
+    """Change state of a worklog entry; allowed for any authenticated user (history is recorded)."""
+    try:
+        entry = WorkLogEntry.objects.select_related("worklog").get(pk=pk)
+    except WorkLogEntry.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Entry not found."}, status=404)
+
+    new_state_id = request.POST.get("state", "").strip()
+    if not new_state_id:
+        return JsonResponse({"ok": False, "error": "State is required."}, status=400)
+    try:
+        new_state = JobState.objects.get(pk=new_state_id)
+    except JobState.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "State not found."}, status=400)
+
+    old_state = entry.state
+    entry.state = new_state
+    entry.save(update_fields=["state"])
+
+    WorkLogEntryStateChange.objects.create(
+        entry=entry,
+        old_state=old_state,
+        new_state=new_state,
+        changed_by=request.user,
+    )
+    return JsonResponse({"ok": True, "state": new_state.short_name})
 
 
 @login_required
 def work_log_master_view(request):
     if not request.user.groups.filter(name__iexact="work_log_master").exists():
         return HttpResponseForbidden("Not allowed")
+
+    # defaults from StandardWorkHours
+    default_start = ""
+    default_end = ""
+    from worklog.models import StandardWorkHours  # lazy import to avoid circulars
+    cfg = StandardWorkHours.objects.first()
+    if cfg:
+        default_start = cfg.start_time.isoformat(timespec="minutes")
+        default_end = cfg.end_time.isoformat(timespec="minutes")
+
+    now = timezone.now().date()
+    filter_due = request.GET.get("due_range", "last_90")
+    filter_loc = request.GET.get("loc", "").strip()
+    filter_state = request.GET.get("state", "").strip()
+    filter_user = request.GET.get("user", "").strip()
+    allowed_keys = {"due_range", "loc", "state", "user"}
+    extra_keys = set(request.GET.keys()) - allowed_keys
+    if extra_keys:
+        clean_params = {}
+        for k in allowed_keys:
+            val = request.GET.get(k, "").strip()
+            if val:
+                clean_params[k] = val
+        query = urlencode(clean_params)
+        target = request.path
+        if query:
+            target = f"{target}?{query}"
+        return redirect(target)
+
+    def month_bounds(year, month):
+        start = datetime(year, month, 1).date()
+        end = datetime(year, month, monthrange(year, month)[1]).date()
+        return start, end
+
+    date_start = date_end = None
+    if filter_due == "last_90":
+        date_end = now
+        date_start = now - timezone.timedelta(days=90)
+    elif filter_due in ("curr_week", "prev_week"):
+        shift = (now.weekday() + 1) % 7
+        date_start = now - timezone.timedelta(days=shift)
+        if filter_due == "prev_week":
+            date_start = date_start - timezone.timedelta(days=7)
+        date_end = date_start + timezone.timedelta(days=6)
+    elif filter_due == "curr_month":
+        date_start, date_end = month_bounds(now.year, now.month)
+    elif filter_due == "prev_month":
+        m = now.month - 1 or 12
+        y = now.year if now.month > 1 else now.year - 1
+        date_start, date_end = month_bounds(y, m)
+    elif filter_due == "curr_year":
+        date_start = datetime(now.year, 1, 1).date()
+        date_end = datetime(now.year, 12, 31).date()
+    elif filter_due == "prev_year":
+        date_start = datetime(now.year - 1, 1, 1).date()
+        date_end = datetime(now.year - 1, 12, 31).date()
+    elif filter_due.startswith("month_"):
+        try:
+            offset = int(filter_due.split("_", 1)[1])
+            ref = datetime(now.year, now.month, 15).date()
+            month_idx = (ref.month - offset - 1) % 12 + 1
+            year_idx = ref.year + ((ref.month - offset - 1) // 12)
+            date_start, date_end = month_bounds(year_idx, month_idx)
+        except Exception:
+            date_start = date_end = None
+
+    due_range_options = [
+        {"value": "last_90", "label": "Last 90 days"},
+        {"value": "curr_week", "label": "Current week"},
+        {"value": "prev_week", "label": "Previous week"},
+        {"value": "curr_month", "label": "Current month"},
+        {"value": "prev_month", "label": "Previous month"},
+        {"value": "curr_year", "label": "Current year"},
+        {"value": "prev_year", "label": "Previous year"},
+    ]
+    for i in range(12):
+        month_idx = (now.month - i - 1) % 12 + 1
+        year_idx = now.year + ((now.month - i - 1) // 12)
+        due_range_options.append(
+            {
+                "value": f"month_{i}",
+                "label": f"{month_name[month_idx]} {year_idx}",
+            }
+        )
+
+    worklogs_qs = (
+        WorkLog.objects.all()
+        .prefetch_related(
+            Prefetch(
+                "entries",
+                queryset=WorkLogEntry.objects.select_related("vehicle_location", "state"),
+            ),
+            "author",
+        )
+        .order_by("-created_at")
+    )
+
+    if date_start and date_end:
+        worklogs_qs = worklogs_qs.filter(due_date__gte=date_start, due_date__lte=date_end)
+    if filter_loc:
+        worklogs_qs = worklogs_qs.filter(entries__vehicle_location_id=filter_loc)
+    if filter_state:
+        worklogs_qs = worklogs_qs.filter(entries__state_id=filter_state)
+    if filter_user:
+        worklogs_qs = worklogs_qs.filter(author_id=filter_user)
+
+    worklogs = []
+    for wl in worklogs_qs:
+        locations = sorted({entry.vehicle_location.name for entry in wl.entries.all()})
+        states = sorted({entry.state.short_name for entry in wl.entries.all() if entry.state})
+        worklogs.append(
+            {
+                "id": wl.id,
+                "number": wl.wl_number,
+                "locations": ", ".join(locations) if locations else "—",
+                "states": ", ".join(states) if states else "—",
+                "note": wl.notes if wl.notes else "—",
+                "created": wl.created_at,
+                "updated": wl.updated_at,
+                "author": wl.author.username if wl.author else "—",
+                "can_edit": False,
+            }
+        )
+
+    user_options = list(
+        WorkLog.objects.values("author_id", "author__username")
+        .order_by("author__username")
+        .distinct()
+    )
+
     return render(
         request,
-        "work_log_master.html",
+        "work_log.html",
         {
             "item_count": InventoryItem.objects.count(),
+            "is_master": True,
+            "hide_add": True,
+            "worklogs": worklogs,
+            "wl_vehicle_options": list(
+                VehicleLocation.objects.values("id", "name").order_by("name")
+            ),
+            "wl_state_options": list(
+                JobState.objects.values("id", "short_name", "full_name").order_by("short_name")
+            ),
+            "wl_unit_options": list(
+                Unit.objects.values("id", "code").order_by("code")
+            ),
+            "wl_default_start": default_start,
+            "wl_default_end": default_end,
+            "due_range_options": due_range_options,
+            "due_range_selected": filter_due,
+            "filter_loc": filter_loc,
+            "filter_state": filter_state,
+            "wl_user_options": user_options,
+            "filter_user": filter_user,
         },
     )
 
@@ -573,8 +867,16 @@ def create_work_log(request):
 
     except ValidationError as ve:
         return JsonResponse({"ok": False, "error": str(ve)}, status=400)
-    except Exception as exc:
-        return JsonResponse({"ok": False, "error": f"Save failed: {exc}"}, status=500)
+    except IntegrityError:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "A work log with this due date already exists. Please choose a different date.",
+            },
+            status=400,
+        )
+    except Exception:
+        return JsonResponse({"ok": False, "error": "Save failed. Please try again."}, status=500)
 
     # DOCX is generated on demand (download/email); no need to persist here
     email_recipient = None
@@ -662,8 +964,16 @@ def update_work_log(request, pk):
                 )
     except ValidationError as ve:
         return JsonResponse({"ok": False, "error": str(ve)}, status=400)
-    except Exception as exc:
-        return JsonResponse({"ok": False, "error": f"Update failed: {exc}"}, status=500)
+    except IntegrityError:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "A work log with this due date already exists. Please choose a different date.",
+            },
+            status=400,
+        )
+    except Exception:
+        return JsonResponse({"ok": False, "error": "Update failed. Please try again."}, status=500)
 
     # DOCX is generated on demand (download/email); no need to persist here
     email_recipient = None

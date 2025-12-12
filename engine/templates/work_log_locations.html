@@ -1,11 +1,139 @@
 {% extends "base.html" %}
-{% block title %}Work Log | Vehicles & Locations{% endblock %}
+{% block title %}Work log – Vehicles &amp; Locations{% endblock %}
 
 {% block content %}
 <div class="sb-card">
     <div class="sb-title-row">
-        <h2 class="sb-title">Vehicles &amp; Locations</h2>
+        <div class="sb-title-group">
+            <h2 class="sb-title">Vehicles &amp; Locations</h2>
+        </div>
     </div>
-    <p style="margin:12px 0;">This page will list vehicles and locations (coming soon).</p>
+
+    <form class="sb-wl-filters sb-wl-filters-under" method="get">
+        <label for="wl-loc">Location</label>
+        <select id="wl-loc" name="loc" onchange="this.form.submit()">
+            <option value="">-----</option>
+            {% for loc in loc_options %}
+                <option value="{{ loc.vehicle_location_id }}"
+                    {% if filter_loc|stringformat:"s" == loc.vehicle_location_id|stringformat:"s" %}selected{% endif %}>
+                    {{ loc.vehicle_location__name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="wl-user">User</label>
+        <select id="wl-user" name="user" onchange="this.form.submit()">
+            <option value="">-----</option>
+            {% for u in user_options %}
+                <option value="{{ u.author_id }}"
+                    {% if filter_user|stringformat:"s" == u.author_id|stringformat:"s" %}selected{% endif %}>
+                    {{ u.author__username }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="wl-state">State</label>
+        <select id="wl-state" name="state" onchange="this.form.submit()">
+            <option value="">-----</option>
+            {% for st in state_options %}
+                <option value="{{ st.state_id }}"
+                    {% if filter_state|stringformat:"s" == st.state_id|stringformat:"s" %}selected{% endif %}>
+                    {{ st.state__short_name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="wl-sort">Sort</label>
+        <select id="wl-sort" name="sort" onchange="this.form.submit()">
+            <option value="due" {% if sort == "due" %}selected{% endif %}>Due date</option>
+            <option value="created" {% if sort == "created" %}selected{% endif %}>Created</option>
+        </select>
+        <select name="dir" onchange="this.form.submit()">
+            <option value="desc" {% if dir == "desc" %}selected{% endif %}>Desc</option>
+            <option value="asc" {% if dir == "asc" %}selected{% endif %}>Asc</option>
+        </select>
+        <noscript><button type="submit" class="sb-btn sb-btn-secondary">Apply</button></noscript>
+    </form>
+
+    <div class="sb-table-wrapper">
+        <table class="sb-table sb-wl-table">
+            <thead>
+            <tr>
+                <th>Vehicle &amp; location</th>
+                <th class="wl-job-wrap">Job description</th>
+                <th>State</th>
+                <th>User notes</th>
+                <th>Due date</th>
+                <th>Created</th>
+                <th>Work log #</th>
+                <th>User created</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% if entries %}
+                {% for en in entries %}
+                    <tr class="{% if en.state and 'finish' in en.state|lower and 'later' in en.state|lower %}wl-state-finish-later{% endif %}">
+                        <td>{{ en.vehicle }}</td>
+                        <td class="wl-job-wrap">{{ en.job }}</td>
+                        <td>
+                            <select class="wl-loc-state"
+                                    data-entry-id="{{ en.id }}"
+                                    title="{{ en.history|escape }}">
+                                {% for st in state_options %}
+                                    <option value="{{ st.state_id }}"
+                                    {% if en.state_id|stringformat:"s" == st.state_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ st.state__short_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>{{ en.note }}</td>
+                        <td>{{ en.due|date:"Y-m-d" }}</td>
+                        <td>{{ en.created|date:"Y-m-d H:i" }}</td>
+                        <td>{{ en.wl_number }}</td>
+                        <td>{{ en.author }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="8" class="wl-empty-row">No entries found.</td></tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<script>
+    (function() {
+        const selects = document.querySelectorAll('.wl-loc-state');
+        if (!selects.length) return;
+
+        function getCSRF() {
+            const match = document.cookie.match(/csrftoken=([^;]+)/);
+            return match ? match[1] : '';
+        }
+
+        selects.forEach(sel => {
+            sel.addEventListener('change', async (e) => {
+                const entryId = sel.dataset.entryId;
+                const newState = sel.value;
+                try {
+                    const resp = await fetch(`/api/work-log-entry/${entryId}/state/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': getCSRF(),
+                        },
+                        body: new URLSearchParams({state: newState})
+                    });
+                    const data = await resp.json();
+                    if (!data.ok) {
+                        alert(data.error || 'Update failed');
+                    }
+                } catch (err) {
+                    alert('Error updating state');
+                }
+            });
+        });
+    })();
+</script>
 {% endblock %}

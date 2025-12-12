@@ -15,7 +15,7 @@
 <div class="sb-card">
     <div class="sb-title-row">
         <div class="sb-title-group">
-            <h2 class="sb-title">Work log list</h2>
+            <h2 class="sb-title">{% if is_master %}Work log master{% else %}Work log list{% endif %}</h2>
             <form class="sb-wl-filters" method="get">
                 <label for="wl-filter-due">Due</label>
                 <select id="wl-filter-due" name="due_range" onchange="this.form.submit()">
@@ -43,25 +43,41 @@
                         </option>
                     {% endfor %}
                 </select>
+                {% if is_master %}
+                    <label for="wl-filter-user">User</label>
+                    <select id="wl-filter-user" name="user" onchange="this.form.submit()">
+                        <option value="">-----</option>
+                        {% for usr in wl_user_options %}
+                            <option value="{{ usr.author_id }}" {% if filter_user|stringformat:"s" == usr.author_id|stringformat:"s" %}selected{% endif %}>
+                                {{ usr.author__username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
                 <noscript><button type="submit" class="sb-btn sb-btn-secondary">Apply</button></noscript>
             </form>
         </div>
-        <button type="button" id="sb-wl-add-btn" class="sb-add-item-btn">
-            <span class="sb-search-icon sb-plus-icon">+</span>
-            <span>work log</span>
-        </button>
+        {% if not hide_add %}
+            <button type="button" id="sb-wl-add-btn" class="sb-add-item-btn">
+                <span class="sb-search-icon sb-plus-icon">+</span>
+                <span>work log</span>
+            </button>
+        {% endif %}
     </div>
     <div class="sb-table-wrapper">
         <table class="sb-table sb-wl-table">
             <thead>
             <tr>
+                {% if is_master %}
+                    <th class="wl-col-user">User</th>
+                {% endif %}
                 <th class="wl-col-number">WL #</th>
                 <th>Locations</th>
                 <th>State</th>
                 <th class="wl-col-note">Note</th>
                 <th class="wl-col-created">Created</th>
                 <th class="wl-col-updated">Last edited</th>
-                <th class="wl-col-edit">View / Edit / Download</th>
+                <th class="wl-col-edit">{% if is_master %}View / Download{% else %}View / Edit / Download{% endif %}</th>
                 {% if request.user.username == "leo-admin" %}
                     <th class="wl-col-delete">Delete</th>
                 {% endif %}
@@ -71,6 +87,9 @@
             {% if worklogs %}
                 {% for wl in worklogs %}
                     <tr>
+                        {% if is_master %}
+                            <td>{{ wl.author }}</td>
+                        {% endif %}
                         <td>
                             <a href="#"
                                class="sb-link wl-link"
@@ -92,17 +111,19 @@
                                     data-wl-id="{{ wl.number }}">
                                 <span class="sb-search-icon wl-view-icon">🔍</span>
                             </button>
-                            {% if wl.can_edit %}
-                                <button class="sb-btn sb-btn-primary wl-edit-btn" type="button" title="Edit" data-wl-pk="{{ wl.id }}">
-                                    <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M12 20H21" />
-                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
-                                    </svg>
-                                </button>
-                            {% else %}
-                                <button class="sb-btn sb-btn-secondary wl-locked-btn" type="button" disabled title="Locked">
-                                    <span class="wl-lock-icon" aria-hidden="true">🔒</span>
-                                </button>
+                            {% if not is_master %}
+                                {% if wl.can_edit %}
+                                    <button class="sb-btn sb-btn-primary wl-edit-btn" type="button" title="Edit" data-wl-pk="{{ wl.id }}">
+                                        <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M12 20H21" />
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+                                        </svg>
+                                    </button>
+                                {% else %}
+                                    <button class="sb-btn sb-btn-secondary wl-locked-btn" type="button" disabled title="Locked">
+                                        <span class="wl-lock-icon" aria-hidden="true">🔒</span>
+                                    </button>
+                                {% endif %}
                             {% endif %}
                             <a class="sb-btn sb-btn-secondary wl-download-btn"
                                title="Download DOCX"
@@ -125,7 +146,7 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="{% if request.user.username == 'leo-admin' %}8{% else %}7{% endif %}" class="wl-empty-row">No work logs yet.</td>
+                    <td colspan="{% if is_master %}{% if request.user.username == 'leo-admin' %}9{% else %}8{% endif %}{% else %}{% if request.user.username == 'leo-admin' %}8{% else %}7{% endif %}{% endif %}" class="wl-empty-row">No work logs yet.</td>
                 </tr>
             {% endif %}
             </tbody>
@@ -310,7 +331,7 @@
                 const tr = document.createElement("tr");
                 const cells = [
                     {val: en.vehicle || ""},
-                    {val: en.job_description || ""},
+                    {val: en.job_description || "", cls: "wl-job"},
                     {val: en.state || ""},
                     {val: en.time_hours || "", cls: "col-time"},
                     {val: en.part || ""},
@@ -397,6 +418,7 @@
     // Add modal form
     const addModal = document.getElementById("wl-add-modal");
     const addBtn = document.getElementById("sb-wl-add-btn");
+    const addInlineBtn = document.getElementById("sb-wl-add-inline");
     const addClose = document.getElementById("wl-add-close");
     const addCancel = document.getElementById("wl-add-cancel");
     const addForm = document.getElementById("wl-add-form");
@@ -667,6 +689,12 @@
     }
     if (addBtn) {
         addBtn.addEventListener("click", () => showAddModal("create", null));
+    }
+    if (addInlineBtn) {
+        addInlineBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            showAddModal("create", null);
+        });
     }
     // Clicking outside should not close the modal.
 

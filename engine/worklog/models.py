@@ -207,6 +207,22 @@ class WorkLogEntry(models.Model):
         return f"{self.worklog} - {self.vehicle_location}"
 
 
+class WorkLogEntryStateChange(models.Model):
+    entry = models.ForeignKey(WorkLogEntry, on_delete=CASCADE, related_name="state_changes")
+    old_state = models.ForeignKey(JobState, null=True, blank=True, on_delete=PROTECT, related_name="+")
+    new_state = models.ForeignKey(JobState, on_delete=PROTECT, related_name="+")
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT, related_name="wl_state_changes")
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at"]
+        verbose_name = "Work Log Entry State Change"
+        verbose_name_plural = "Work Log Entry State Changes"
+
+    def __str__(self):
+        return f"{self.entry} {self.old_state} -> {self.new_state}"
+
+
 class WorklogEmailSettings(models.Model):
     send_new = models.BooleanField(
         default=False,

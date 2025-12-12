@@ -1096,6 +1096,21 @@
 .sb-wl-table .wl-col-delete { width: 6ch; text-align: center; }
 .sb-wl-table .wl-col-note { min-width: 18ch; }
 .sb-wl-table .wl-note-cell { text-align: left; }
+.sb-wl-table td,
+.sb-wl-table th {
+    vertical-align: middle;
+}
+.sb-wl-table tbody tr.wl-state-finish-later td {
+    background-color: rgba(255, 0, 0, 0.08) !important;
+}
+.sb-wl-table tbody tr.wl-state-finish-later td select {
+    background-color: rgba(255, 0, 0, 0.14) !important;
+}
+.wl-loc-state {
+    font-size: 10px;
+    line-height: 1.2;
+    padding: 1px 2px;
+}
 
 .sb-wl-table .wl-delete-cell {
     text-align: center;
@@ -1187,6 +1202,13 @@
 
 .sb-wl-entries-table .wl-veh { width: 60px; }
 .sb-wl-entries-table .wl-job { min-width: 220px; }
+.sb-wl-entries-table .wl-job,
+.wl-job-wrap {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-width: 50ch;
+    white-space: normal;
+}
 .sb-wl-entries-table th:nth-child(3),
 .sb-wl-entries-table td:nth-child(3) select {
     max-width: 140px;
@@ -1196,5 +1218,12 @@
     width: 6ch;
     max-width: 6ch;
     white-space: nowrap;
+}
+.sb-wl-entries-table .col-time input {
+    width: 5ch;
+    min-width: 5ch;
+    text-align: center;
+    padding: 4px;
+    box-sizing: border-box;
 }
 .sb-wl-entries-table .wl-notes-col { min-width: 180px; }

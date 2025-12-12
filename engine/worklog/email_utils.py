@@ -69,10 +69,9 @@ def send_worklog_docx_email(worklog, is_new=True):
     cfg = AdminEmailSettings.objects.first()
     from_email = cfg.from_email if cfg and cfg.from_email else None
 
-    byte_len = len(content)
     email = EmailMessage(
         subject=subject,
-        body=f"Attachment source: {source}, bytes: {byte_len}",
+        body="",
         from_email=from_email,
         to=[recipient],
         connection=connection,

@@ -118,6 +118,50 @@ body {
     font-weight: 600;
 }
 
+/* Dropdown inline add (Work log -> add shortcut) */
+.sb-dropdown-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+}
+.sb-dropdown-item-main {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+.sb-dd-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    background: var(--sb-accent, #22c55e);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    transition: filter 0.15s ease, transform 0.1s ease;
+}
+.sb-dd-add-btn:hover {
+    filter: brightness(0.95);
+}
+.sb-dd-add-btn:active {
+    transform: translateY(1px);
+}
+.sb-dd-add-label {
+    text-transform: lowercase;
+}
+
+.sb-user-divider {
+    border: none;
+    border-top: 1px solid var(--sb-border, #d8dde3);
+    margin: 12px 0;
+}
+
 .sb-dropdown-active .sb-drop-trigger {
     color: #28a745;
     font-weight: 700;

@@ -1112,6 +1112,9 @@
         const lastEl = modal.querySelector("#sb-user-last");
         const emailEl = modal.querySelector("#sb-user-email");
         const prefEl = modal.querySelector("#sb-user-preferred");
+        const oldPwEl = modal.querySelector("#sb-user-oldpw");
+        const newPwEl = modal.querySelector("#sb-user-newpw");
+        const newPw2El = modal.querySelector("#sb-user-newpw2");
 
         let isOpen = false;
 
@@ -1191,6 +1194,28 @@
                 const fd = new URLSearchParams();
                 fd.append("email", emailEl ? (emailEl.value || "").trim() : "");
                 fd.append("preferred_name", prefEl ? (prefEl.value || "").trim() : "");
+                const newPw = newPwEl ? (newPwEl.value || "").trim() : "";
+                const oldPw = oldPwEl ? (oldPwEl.value || "").trim() : "";
+                const newPw2 = newPw2El ? (newPw2El.value || "").trim() : "";
+                if (newPw || newPw2) {
+                    if (!newPw || !newPw2) {
+                        showError("Please enter new password twice.");
+                        return;
+                    }
+                    if (newPw !== newPw2) {
+                        showError("New password entries do not match.");
+                        return;
+                    }
+                    if (newPw.length < 6) {
+                        showError("New password must be at least 6 characters.");
+                        return;
+                    }
+                }
+                if (newPw) {
+                    fd.append("new_password", newPw);
+                    fd.append("old_password", oldPw);
+                    fd.append("new_password_confirm", newPw2);
+                }
 
                 fetch("/api/user/profile/", {
                     method: "POST",
@@ -1206,6 +1231,9 @@
                             showError(data.error || "Save failed.");
                             return;
                         }
+                        if (newPwEl) newPwEl.value = "";
+                        if (newPw2El) newPw2El.value = "";
+                        if (oldPwEl) oldPwEl.value = "";
                         closeModal();
                     })
                     .catch(err => {
