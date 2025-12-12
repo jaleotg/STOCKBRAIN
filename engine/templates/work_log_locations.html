@@ -112,8 +112,25 @@
             return match ? match[1] : '';
         }
 
+        function updateRowHighlight(selectEl) {
+            const row = selectEl.closest('tr');
+            if (!row) return;
+            const label = selectEl.options[selectEl.selectedIndex]?.textContent.toLowerCase() || '';
+            if (label.includes('finish') && label.includes('later')) {
+                row.classList.add('wl-state-finish-later');
+            } else {
+                row.classList.remove('wl-state-finish-later');
+            }
+        }
+
         selects.forEach(sel => {
-            sel.addEventListener('change', async (e) => {
+            let prevValue = sel.value;
+
+            sel.addEventListener('focus', () => {
+                prevValue = sel.value;
+            });
+
+            sel.addEventListener('change', async () => {
                 const entryId = sel.dataset.entryId;
                 const newState = sel.value;
                 try {
@@ -126,13 +143,23 @@
                         body: new URLSearchParams({state: newState})
                     });
                     const data = await resp.json();
-                    if (!data.ok) {
-                        alert(data.error || 'Update failed');
+                    if (resp.ok && data.ok) {
+                        updateRowHighlight(sel);
+                        if (data.history) {
+                            sel.title = data.history;
+                        }
+                    } else {
+                        sel.value = prevValue;
+                        alert(data.error || `Update failed (status ${resp.status})`);
                     }
                 } catch (err) {
+                    sel.value = prevValue;
                     alert('Error updating state');
                 }
             });
+
+            // Ensure initial highlight matches state without refresh
+            updateRowHighlight(sel);
         });
     })();
 </script>

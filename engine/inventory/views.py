@@ -466,6 +466,21 @@ def change_worklog_entry_state(request, pk):
         return JsonResponse({"ok": False, "error": "State not found."}, status=400)
 
     old_state = entry.state
+    # If state is unchanged, do nothing (avoid logging noise)
+    if old_state and old_state.id == new_state.id:
+        history_lines = []
+        for sc in (
+            entry.state_changes.select_related("old_state", "new_state", "changed_by")
+            .order_by("-changed_at")
+        ):
+            old_label = sc.old_state.short_name if sc.old_state else "—"
+            new_label = sc.new_state.short_name if sc.new_state else "—"
+            who = sc.changed_by.username if sc.changed_by else "unknown"
+            when = sc.changed_at.strftime("%Y-%m-%d %H:%M")
+            history_lines.append(f"{when}: {old_label} → {new_label} by {who}")
+        history_str = "\n".join(history_lines) if history_lines else "No changes yet"
+        return JsonResponse({"ok": True, "state": new_state.short_name, "history": history_str})
+
     entry.state = new_state
     entry.save(update_fields=["state"])
 
@@ -475,7 +490,19 @@ def change_worklog_entry_state(request, pk):
         new_state=new_state,
         changed_by=request.user,
     )
-    return JsonResponse({"ok": True, "state": new_state.short_name})
+    history_lines = []
+    for sc in (
+        entry.state_changes.select_related("old_state", "new_state", "changed_by")
+        .order_by("-changed_at")
+    ):
+        old_label = sc.old_state.short_name if sc.old_state else "—"
+        new_label = sc.new_state.short_name if sc.new_state else "—"
+        who = sc.changed_by.username if sc.changed_by else "unknown"
+        when = sc.changed_at.strftime("%Y-%m-%d %H:%M")
+        history_lines.append(f"{when}: {old_label} → {new_label} by {who}")
+    history_str = "\n".join(history_lines) if history_lines else "No changes yet"
+
+    return JsonResponse({"ok": True, "state": new_state.short_name, "history": history_str})
 
 
 @login_required
