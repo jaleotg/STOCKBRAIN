@@ -131,15 +131,22 @@ body {
 /* Links in header (light theme) */
 .sb-header .sb-link {
     font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 6px;
 }
 
 .sb-header .sb-link:hover {
-    text-decoration: underline;
+    text-decoration: none;
+    background: var(--sb-table-row-hover, #eef2f3);
 }
 
-.sb-header .sb-link-active {
+.sb-header .sb-link-active,
+.sb-dropdown-active .sb-drop-trigger {
     color: #28a745 !important;
     font-weight: 700;
+    background: var(--sb-table-row-hover, #eef2f3);
+    border-radius: 6px;
+    padding: 6px 10px;
 }
 
 .sb-btn {
