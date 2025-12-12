@@ -42,12 +42,27 @@
             {% url 'home' as home_url %}
             {% url 'home_alias' as home_alias_url %}
             {% url 'work_log' as work_log_url %}
+            {% url 'work_log_locations' as wl_locations_url %}
+            {% url 'work_log_master' as wl_master_url %}
             {% with current_name=request.resolver_match.url_name|default:'' %}
             <nav class="sb-header-nav">
                 <a href="{{ home_url }}"
                    class="sb-link {% if current_name == 'home' or current_name == 'home_alias' %}sb-link-active{% endif %}">Inventory</a>
-                <a href="{{ work_log_url }}"
-                   class="sb-link {% if current_name == 'work_log' %}sb-link-active{% endif %}">Work Log</a>
+
+                <div class="sb-dropdown {% if current_name|slice:'0:8' == 'work_log' %}sb-dropdown-active{% endif %}">
+                    <a href="{{ work_log_url }}"
+                       class="sb-drop-trigger {% if current_name|slice:'0:8' == 'work_log' %}sb-link-active{% endif %}">
+                        Work log
+                    </a>
+                    <div class="sb-dropdown-menu">
+                        <a href="{{ work_log_url }}" class="sb-dropdown-item {% if current_name == 'work_log' %}sb-dd-active{% endif %}">List</a>
+                        <a href="{{ wl_locations_url }}" class="sb-dropdown-item {% if current_name == 'work_log_locations' %}sb-dd-active{% endif %}">Vehicles &amp; Locations</a>
+                        {% if request.user.is_staff %}
+                            <a href="{{ wl_master_url }}" class="sb-dropdown-item {% if current_name == 'work_log_master' %}sb-dd-active{% endif %}">Master</a>
+                        {% endif %}
+                    </div>
+                </div>
+
                 {% if request.user.is_staff %}
                     <a href="{% url 'admin:index' %}"
                        target="_blank" rel="noopener"

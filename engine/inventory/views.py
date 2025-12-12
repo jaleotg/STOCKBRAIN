@@ -34,9 +34,10 @@ from .models import (
     FAVORITE_COLOR_CHOICES,
     InventorySettings,
 )
-from worklog.models import WorkLog, WorkLogEntry, VehicleLocation, JobState
+from worklog.models import WorkLog, WorkLogEntry, VehicleLocation, JobState, EditCondition
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
+from calendar import month_name, monthrange
 
 
 def user_can_edit_or_json_error(request):
@@ -116,6 +117,81 @@ def work_log_view(request):
         default_start = cfg.start_time.isoformat(timespec="minutes")
         default_end = cfg.end_time.isoformat(timespec="minutes")
 
+    # edit conditions
+    cond = EditCondition.objects.first()
+    only_last = cond.only_last_wl_editable if cond else False
+    hours_limit = cond.editable_time_since_created if cond else 0
+    # date filters
+    now = timezone.now().date()
+    filter_due = request.GET.get("due_range", "last_90")
+    filter_loc = request.GET.get("loc", "").strip()
+    filter_state = request.GET.get("state", "").strip()
+
+    def month_bounds(year, month):
+        start = datetime(year, month, 1).date()
+        end = datetime(year, month, monthrange(year, month)[1]).date()
+        return start, end
+
+    date_start = date_end = None
+    if filter_due == "last_90":
+        date_end = now
+        date_start = now - timezone.timedelta(days=90)
+    elif filter_due in ("curr_week", "prev_week"):
+        # week starts on Sunday
+        shift = (now.weekday() + 1) % 7  # Monday=0 ... Sunday=6 -> 0
+        date_start = now - timezone.timedelta(days=shift)
+        if filter_due == "prev_week":
+            date_start = date_start - timezone.timedelta(days=7)
+        date_end = date_start + timezone.timedelta(days=6)
+    elif filter_due == "curr_month":
+        date_start, date_end = month_bounds(now.year, now.month)
+    elif filter_due == "prev_month":
+        m = now.month - 1 or 12
+        y = now.year if now.month > 1 else now.year - 1
+        date_start, date_end = month_bounds(y, m)
+    elif filter_due == "curr_year":
+        date_start = datetime(now.year, 1, 1).date()
+        date_end = datetime(now.year, 12, 31).date()
+    elif filter_due == "prev_year":
+        date_start = datetime(now.year - 1, 1, 1).date()
+        date_end = datetime(now.year - 1, 12, 31).date()
+    elif filter_due.startswith("month_"):
+        try:
+            offset = int(filter_due.split("_", 1)[1])
+            ref = datetime(now.year, now.month, 15).date()
+            # move back offset months
+            month_idx = (ref.month - offset - 1) % 12 + 1
+            year_idx = ref.year + ((ref.month - offset - 1) // 12)
+            date_start, date_end = month_bounds(year_idx, month_idx)
+        except Exception:
+            date_start = date_end = None
+
+    due_range_options = [
+        {"value": "last_90", "label": "Last 90 days"},
+        {"value": "curr_week", "label": "Current week"},
+        {"value": "prev_week", "label": "Previous week"},
+        {"value": "curr_month", "label": "Current month"},
+        {"value": "prev_month", "label": "Previous month"},
+        {"value": "curr_year", "label": "Current year"},
+        {"value": "prev_year", "label": "Previous year"},
+    ]
+    for i in range(12):
+        month_idx = (now.month - i - 1) % 12 + 1
+        year_idx = now.year + ((now.month - i - 1) // 12)
+        due_range_options.append(
+            {
+                "value": f"month_{i}",
+                "label": f"{month_name[month_idx]} {year_idx}",
+            }
+        )
+
+    last_wl_id = (
+        WorkLog.objects.filter(author=request.user)
+        .order_by("-created_at")
+        .values_list("id", flat=True)
+        .first()
+    )
+
     worklogs_qs = (
         WorkLog.objects.filter(author=request.user)
         .prefetch_related(
@@ -127,7 +203,15 @@ def work_log_view(request):
         .order_by("-created_at")
     )
 
-    now = timezone.now()
+    if date_start and date_end:
+        worklogs_qs = worklogs_qs.filter(due_date__gte=date_start, due_date__lte=date_end)
+
+    if filter_loc:
+        worklogs_qs = worklogs_qs.filter(entries__vehicle_location_id=filter_loc)
+    if filter_state:
+        worklogs_qs = worklogs_qs.filter(entries__state_id=filter_state)
+
+    now_dt = timezone.now()
     worklogs = []
     for wl in worklogs_qs:
         locations = sorted(
@@ -136,7 +220,10 @@ def work_log_view(request):
         states = sorted(
             {entry.state.short_name for entry in wl.entries.all() if entry.state}
         )
-        can_edit = (now - wl.created_at).total_seconds() < 24 * 60 * 60
+        diff_hours = (now_dt - wl.created_at).total_seconds() / 3600.0
+        time_ok = (hours_limit == 0) or (diff_hours <= hours_limit)
+        last_ok = (not only_last) or (wl.id == last_wl_id)
+        can_edit = time_ok and last_ok
         worklogs.append(
             {
                 "id": wl.id,
@@ -166,6 +253,34 @@ def work_log_view(request):
             ),
             "wl_default_start": default_start,
             "wl_default_end": default_end,
+            "due_range_options": due_range_options,
+            "due_range_selected": filter_due,
+            "filter_loc": filter_loc,
+            "filter_state": filter_state,
+        },
+    )
+
+
+@login_required
+def work_log_locations_view(request):
+    return render(
+        request,
+        "work_log_locations.html",
+        {
+            "item_count": InventoryItem.objects.count(),
+        },
+    )
+
+
+@login_required
+def work_log_master_view(request):
+    if not request.user.groups.filter(name__iexact="work_log_master").exists():
+        return HttpResponseForbidden("Not allowed")
+    return render(
+        request,
+        "work_log_master.html",
+        {
+            "item_count": InventoryItem.objects.count(),
         },
     )
 
@@ -197,12 +312,16 @@ def work_log_detail(request, pk):
         entries.append(
             {
                 "vehicle": entry.vehicle_location.name,
+                "vehicle_id": entry.vehicle_location.id,
                 "state": entry.state.short_name,
+                "state_id": entry.state.id,
                 "job_description": entry.job_description,
                 "part": entry.part.name if entry.part else "",
+                "part_id": entry.part.id if entry.part else None,
                 "part_description": entry.part_description,
                 "quantity": entry.quantity,
                 "unit": entry.unit.code if entry.unit else "",
+                "unit_id": entry.unit.id if entry.unit else None,
                 "time_hours": entry.time_hours,
                 "notes": entry.notes,
             }
@@ -212,11 +331,12 @@ def work_log_detail(request, pk):
         "ok": True,
         "worklog": {
             "number": wl.wl_number,
-            "due_date": wl.due_date,
+            "id": wl.id,
+            "due_date": wl.due_date.strftime("%Y-%m-%d") if wl.due_date else "",
             "created_at": wl.created_at,
             "updated_at": wl.updated_at,
-            "start_time": wl.start_time,
-            "end_time": wl.end_time,
+            "start_time": wl.start_time.strftime("%H:%M") if wl.start_time else "",
+            "end_time": wl.end_time.strftime("%H:%M") if wl.end_time else "",
             "notes": wl.notes,
             "author": wl.author.username,
             "user_full": f"{wl.author.first_name} {wl.author.last_name}".strip() or wl.author.username,
@@ -224,6 +344,101 @@ def work_log_detail(request, pk):
         },
     }
     return JsonResponse(data)
+
+
+def _parse_date(date_str):
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise ValidationError("Invalid due date format (YYYY-MM-DD).")
+
+
+def _parse_time(val):
+    val = (val or "").strip()
+    if not val:
+        return None
+    try:
+        return datetime.strptime(val, "%H:%M").time()
+    except ValueError:
+        raise ValidationError("Invalid time format (HH:MM).")
+
+
+def _prepare_entries_payload(request):
+    vehicles = request.POST.getlist("entry_vehicle[]")
+    jobs = request.POST.getlist("entry_job[]")
+    states = request.POST.getlist("entry_state[]")
+    times = request.POST.getlist("entry_time[]")
+    parts = request.POST.getlist("entry_part[]")
+    part_descs = request.POST.getlist("entry_part_desc[]")
+    units = request.POST.getlist("entry_unit[]")
+    qtys = request.POST.getlist("entry_qty[]")
+    entry_notes = request.POST.getlist("entry_notes[]")
+
+    n = len(vehicles)
+    if not n:
+        raise ValidationError("At least one entry is required.")
+    if not (len(jobs) == len(states) == len(times) == len(parts) == len(part_descs) == len(units) == len(qtys) == len(entry_notes) == n):
+        raise ValidationError("Entries payload is inconsistent.")
+
+    entries = []
+    for idx in range(n):
+        veh_id = vehicles[idx].strip()
+        state_id = states[idx].strip()
+        job_text = jobs[idx].strip()
+        time_val = times[idx].strip()
+        if not (veh_id and state_id and job_text and time_val):
+            raise ValidationError(f"Row {idx+1}: vehicle, state, job, and time are required.")
+        try:
+            vehicle_obj = VehicleLocation.objects.get(pk=int(veh_id))
+        except (VehicleLocation.DoesNotExist, ValueError):
+            raise ValidationError(f"Row {idx+1}: invalid vehicle/location.")
+        try:
+            state_obj = JobState.objects.get(pk=int(state_id))
+        except (JobState.DoesNotExist, ValueError):
+            raise ValidationError(f"Row {idx+1}: invalid state.")
+        try:
+            time_hours = Decimal(time_val)
+        except (InvalidOperation, ValueError):
+            raise ValidationError(f"Row {idx+1}: invalid time value.")
+
+        part_obj = None
+        part_val = parts[idx].strip()
+        if part_val:
+            try:
+                part_obj = InventoryItem.objects.get(pk=int(part_val))
+            except (InventoryItem.DoesNotExist, ValueError):
+                part_obj = None
+
+        unit_obj = None
+        unit_val = units[idx].strip()
+        if unit_val:
+            try:
+                unit_obj = Unit.objects.get(pk=int(unit_val))
+            except (Unit.DoesNotExist, ValueError):
+                unit_obj = None
+
+        qty_dec = None
+        qty_val = qtys[idx].strip()
+        if qty_val:
+            try:
+                qty_dec = Decimal(qty_val)
+            except (InvalidOperation, ValueError):
+                raise ValidationError(f"Row {idx+1}: invalid quantity.")
+
+        entries.append(
+            {
+                "vehicle": vehicle_obj,
+                "state": state_obj,
+                "job": job_text,
+                "time": time_hours,
+                "part": part_obj,
+                "part_desc": part_descs[idx].strip(),
+                "unit": unit_obj,
+                "qty": qty_dec,
+                "notes": entry_notes[idx].strip(),
+            }
+        )
+    return entries
 
 
 @login_required
@@ -235,42 +450,23 @@ def create_work_log(request):
     end_time_str = request.POST.get("end_time", "").strip()
     notes = request.POST.get("notes", "").strip()
 
-    vehicles = request.POST.getlist("entry_vehicle[]")
-    jobs = request.POST.getlist("entry_job[]")
-    states = request.POST.getlist("entry_state[]")
-    times = request.POST.getlist("entry_time[]")
-    parts = request.POST.getlist("entry_part[]")
-    part_descs = request.POST.getlist("entry_part_desc[]")
-    units = request.POST.getlist("entry_unit[]")
-    qtys = request.POST.getlist("entry_qty[]")
-    entry_notes = request.POST.getlist("entry_notes[]")
-
-    # basic checks
     if not due_date_str:
         return JsonResponse({"ok": False, "error": "Due date is required."}, status=400)
     try:
-        due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return JsonResponse({"ok": False, "error": "Invalid due date format (YYYY-MM-DD)."}, status=400)
+        due_date = _parse_date(due_date_str)
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
 
-    def parse_time(val):
-        val = (val or "").strip()
-        if not val:
-            return None
-        try:
-            return datetime.strptime(val, "%H:%M").time()
-        except ValueError:
-            return None
+    try:
+        start_time = _parse_time(start_time_str)
+        end_time = _parse_time(end_time_str)
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
 
-    start_time = parse_time(start_time_str)
-    end_time = parse_time(end_time_str)
-
-    # entries validation
-    n = len(vehicles)
-    if not n:
-        return JsonResponse({"ok": False, "error": "At least one entry is required."}, status=400)
-    if not (len(jobs) == len(states) == len(times) == len(parts) == len(part_descs) == len(units) == len(qtys) == len(entry_notes) == n):
-        return JsonResponse({"ok": False, "error": "Entries payload is inconsistent."}, status=400)
+    try:
+        entries = _prepare_entries_payload(request)
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
 
     try:
         with transaction.atomic():
@@ -282,73 +478,106 @@ def create_work_log(request):
                 notes=notes,
             )
 
-            for idx in range(n):
-                # Required lookups
-                veh_id = vehicles[idx].strip()
-                state_id = states[idx].strip()
-                job_text = jobs[idx].strip()
-                time_val = times[idx].strip()
-
-                if not (veh_id and state_id and job_text and time_val):
-                    raise ValidationError("Each entry needs vehicle, state, job, and time.")
-
-                try:
-                    vehicle_obj = VehicleLocation.objects.get(pk=int(veh_id))
-                except (VehicleLocation.DoesNotExist, ValueError):
-                    raise ValidationError(f"Invalid vehicle/location at row {idx+1}.")
-
-                try:
-                    state_obj = JobState.objects.get(pk=int(state_id))
-                except (JobState.DoesNotExist, ValueError):
-                    raise ValidationError(f"Invalid state at row {idx+1}.")
-
-                try:
-                    time_hours = Decimal(time_val)
-                except (InvalidOperation, ValueError):
-                    raise ValidationError(f"Invalid time value at row {idx+1}.")
-
-                # Optional lookups
-                part_obj = None
-                part_val = parts[idx].strip()
-                if part_val:
-                    try:
-                        part_obj = InventoryItem.objects.get(pk=int(part_val))
-                    except (InventoryItem.DoesNotExist, ValueError):
-                        part_obj = None  # treat as free text only
-
-                unit_obj = None
-                unit_val = units[idx].strip()
-                if unit_val:
-                    try:
-                        unit_obj = Unit.objects.get(pk=int(unit_val))
-                    except (Unit.DoesNotExist, ValueError):
-                        unit_obj = None
-
-                qty_val = qtys[idx].strip()
-                qty_dec = None
-                if qty_val:
-                    try:
-                        qty_dec = Decimal(qty_val)
-                    except (InvalidOperation, ValueError):
-                        raise ValidationError(f"Invalid quantity at row {idx+1}.")
-
+            for entry in entries:
                 WorkLogEntry.objects.create(
                     worklog=wl,
-                    vehicle_location=vehicle_obj,
-                    job_description=job_text,
-                    state=state_obj,
-                    part=part_obj,
-                    part_description=part_descs[idx].strip(),
-                    unit=unit_obj,
-                    quantity=qty_dec,
-                    time_hours=time_hours,
-                    notes=entry_notes[idx].strip(),
+                    vehicle_location=entry["vehicle"],
+                    job_description=entry["job"],
+                    state=entry["state"],
+                    part=entry["part"],
+                    part_description=entry["part_desc"],
+                    unit=entry["unit"],
+                    quantity=entry["qty"],
+                    time_hours=entry["time"],
+                    notes=entry["notes"],
                 )
 
     except ValidationError as ve:
         return JsonResponse({"ok": False, "error": str(ve)}, status=400)
     except Exception as exc:
         return JsonResponse({"ok": False, "error": f"Save failed: {exc}"}, status=500)
+
+    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
+
+
+@login_required
+@require_POST
+def update_work_log(request, pk):
+    """Update an existing work log."""
+    try:
+        wl = WorkLog.objects.get(pk=pk)
+    except WorkLog.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Work log not found."}, status=404)
+
+    # permission: only author (apply conditions always)
+    if wl.author != request.user:
+        return JsonResponse({"ok": False, "error": "Not allowed."}, status=403)
+
+    # edit conditions
+    cond = EditCondition.objects.first()
+    only_last = cond.only_last_wl_editable if cond else False
+    hours_limit = cond.editable_time_since_created if cond else 0
+    now = timezone.now()
+    diff_hours = (now - wl.created_at).total_seconds() / 3600.0
+    time_ok = (hours_limit == 0) or (diff_hours <= hours_limit)
+    last_id = (
+        WorkLog.objects.filter(author=request.user)
+        .order_by("-created_at")
+        .values_list("id", flat=True)
+        .first()
+    )
+    last_ok = (not only_last) or (wl.id == last_id)
+    if not (time_ok and last_ok):
+        return JsonResponse({"ok": False, "error": "Editing conditions are not met."}, status=403)
+
+    due_date_str = request.POST.get("due_date", "").strip()
+    start_time_str = request.POST.get("start_time", "").strip()
+    end_time_str = request.POST.get("end_time", "").strip()
+    notes = request.POST.get("notes", "").strip()
+
+    if not due_date_str:
+        return JsonResponse({"ok": False, "error": "Due date is required."}, status=400)
+    try:
+        due_date = _parse_date(due_date_str)
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
+
+    try:
+        start_time = _parse_time(start_time_str)
+        end_time = _parse_time(end_time_str)
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
+
+    try:
+        entries = _prepare_entries_payload(request)
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
+
+    try:
+        with transaction.atomic():
+            wl.due_date = due_date
+            wl.start_time = start_time
+            wl.end_time = end_time
+            wl.notes = notes
+            wl.save()
+            wl.entries.all().delete()
+            for entry in entries:
+                WorkLogEntry.objects.create(
+                    worklog=wl,
+                    vehicle_location=entry["vehicle"],
+                    job_description=entry["job"],
+                    state=entry["state"],
+                    part=entry["part"],
+                    part_description=entry["part_desc"],
+                    unit=entry["unit"],
+                    quantity=entry["qty"],
+                    time_hours=entry["time"],
+                    notes=entry["notes"],
+                )
+    except ValidationError as ve:
+        return JsonResponse({"ok": False, "error": str(ve)}, status=400)
+    except Exception as exc:
+        return JsonResponse({"ok": False, "error": f"Update failed: {exc}"}, status=500)
 
     return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
 

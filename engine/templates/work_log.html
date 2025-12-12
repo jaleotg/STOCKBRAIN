@@ -14,7 +14,38 @@
 
 <div class="sb-card">
     <div class="sb-title-row">
-        <h2 class="sb-title">Work log list</h2>
+        <div class="sb-title-group">
+            <h2 class="sb-title">Work log list</h2>
+            <form class="sb-wl-filters" method="get">
+                <label for="wl-filter-due">Due</label>
+                <select id="wl-filter-due" name="due_range" onchange="this.form.submit()">
+                    {% for opt in due_range_options %}
+                        <option value="{{ opt.value }}" {% if opt.value == due_range_selected %}selected{% endif %}>
+                            {{ opt.label }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <label for="wl-filter-loc">Location</label>
+                <select id="wl-filter-loc" name="loc" onchange="this.form.submit()">
+                    <option value="">-----</option>
+                    {% for loc in wl_vehicle_options %}
+                        <option value="{{ loc.id }}" {% if filter_loc|stringformat:"s" == loc.id|stringformat:"s" %}selected{% endif %}>
+                            {{ loc.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <label for="wl-filter-state">State</label>
+                <select id="wl-filter-state" name="state" onchange="this.form.submit()">
+                    <option value="">-----</option>
+                    {% for st in wl_state_options %}
+                        <option value="{{ st.id }}" {% if filter_state|stringformat:"s" == st.id|stringformat:"s" %}selected{% endif %}>
+                            {{ st.short_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <noscript><button type="submit" class="sb-btn sb-btn-secondary">Apply</button></noscript>
+            </form>
+        </div>
         <button type="button" id="sb-wl-add-btn" class="sb-add-item-btn">
             <span class="sb-search-icon sb-plus-icon">+</span>
             <span>work log</span>
@@ -29,7 +60,7 @@
                 <th>State</th>
                 <th class="wl-col-created">Created</th>
                 <th class="wl-col-updated">Last edited</th>
-                <th class="wl-col-edit">Edit</th>
+                <th class="wl-col-edit">View / Edit</th>
             </tr>
             </thead>
             <tbody>
@@ -48,16 +79,25 @@
                         <td>{{ wl.states }}</td>
                         <td>{{ wl.created|date:"Y-m-d H:i" }}</td>
                         <td>{{ wl.updated|date:"Y-m-d H:i" }}</td>
-                        <td>
+                        <td class="wl-actions">
+                            <button class="sb-btn sb-btn-primary wl-view-btn"
+                                    type="button"
+                                    title="View"
+                                    data-wl-pk="{{ wl.id }}"
+                                    data-wl-id="{{ wl.number }}">
+                                <span class="sb-search-icon" style="color:#fff;">🔍</span>
+                            </button>
                             {% if wl.can_edit %}
-                                <button class="sb-btn sb-btn-primary" type="button" title="Edit">
+                                <button class="sb-btn sb-btn-primary wl-edit-btn" type="button" title="Edit" data-wl-pk="{{ wl.id }}">
                                     <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M12 20H21" />
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
                                     </svg>
                                 </button>
                             {% else %}
-                                <button class="sb-btn sb-btn-secondary" type="button" disabled>Locked</button>
+                                <button class="sb-btn sb-btn-secondary" type="button" disabled title="Locked">
+                                    <span style="font-size:14px; color:#000;">🔒</span>
+                                </button>
                             {% endif %}
                         </td>
                     </tr>
@@ -299,6 +339,39 @@
     document.querySelectorAll(".wl-link").forEach((a) => {
         a.addEventListener("click", onLinkClick);
     });
+    document.querySelectorAll(".wl-view-btn").forEach((btn) => {
+        btn.addEventListener("click", function() {
+            const pk = this.getAttribute("data-wl-pk");
+            const num = this.getAttribute("data-wl-id");
+            if (!pk) return;
+            fetch(`/api/work-log/${pk}/`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) throw new Error("Load failed");
+                    // format dates
+                    ["created_at","updated_at"].forEach(k => {
+                        if (data.worklog && data.worklog[k]) {
+                            data.worklog[k] = new Date(data.worklog[k]).toLocaleString();
+                        }
+                    });
+                    fillModal(data);
+                })
+                .catch(err => alert("Failed to load work log " + (num || "") + ": " + err));
+        });
+    });
+    document.querySelectorAll(".wl-edit-btn").forEach((btn) => {
+        btn.addEventListener("click", function() {
+            const pk = this.getAttribute("data-wl-pk");
+            if (!pk) return;
+            fetch(`/api/work-log/${pk}/`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) throw new Error("Load failed");
+                    showAddModal("edit", data);
+                })
+                .catch(err => alert("Failed to load work log: " + err));
+        });
+    });
 
     // Add modal form
     const addModal = document.getElementById("wl-add-modal");
@@ -306,6 +379,15 @@
     const addClose = document.getElementById("wl-add-close");
     const addCancel = document.getElementById("wl-add-cancel");
     const addForm = document.getElementById("wl-add-form");
+    const modeInput = document.createElement("input");
+    modeInput.type = "hidden";
+    modeInput.name = "mode";
+    modeInput.value = "create";
+    const wlIdInput = document.createElement("input");
+    wlIdInput.type = "hidden";
+    wlIdInput.name = "wl_id";
+    addForm.appendChild(modeInput);
+    addForm.appendChild(wlIdInput);
     const addEntryBtn = document.getElementById("wl-add-entry-btn");
     const entriesBodyAdd = document.getElementById("wl-add-entries-body");
     const vehicleOptions = JSON.parse(document.getElementById("wl-vehicle-options").textContent);
@@ -316,20 +398,47 @@
     function hideAddModal() {
         addModal.style.display = "none";
     }
-    function showAddModal() {
+    function resetAddForm(clearValues=true) {
+        if (!addForm) return;
+        if (clearValues) addForm.reset();
+        entriesBodyAdd.innerHTML = "";
+    }
+    function showAddModal(mode="create", data=null) {
         addModal.style.display = "flex";
-        if (!entriesBodyAdd.children.length) {
-            addEntryRow();
-        }
-        // set defaults
+        resetAddForm(false);
+        modeInput.value = mode;
+        wlIdInput.value = mode === "edit" && data?.worklog ? data.worklog.id || "" : "";
+        const titleEl = document.querySelector("#wl-add-modal .sb-modal-title");
+        if (titleEl) titleEl.textContent = mode === "edit" ? "Edit Work Log" : "Add Work Log";
+
         const dueInput = document.getElementById("wl-add-due");
         const startInput = document.getElementById("wl-add-start");
         const endInput = document.getElementById("wl-add-end");
-        const today = new Date();
-        const todayStr = today.toISOString().slice(0,10); // YYYY-MM-DD
-        if (dueInput && !dueInput.value) dueInput.value = todayStr;
-        if (startInput && !startInput.value) startInput.value = defaultsHolder.dataset.defaultStart || "";
-        if (endInput && !endInput.value) endInput.value = defaultsHolder.dataset.defaultEnd || "";
+        const notesInput = document.getElementById("wl-add-notes");
+
+        if (mode === "edit" && data?.worklog) {
+            const wl = data.worklog;
+            if (dueInput) dueInput.value = wl.due_date || "";
+            if (startInput) startInput.value = wl.start_time || "";
+            if (endInput) endInput.value = wl.end_time || "";
+            if (notesInput) notesInput.value = wl.notes || "";
+            entriesBodyAdd.innerHTML = "";
+            const entries = wl.entries || [];
+            if (entries.length) {
+                entries.forEach(en => addEntryRow(en));
+            } else {
+                addEntryRow();
+            }
+        } else {
+            // defaults for create
+            const today = new Date();
+            const todayStr = today.toISOString().slice(0,10); // YYYY-MM-DD
+            if (dueInput) dueInput.value = todayStr;
+            if (startInput) startInput.value = defaultsHolder.dataset.defaultStart || "";
+            if (endInput) endInput.value = defaultsHolder.dataset.defaultEnd || "";
+            if (notesInput) notesInput.value = "";
+            if (!entriesBodyAdd.children.length) addEntryRow();
+        }
     }
 
     // Custom validation messages (force English)
@@ -385,7 +494,7 @@
         return sel;
     }
 
-    function addEntryRow() {
+    function addEntryRow(prefill=null) {
         const tr = document.createElement("tr");
 
         // Vehicle
@@ -394,6 +503,7 @@
         selVeh.name = "entry_vehicle[]";
         selVeh.required = true;
         attachValidation(selVeh);
+        if (prefill && prefill.vehicle_id) selVeh.value = prefill.vehicle_id;
         tdVeh.appendChild(selVeh);
         tr.appendChild(tdVeh);
 
@@ -404,6 +514,7 @@
         jobInput.rows = 2;
         jobInput.required = true;
         attachValidation(jobInput);
+        if (prefill && prefill.job_description) jobInput.value = prefill.job_description;
         tdJob.appendChild(jobInput);
         tr.appendChild(tdJob);
 
@@ -413,6 +524,7 @@
         selState.name = "entry_state[]";
         selState.required = true;
         attachValidation(selState);
+        if (prefill && prefill.state_id) selState.value = prefill.state_id;
         tdState.appendChild(selState);
         tr.appendChild(tdState);
 
@@ -425,6 +537,9 @@
         timeInput.name = "entry_time[]";
         timeInput.required = true;
         attachValidation(timeInput);
+        if (prefill && prefill.time_hours !== undefined && prefill.time_hours !== null) {
+            timeInput.value = prefill.time_hours;
+        }
         tdTime.className = "col-time";
         tdTime.appendChild(timeInput);
         tr.appendChild(tdTime);
@@ -436,6 +551,7 @@
         partInput.name = "entry_part[]";
         partInput.placeholder = "Part name/id";
         attachValidation(partInput);
+        if (prefill && prefill.part_id) partInput.value = prefill.part_id;
         tdPart.appendChild(partInput);
         tr.appendChild(tdPart);
 
@@ -445,6 +561,7 @@
         partDescInput.type = "text";
         partDescInput.name = "entry_part_desc[]";
         attachValidation(partDescInput);
+        if (prefill && prefill.part_description) partDescInput.value = prefill.part_description;
         tdPartDesc.appendChild(partDescInput);
         tr.appendChild(tdPartDesc);
 
@@ -453,6 +570,7 @@
         const unitSel = buildSelect(unitOptions, "Unit");
         unitSel.name = "entry_unit[]";
         attachValidation(unitSel);
+        if (prefill && prefill.unit_id) unitSel.value = prefill.unit_id;
         tdUnit.appendChild(unitSel);
         tr.appendChild(tdUnit);
 
@@ -464,6 +582,9 @@
         qtyInput.min = "0";
         qtyInput.name = "entry_qty[]";
         attachValidation(qtyInput);
+        if (prefill && prefill.quantity !== undefined && prefill.quantity !== null) {
+            qtyInput.value = prefill.quantity;
+        }
         tdQty.appendChild(qtyInput);
         tr.appendChild(tdQty);
 
@@ -472,6 +593,7 @@
         const notesInput = document.createElement("textarea");
         notesInput.name = "entry_notes[]";
         notesInput.rows = 2;
+        if (prefill && prefill.notes) notesInput.value = prefill.notes;
         tdNotes.appendChild(notesInput);
         tr.appendChild(tdNotes);
 
@@ -496,7 +618,12 @@
         addForm.addEventListener("submit", (e) => {
             e.preventDefault();
             const fd = new FormData(addForm);
-            fetch("/api/work-log/create/", {
+            const mode = modeInput.value === "edit" ? "edit" : "create";
+            const wlId = wlIdInput.value;
+            const url = mode === "edit" && wlId
+                ? `/api/work-log/${wlId}/update/`
+                : "/api/work-log/create/";
+            fetch(url, {
                 method: "POST",
                 headers: { "X-CSRFToken": csrftoken },
                 body: fd,
@@ -507,7 +634,6 @@
                         throw new Error(data.error || "Save failed");
                     }
                     hideAddModal();
-                    // reload to show new entry
                     window.location.reload();
                 })
                 .catch(err => {
@@ -516,7 +642,7 @@
         });
     }
     if (addBtn) {
-        addBtn.addEventListener("click", showAddModal);
+        addBtn.addEventListener("click", () => showAddModal("create", null));
     }
     // Clicking outside should not close the modal.
 })();

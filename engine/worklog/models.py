@@ -176,8 +176,8 @@ class WorkLog(models.Model):
             if self.end_time is None:
                 self.end_time = end_default
 
-        # Generate wl_number from due_date and author
-        if self.due_date and self.author:
+        # Generate wl_number only when missing (do not change on edit)
+        if not self.wl_number and self.due_date and self.author:
             due_str = self.due_date.strftime("%y%m%d")
             author_segment = format_author_segment(self.author)
             self.wl_number = f"WL-{due_str}-{author_segment}"

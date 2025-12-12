@@ -7,6 +7,9 @@ from inventory.views import (
     work_log_view,
     work_log_detail,
     create_work_log,
+    update_work_log,
+    work_log_locations_view,
+    work_log_master_view,
     update_unit,
     update_group,
     update_field,
@@ -28,8 +31,11 @@ urlpatterns = [
     path("", home_view, name="home"),
     path("home/", home_view, name="home_alias"),
     path("work-log/", work_log_view, name="work_log"),
+    path("work-log/locations/", work_log_locations_view, name="work_log_locations"),
+    path("work-log/master/", work_log_master_view, name="work_log_master"),
     path("api/work-log/<int:pk>/", work_log_detail, name="work_log_detail"),
     path("api/work-log/create/", create_work_log, name="create_work_log"),
+    path("api/work-log/<int:pk>/update/", update_work_log, name="update_work_log"),
     path("admin/db-tools/", db_tools, name="db_tools"),
 
     # AJAX API endpoints (InventoryItem)

@@ -1056,6 +1056,35 @@
    WORK LOG STYLES
    ============================================================ */
 
+.sb-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sb-wl-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-left: 8px;
+}
+
+.sb-wl-filters label {
+    font-size: 0.9em;
+    color: var(--sb-text, #1f2933);
+}
+
+.sb-wl-filters select {
+    height: 28px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--sb-border, #cfd8dc);
+    background: var(--sb-table-header-bg, #fff);
+    color: inherit;
+}
+
 .sb-wl-table {
     text-align: center;
 }
