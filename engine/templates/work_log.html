@@ -290,7 +290,9 @@
         if (parts.length === 2) return parts.pop().split(";").shift();
         return "";
     }
-    const csrftoken = getCookie("csrftoken") || "";
+    function getCsrfToken() {
+        return getCookie("csrftoken") || "";
+    }
 
     const modal = document.getElementById("wl-modal");
     const closeButtons = [document.getElementById("wl-modal-close"), document.getElementById("wl-modal-close-2")];
@@ -431,6 +433,7 @@
     wlIdInput.name = "wl_id";
     addForm.appendChild(modeInput);
     addForm.appendChild(wlIdInput);
+
     const addEntryBtn = document.getElementById("wl-add-entry-btn");
     const entriesBodyAdd = document.getElementById("wl-add-entries-body");
     const vehicleOptions = JSON.parse(document.getElementById("wl-vehicle-options").textContent);
@@ -668,10 +671,16 @@
                 : "/api/work-log/create/";
             fetch(url, {
                 method: "POST",
-                headers: { "X-CSRFToken": csrftoken },
+                headers: { "X-CSRFToken": getCsrfToken() },
                 body: fd,
             })
-                .then(r => r.json())
+                .then(async (r) => {
+                    if (!r.ok) {
+                        const text = await r.text();
+                        throw new Error(`HTTP ${r.status}: ${text.slice(0, 200)}`);
+                    }
+                    return r.json();
+                })
                 .then(data => {
                     if (!data.ok) {
                         throw new Error(data.error || "Save failed");
@@ -680,7 +689,12 @@
                     if (data.email_recipient) {
                         alert(`Work log ${data.number} sent to ${data.email_recipient}`);
                     }
-                    window.location.reload();
+                    // After create, reset filters so the new item is visible.
+                    if (mode === "create") {
+                        window.location.href = "/work-log/?due_range=last_90";
+                    } else {
+                        window.location.reload();
+                    }
                 })
                 .catch(err => {
                     alert("Save work log failed: " + err.message);
@@ -707,9 +721,15 @@
             if (!confirm(`Delete work log ${num || pk}?`)) return;
             fetch(`/api/work-log/${pk}/delete/`, {
                 method: "POST",
-                headers: { "X-CSRFToken": csrftoken },
+                headers: { "X-CSRFToken": getCsrfToken() },
             })
-                .then(r => r.json())
+                .then(async (r) => {
+                    if (!r.ok) {
+                        const text = await r.text();
+                        throw new Error(`HTTP ${r.status}: ${text.slice(0, 200)}`);
+                    }
+                    return r.json();
+                })
                 .then(data => {
                     if (!data.ok) throw new Error(data.error || "Delete failed");
                     alert(`Work log ${num || pk} deleted.`);

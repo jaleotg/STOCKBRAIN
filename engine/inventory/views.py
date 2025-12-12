@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import (
     Prefetch,
     Case,
@@ -871,7 +871,7 @@ def create_work_log(request):
         return JsonResponse(
             {
                 "ok": False,
-                "error": "A work log with this due date already exists. Please choose a different date.",
+                "error": "A work log with this number already exists. Please pick a different due date or edit the existing one.",
             },
             status=400,
         )
@@ -968,7 +968,7 @@ def update_work_log(request, pk):
         return JsonResponse(
             {
                 "ok": False,
-                "error": "A work log with this due date already exists. Please choose a different date.",
+                "error": "A work log with this number already exists. Please pick a different due date or edit the existing one.",
             },
             status=400,
         )

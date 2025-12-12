@@ -1200,6 +1200,24 @@
     text-align: center;
 }
 
+.sb-wl-entries-table th,
+.sb-wl-entries-table td {
+    padding: 2px 4px;
+}
+
+.sb-wl-entries-table input,
+.sb-wl-entries-table select,
+.sb-wl-entries-table textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px 4px;
+}
+
+.sb-wl-entries-table textarea {
+    resize: vertical;
+}
+
 .sb-wl-entries-table .wl-veh { width: 60px; }
 .sb-wl-entries-table .wl-job { min-width: 220px; }
 .sb-wl-entries-table .wl-job,
@@ -1227,3 +1245,5 @@
     box-sizing: border-box;
 }
 .sb-wl-entries-table .wl-notes-col { min-width: 180px; }
+
+/* (date picker styles removed) */
