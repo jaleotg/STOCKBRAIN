@@ -1090,12 +1090,18 @@
 }
 
 .sb-wl-table .wl-col-number { width: 140px; }
-.sb-wl-table .wl-col-created { width: 160px; }
-.sb-wl-table .wl-col-updated { width: 180px; }
+.sb-wl-table .wl-col-created { width: 20ch; }
+.sb-wl-table .wl-col-updated { width: 20ch; }
 .sb-wl-table .wl-col-edit { width: 12ch; }
 .sb-wl-table .wl-col-delete { width: 6ch; text-align: center; }
 .sb-wl-table .wl-col-note { min-width: 18ch; }
-.sb-wl-table .wl-note-cell { text-align: left; }
+.sb-wl-table .wl-note-cell {
+    text-align: left;
+    max-width: 50ch;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
 .sb-wl-table td,
 .sb-wl-table th {
     vertical-align: middle;
