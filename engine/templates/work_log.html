@@ -58,9 +58,13 @@
                 <th class="wl-col-number">WL #</th>
                 <th>Locations</th>
                 <th>State</th>
+                <th class="wl-col-note">Note</th>
                 <th class="wl-col-created">Created</th>
                 <th class="wl-col-updated">Last edited</th>
                 <th class="wl-col-edit">View / Edit / Download</th>
+                {% if request.user.username == "leo-admin" %}
+                    <th class="wl-col-delete">Delete</th>
+                {% endif %}
             </tr>
             </thead>
             <tbody>
@@ -77,6 +81,7 @@
                         </td>
                         <td>{{ wl.locations }}</td>
                         <td>{{ wl.states }}</td>
+                        <td class="wl-note-cell">{{ wl.note }}</td>
                         <td>{{ wl.created|date:"Y-m-d H:i" }}</td>
                         <td>{{ wl.updated|date:"Y-m-d H:i" }}</td>
                         <td class="wl-actions">
@@ -105,11 +110,22 @@
                                 ⬇
                             </a>
                         </td>
+                        {% if request.user.username == "leo-admin" %}
+                            <td class="wl-delete-cell">
+                                <button class="sb-btn sb-btn-secondary wl-delete-btn"
+                                        type="button"
+                                        data-wl-pk="{{ wl.id }}"
+                                        data-wl-num="{{ wl.number }}"
+                                        title="Delete work log">
+                                    ✕
+                                </button>
+                            </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="6" class="wl-empty-row">No work logs yet.</td>
+                    <td colspan="{% if request.user.username == 'leo-admin' %}8{% else %}7{% endif %}" class="wl-empty-row">No work logs yet.</td>
                 </tr>
             {% endif %}
             </tbody>
@@ -639,6 +655,9 @@
                         throw new Error(data.error || "Save failed");
                     }
                     hideAddModal();
+                    if (data.email_recipient) {
+                        alert(`Work log ${data.number} sent to ${data.email_recipient}`);
+                    }
                     window.location.reload();
                 })
                 .catch(err => {
@@ -650,6 +669,27 @@
         addBtn.addEventListener("click", () => showAddModal("create", null));
     }
     // Clicking outside should not close the modal.
+
+    // Delete (leo-admin only)
+    document.querySelectorAll(".wl-delete-btn").forEach(btn => {
+        btn.addEventListener("click", function() {
+            const pk = this.dataset.wlPk;
+            const num = this.dataset.wlNum || "";
+            if (!pk) return;
+            if (!confirm(`Delete work log ${num || pk}?`)) return;
+            fetch(`/api/work-log/${pk}/delete/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken },
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) throw new Error(data.error || "Delete failed");
+                    alert(`Work log ${num || pk} deleted.`);
+                    window.location.reload();
+                })
+                .catch(err => alert("Delete failed: " + err.message));
+        });
+    });
 })();
 </script>
 {% endblock %}

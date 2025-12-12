@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import transaction
 from django.db.models import (
@@ -34,9 +35,11 @@ from .models import (
     InventoryColumn,
     FAVORITE_COLOR_CHOICES,
     InventorySettings,
+    get_user_profile,
 )
 from worklog.models import WorkLog, WorkLogEntry, VehicleLocation, JobState, EditCondition
-from worklog.docx_utils import generate_and_store_docx
+from worklog.docx_utils import render_worklog_docx, generate_and_store_docx
+from worklog.email_utils import send_worklog_docx_email
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from calendar import month_name, monthrange
@@ -103,6 +106,41 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect("login")
+
+
+@login_required
+def user_profile(request):
+    profile = get_user_profile(request.user)
+
+    if request.method == "GET":
+        data = {
+            "ok": True,
+            "user": {
+                "username": request.user.username,
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "email": request.user.email,
+                "preferred_name": profile.preferred_name if profile else "",
+            },
+        }
+        return JsonResponse(data)
+
+    if request.method == "POST":
+        email = (request.POST.get("email") or "").strip()
+        preferred = (request.POST.get("preferred_name") or "").strip()
+        if email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                return JsonResponse({"ok": False, "error": "Invalid e-mail address."}, status=400)
+        request.user.email = email
+        request.user.save(update_fields=["email"])
+        if profile:
+            profile.preferred_name = preferred
+            profile.save(update_fields=["preferred_name"])
+        return JsonResponse({"ok": True})
+
+    return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
 
 
 # ============================================
@@ -246,6 +284,7 @@ def work_log_view(request):
                 "number": wl.wl_number,
                 "locations": ", ".join(locations) if locations else "—",
                 "states": ", ".join(states) if states else "—",
+                "note": wl.notes if wl.notes else "—",
                 "created": wl.created_at,
                 "updated": wl.updated_at,
                 "can_edit": can_edit,
@@ -366,7 +405,7 @@ def work_log_detail(request, pk):
 
 @login_required
 def download_work_log_docx(request, pk):
-    """Generate (if needed) and return the DOCX representation of a work log."""
+    """Generate and return the DOCX representation of a work log."""
     try:
         wl = WorkLog.objects.get(pk=pk)
     except WorkLog.DoesNotExist:
@@ -375,14 +414,9 @@ def download_work_log_docx(request, pk):
     if wl.author != request.user and not request.user.is_staff:
         return HttpResponseForbidden("Not allowed")
 
-    doc_obj = generate_and_store_docx(wl)
-    if not doc_obj.docx_file:
-        raise Http404("DOCX not available")
-
-    # Stream the file
-    file_obj = doc_obj.docx_file
-    filename = file_obj.name.split("/")[-1]
-    content = file_obj.read()
+    # Generate fresh DOCX bytes on demand (do not rely on stored file)
+    content = render_worklog_docx(wl)
+    filename = f"{wl.wl_number}.docx"
     resp = HttpResponse(
         content,
         content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -542,13 +576,14 @@ def create_work_log(request):
     except Exception as exc:
         return JsonResponse({"ok": False, "error": f"Save failed: {exc}"}, status=500)
 
+    # DOCX is generated on demand (download/email); no need to persist here
+    email_recipient = None
     try:
-        generate_and_store_docx(wl)
+        email_recipient = send_worklog_docx_email(wl, is_new=True)
     except Exception:
-        # do not block save; docx can be regenerated later
         pass
 
-    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
+    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number, "email_recipient": email_recipient})
 
 
 @login_required
@@ -630,12 +665,29 @@ def update_work_log(request, pk):
     except Exception as exc:
         return JsonResponse({"ok": False, "error": f"Update failed: {exc}"}, status=500)
 
+    # DOCX is generated on demand (download/email); no need to persist here
+    email_recipient = None
     try:
-        generate_and_store_docx(wl)
+        email_recipient = send_worklog_docx_email(wl, is_new=False)
     except Exception:
         pass
 
-    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
+    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number, "email_recipient": email_recipient})
+
+
+@login_required
+@require_POST
+def delete_work_log(request, pk):
+    """Delete a work log – only for the hardcoded super user leo-admin."""
+    if request.user.username.lower() != "leo-admin":
+        return JsonResponse({"ok": False, "error": "Not allowed."}, status=403)
+    try:
+        wl = WorkLog.objects.get(pk=pk)
+    except WorkLog.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Work log not found."}, status=404)
+
+    wl.delete()
+    return JsonResponse({"ok": True})
 
 
 # ============================================

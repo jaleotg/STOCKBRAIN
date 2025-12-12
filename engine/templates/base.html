@@ -83,10 +83,20 @@
             </button>
 
             {% if request.user.is_authenticated %}
-                <span style="margin-left:10px; margin-right:10px;">
-                    {{ request.user.username }}
-                </span>
-                <a href="{% url 'logout' %}" class="sb-link">Logout</a>
+                <div class="sb-dropdown">
+                    <a href="#"
+                       class="sb-drop-trigger">
+                        {{ request.user.username }}
+                    </a>
+                    <div class="sb-dropdown-menu" style="right:0; left:auto;">
+                        <a href="#"
+                           id="sb-user-edit-trigger"
+                           class="sb-dropdown-item">
+                            Edit user data
+                        </a>
+                        <a href="{% url 'logout' %}" class="sb-dropdown-item">Logout</a>
+                    </div>
+                </div>
             {% else %}
                 <a href="{% url 'login' %}" class="sb-link">Login</a>
             {% endif %}
@@ -134,6 +144,47 @@
                 </button>
             </div>
 
+        </div>
+    </div>
+
+    <!-- USER PROFILE MODAL -->
+    <div id="sb-user-modal" class="sb-modal" style="display:none;">
+        <div class="sb-modal-dialog">
+            <div class="sb-modal-header">
+                <h2 class="sb-modal-title">Edit user data</h2>
+                <button type="button" class="sb-modal-close" id="sb-user-close">✕</button>
+            </div>
+            <form id="sb-user-form">
+                <div class="sb-modal-body">
+                    <div class="sb-add-field">
+                        <label>Username</label>
+                        <input type="text" id="sb-user-username" readonly>
+                    </div>
+                    <div class="sb-inline-fields">
+                        <div class="sb-add-field">
+                            <label>First name</label>
+                            <input type="text" id="sb-user-first" readonly>
+                        </div>
+                        <div class="sb-add-field">
+                            <label>Last name</label>
+                            <input type="text" id="sb-user-last" readonly>
+                        </div>
+                    </div>
+                    <div class="sb-add-field">
+                        <label for="sb-user-email">E-mail</label>
+                        <input type="email" id="sb-user-email" name="email" required>
+                    </div>
+                    <div class="sb-add-field">
+                        <label for="sb-user-preferred">Preferred (how you want to be called)</label>
+                        <input type="text" id="sb-user-preferred" name="preferred_name">
+                    </div>
+                    <div id="sb-user-error" class="sb-validation" style="display:none;"></div>
+                </div>
+                <div class="sb-modal-footer">
+                    <button type="button" class="sb-btn sb-btn-secondary" id="sb-user-cancel">Cancel</button>
+                    <button type="submit" class="sb-btn sb-btn-primary">Save</button>
+                </div>
+            </form>
         </div>
     </div>
 

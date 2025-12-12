@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db.models import PROTECT, CASCADE
 
 
 # Condition status for each inventory item
@@ -214,6 +216,29 @@ class InventorySettings(models.Model):
 
     def __str__(self) -> str:
         return "Inventory settings"
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    preferred_name = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+    def __str__(self) -> str:
+        return f"Profile for {self.user.username}"
+
+
+def get_user_profile(user):
+    if not user or not user.is_authenticated:
+        return None
+    profile, _created = UserProfile.objects.get_or_create(user=user)
+    return profile
 
 
 class Unit(models.Model):

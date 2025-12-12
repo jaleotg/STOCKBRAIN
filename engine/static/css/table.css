@@ -1093,6 +1093,17 @@
 .sb-wl-table .wl-col-created { width: 160px; }
 .sb-wl-table .wl-col-updated { width: 180px; }
 .sb-wl-table .wl-col-edit { width: 12ch; }
+.sb-wl-table .wl-col-delete { width: 6ch; text-align: center; }
+.sb-wl-table .wl-col-note { min-width: 18ch; }
+.sb-wl-table .wl-note-cell { text-align: left; }
+
+.sb-wl-table .wl-delete-cell {
+    text-align: center;
+}
+.sb-wl-table .wl-delete-btn {
+    padding: 2px 6px;
+    font-size: 12px;
+}
 .sb-wl-table .wl-actions {
     display: flex;
     gap: 6px;

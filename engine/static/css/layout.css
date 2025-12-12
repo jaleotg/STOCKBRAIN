@@ -48,6 +48,9 @@ body {
 
 .sb-header-right {
     font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .sb-header-nav {
@@ -104,6 +107,11 @@ body {
 
 .sb-dropdown-item:hover {
     background: var(--sb-table-row-hover, #eef2f3);
+}
+.sb-dropdown-item.sb-dd-disabled {
+    color: #999;
+    cursor: default;
+    pointer-events: none;
 }
 
 .sb-dd-active {

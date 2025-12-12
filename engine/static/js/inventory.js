@@ -1092,6 +1092,131 @@
     }
 
     /* ================================================
+       USER PROFILE MODAL (edit e-mail / preferred name)
+    ================================================= */
+    function sbInitUserProfileModal() {
+        const trigger = document.getElementById("sb-user-edit-trigger");
+        const modal = document.getElementById("sb-user-modal");
+        if (!trigger || !modal) return;
+        if (trigger.dataset.sbBound === "1") return;
+        trigger.dataset.sbBound = "1";
+
+        const dialog = modal.querySelector(".sb-modal-dialog");
+        const closeBtn = modal.querySelector("#sb-user-close");
+        const cancelBtn = modal.querySelector("#sb-user-cancel");
+        const form = modal.querySelector("#sb-user-form");
+        const errBox = modal.querySelector("#sb-user-error");
+
+        const usernameEl = modal.querySelector("#sb-user-username");
+        const firstEl = modal.querySelector("#sb-user-first");
+        const lastEl = modal.querySelector("#sb-user-last");
+        const emailEl = modal.querySelector("#sb-user-email");
+        const prefEl = modal.querySelector("#sb-user-preferred");
+
+        let isOpen = false;
+
+        function showError(msg) {
+            if (!errBox) return;
+            errBox.textContent = msg || "";
+            errBox.style.display = msg ? "block" : "none";
+        }
+
+        function fillUser(data) {
+            const u = (data && data.user) || {};
+            if (usernameEl) usernameEl.value = u.username || "";
+            if (firstEl) firstEl.value = u.first_name || "";
+            if (lastEl) lastEl.value = u.last_name || "";
+            if (emailEl) emailEl.value = u.email || "";
+            if (prefEl) prefEl.value = u.preferred_name || "";
+            if (emailEl) emailEl.focus();
+        }
+
+        function openModal() {
+            showError("");
+            modal.style.display = "flex";
+            isOpen = true;
+            fetch("/api/user/profile/")
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) {
+                        showError(data.error || "Failed to load profile.");
+                        return;
+                    }
+                    fillUser(data);
+                })
+                .catch(err => {
+                    console.error("Profile load error", err);
+                    showError("Failed to load profile.");
+                });
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+            isOpen = false;
+        }
+
+        function handleOutside(e) {
+            if (!isOpen || !dialog) return;
+            if (!dialog.contains(e.target)) {
+                closeModal();
+            }
+        }
+
+        function handleKey(e) {
+            if (!isOpen) return;
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeModal();
+            }
+        }
+
+        trigger.addEventListener("click", function (e) {
+            e.preventDefault();
+            openModal();
+        });
+
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+        if (cancelBtn) cancelBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            closeModal();
+        });
+
+        modal.addEventListener("mousedown", handleOutside);
+        document.addEventListener("keydown", handleKey);
+
+        if (form) {
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                showError("");
+                const fd = new URLSearchParams();
+                fd.append("email", emailEl ? (emailEl.value || "").trim() : "");
+                fd.append("preferred_name", prefEl ? (prefEl.value || "").trim() : "");
+
+                fetch("/api/user/profile/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": getCookie("csrftoken") || "",
+                    },
+                    body: fd.toString(),
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.ok) {
+                            showError(data.error || "Save failed.");
+                            return;
+                        }
+                        closeModal();
+                    })
+                    .catch(err => {
+                        console.error("Profile save error", err);
+                        showError("Save failed.");
+                    });
+            });
+        }
+    }
+
+    /* ================================================
        ADD ITEM MODAL (Editor / Purchase Manager)
     ================================================= */
     function sbInitAddItemModal() {
@@ -2257,6 +2382,7 @@
         sbInitNoteButtons();
         sbInitAddItemModal();
         sbInitDeleteModal();
+        sbInitUserProfileModal();
         applyPendingHighlight();
         sbSyncUrlWithState();
     });
