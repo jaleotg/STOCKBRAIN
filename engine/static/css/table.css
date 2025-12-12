@@ -1092,7 +1092,24 @@
 .sb-wl-table .wl-col-number { width: 140px; }
 .sb-wl-table .wl-col-created { width: 160px; }
 .sb-wl-table .wl-col-updated { width: 180px; }
-.sb-wl-table .wl-col-edit { width: 5ch; }
+.sb-wl-table .wl-col-edit { width: 12ch; }
+.sb-wl-table .wl-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+}
+.wl-download-btn {
+    padding: 6px 8px;
+    line-height: 1;
+}
+.wl-view-icon {
+    color: #fff;
+}
+.wl-lock-icon {
+    font-size: 14px;
+    color: #000;
+}
 
 .wl-empty-row {
     text-align: center;
@@ -1159,6 +1176,10 @@
 
 .sb-wl-entries-table .wl-veh { width: 60px; }
 .sb-wl-entries-table .wl-job { min-width: 220px; }
+.sb-wl-entries-table th:nth-child(3),
+.sb-wl-entries-table td:nth-child(3) select {
+    max-width: 140px;
+}
 .sb-wl-entries-table .wl-part { min-width: 180px; }
 .sb-wl-entries-table .col-time {
     width: 6ch;

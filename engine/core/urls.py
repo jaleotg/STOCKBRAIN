@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from inventory.views import (
     login_view,
     logout_view,
@@ -17,6 +19,7 @@ from inventory.views import (
     update_note,
     create_item,
     delete_item,
+    download_work_log_docx,
 )
 from datatools.views import db_tools
 
@@ -36,6 +39,7 @@ urlpatterns = [
     path("api/work-log/<int:pk>/", work_log_detail, name="work_log_detail"),
     path("api/work-log/create/", create_work_log, name="create_work_log"),
     path("api/work-log/<int:pk>/update/", update_work_log, name="update_work_log"),
+    path("api/work-log/<int:pk>/download/", download_work_log_docx, name="download_work_log_docx"),
     path("admin/db-tools/", db_tools, name="db_tools"),
 
     # AJAX API endpoints (InventoryItem)
@@ -49,3 +53,6 @@ urlpatterns = [
     path("api/update-favorite/", update_favorite, name="update_favorite"),
     path("api/update-note/", update_note, name="update_note"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

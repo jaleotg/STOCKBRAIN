@@ -24,6 +24,7 @@ from django.db.models.functions import Lower, Substr, RowNumber, Cast, NullIf
 from django.db.models import Func
 from django.utils import timezone
 from django.http import HttpResponseForbidden, Http404
+from django.http import HttpResponse
 
 from .models import (
     InventoryItem,
@@ -35,9 +36,11 @@ from .models import (
     InventorySettings,
 )
 from worklog.models import WorkLog, WorkLogEntry, VehicleLocation, JobState, EditCondition
+from worklog.docx_utils import generate_and_store_docx
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from calendar import month_name, monthrange
+from urllib.parse import urlencode
 
 
 def user_can_edit_or_json_error(request):
@@ -126,6 +129,19 @@ def work_log_view(request):
     filter_due = request.GET.get("due_range", "last_90")
     filter_loc = request.GET.get("loc", "").strip()
     filter_state = request.GET.get("state", "").strip()
+    allowed_keys = {"due_range", "loc", "state"}
+    extra_keys = set(request.GET.keys()) - allowed_keys
+    if extra_keys:
+        clean_params = {}
+        for k in allowed_keys:
+            val = request.GET.get(k, "").strip()
+            if val:
+                clean_params[k] = val
+        query = urlencode(clean_params)
+        target = request.path
+        if query:
+            target = f"{target}?{query}"
+        return redirect(target)
 
     def month_bounds(year, month):
         start = datetime(year, month, 1).date()
@@ -285,6 +301,8 @@ def work_log_master_view(request):
     )
 
 
+
+
 @login_required
 def work_log_detail(request, pk):
     """Read-only detail of a single worklog for the current user."""
@@ -344,6 +362,33 @@ def work_log_detail(request, pk):
         },
     }
     return JsonResponse(data)
+
+
+@login_required
+def download_work_log_docx(request, pk):
+    """Generate (if needed) and return the DOCX representation of a work log."""
+    try:
+        wl = WorkLog.objects.get(pk=pk)
+    except WorkLog.DoesNotExist:
+        raise Http404
+
+    if wl.author != request.user and not request.user.is_staff:
+        return HttpResponseForbidden("Not allowed")
+
+    doc_obj = generate_and_store_docx(wl)
+    if not doc_obj.docx_file:
+        raise Http404("DOCX not available")
+
+    # Stream the file
+    file_obj = doc_obj.docx_file
+    filename = file_obj.name.split("/")[-1]
+    content = file_obj.read()
+    resp = HttpResponse(
+        content,
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return resp
 
 
 def _parse_date(date_str):
@@ -497,6 +542,12 @@ def create_work_log(request):
     except Exception as exc:
         return JsonResponse({"ok": False, "error": f"Save failed: {exc}"}, status=500)
 
+    try:
+        generate_and_store_docx(wl)
+    except Exception:
+        # do not block save; docx can be regenerated later
+        pass
+
     return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
 
 
@@ -578,6 +629,11 @@ def update_work_log(request, pk):
         return JsonResponse({"ok": False, "error": str(ve)}, status=400)
     except Exception as exc:
         return JsonResponse({"ok": False, "error": f"Update failed: {exc}"}, status=500)
+
+    try:
+        generate_and_store_docx(wl)
+    except Exception:
+        pass
 
     return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
 

@@ -208,6 +208,14 @@ class WorkLogEntry(models.Model):
 
 
 class WorklogEmailSettings(models.Model):
+    send_new = models.BooleanField(
+        default=False,
+        help_text="Send newly created work logs to the specified e-mail",
+    )
+    send_edit = models.BooleanField(
+        default=False,
+        help_text="Send notification when a work log is edited",
+    )
     recipient_email = models.EmailField(help_text="Docelowy adres e-mail do wysyłki worklogów")
     users = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
@@ -221,3 +229,26 @@ class WorklogEmailSettings(models.Model):
 
     def __str__(self):
         return self.recipient_email
+
+
+class WorkLogDocument(models.Model):
+    worklog = models.OneToOneField(
+        WorkLog,
+        related_name="docx_document",
+        on_delete=models.CASCADE,
+        help_text="Work log this DOCX file belongs to",
+    )
+    docx_file = models.FileField(
+        upload_to="worklogs/docx/",
+        blank=True,
+        null=True,
+        help_text="Generated DOCX representation (WL-YYMMDD-Name_Surname.docx)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Work Log DOCX"
+        verbose_name_plural = "Work Log DOCX files"
+
+    def __str__(self):
+        return f"{self.worklog} docx"

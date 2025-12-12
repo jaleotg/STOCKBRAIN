@@ -7,6 +7,7 @@ from .models import (
     WorkLogEntry,
     WorklogEmailSettings,
     EditCondition,
+    WorkLogDocument,
 )
 
 
@@ -79,7 +80,7 @@ class WorkLogEntryAdmin(admin.ModelAdmin):
 
 @admin.register(WorklogEmailSettings)
 class WorklogEmailSettingsAdmin(admin.ModelAdmin):
-    list_display = ("recipient_email",)
+    list_display = ("send_new", "recipient_email",)
     filter_horizontal = ("users",)
 
     def has_add_permission(self, request):
@@ -95,3 +96,9 @@ class WorklogEmailSettingsAdmin(admin.ModelAdmin):
         if not obj:
             obj = WorklogEmailSettings.objects.create(recipient_email="")
         return self.change_view(request, object_id=str(obj.pk), extra_context=extra_context)
+
+
+@admin.register(WorkLogDocument)
+class WorkLogDocumentAdmin(admin.ModelAdmin):
+    list_display = ("worklog", "docx_file", "created_at")
+    search_fields = ("worklog__wl_number",)

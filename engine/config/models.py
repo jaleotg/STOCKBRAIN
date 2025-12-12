@@ -54,8 +54,6 @@ class AdminEmailSettings(models.Model):
 
     def save(self, *args, **kwargs):
         self.singleton = 1
-        if self.smtp_password and not self.smtp_password.startswith("pbkdf2_"):
-            self.smtp_password = make_password(self.smtp_password)
         super().save(*args, **kwargs)
 
     def __str__(self):

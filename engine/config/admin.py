@@ -33,7 +33,7 @@ class AdminEmailSettingsForm(forms.ModelForm):
             "smtp_password": forms.PasswordInput(render_value=True),
         }
         help_texts = {
-            "smtp_password": "Use an app-specific password; value is stored hashed and cannot be read back.",
+            "smtp_password": "Use an app-specific password; value is stored (plain) for SMTP login. Re-enter to change.",
         }
 
 
@@ -59,7 +59,7 @@ class AdminEmailSettingsAdmin(admin.ModelAdmin):
                 "<strong>Example (Gmail):</strong><br>"
                 "Host: smtp.gmail.com, Port: 587 (TLS) or 465 (SSL).<br>"
                 "TLS ON with 587, SSL ON with 465 (never both).<br>"
-                "Login: full Gmail address. Password: App Password from Google Account (not regular password).<br>"
+                "Login: full Gmail address. Password: App Password from Google Account (not regular password, stored as plain for SMTP use).<br>"
                 "From: usually same as login."
             ),
         }),
@@ -95,7 +95,7 @@ class AdminEmailSettingsAdmin(admin.ModelAdmin):
                 cd = form.cleaned_data
                 # Use the raw value from POST; the cleaned value would reuse the hashed
                 # password from the instance, which cannot be used for SMTP login.
-                raw_password = request.POST.get("smtp_password", "")
+                raw_password = (request.POST.get("smtp_password", "") or "").strip()
                 if raw_password == form_class.PLACEHOLDER:
                     raw_password = ""
                 if not raw_password:
@@ -135,8 +135,14 @@ class AdminEmailSettingsAdmin(admin.ModelAdmin):
             server.ehlo()
             if use_tls and not use_ssl:
                 server.starttls()
+                server.ehlo()
             if username:
-                server.login(username, raw_password)
+                try:
+                    server.login(username, raw_password)
+                except smtplib.SMTPAuthenticationError as exc:
+                    code = getattr(exc, "smtp_code", "")
+                    resp = getattr(exc, "smtp_error", b"").decode(errors="ignore")
+                    raise Exception(f"SMTP auth failed (code {code}): {resp or exc}") from exc
             msg = EmailMessage()
             msg["Subject"] = "StockBrain test e-mail"
             msg["From"] = from_email or username

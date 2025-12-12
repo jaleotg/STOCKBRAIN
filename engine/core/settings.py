@@ -169,6 +169,10 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",     # engine/static/
 ]
 
+# Media uploads (docx exports, etc.)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 
 # ------------------------------------------
 # DEFAULT PRIMARY KEY

@@ -60,7 +60,7 @@
                 <th>State</th>
                 <th class="wl-col-created">Created</th>
                 <th class="wl-col-updated">Last edited</th>
-                <th class="wl-col-edit">View / Edit</th>
+                <th class="wl-col-edit">View / Edit / Download</th>
             </tr>
             </thead>
             <tbody>
@@ -85,7 +85,7 @@
                                     title="View"
                                     data-wl-pk="{{ wl.id }}"
                                     data-wl-id="{{ wl.number }}">
-                                <span class="sb-search-icon" style="color:#fff;">🔍</span>
+                                <span class="sb-search-icon wl-view-icon">🔍</span>
                             </button>
                             {% if wl.can_edit %}
                                 <button class="sb-btn sb-btn-primary wl-edit-btn" type="button" title="Edit" data-wl-pk="{{ wl.id }}">
@@ -95,10 +95,15 @@
                                     </svg>
                                 </button>
                             {% else %}
-                                <button class="sb-btn sb-btn-secondary" type="button" disabled title="Locked">
-                                    <span style="font-size:14px; color:#000;">🔒</span>
+                                <button class="sb-btn sb-btn-secondary wl-locked-btn" type="button" disabled title="Locked">
+                                    <span class="wl-lock-icon" aria-hidden="true">🔒</span>
                                 </button>
                             {% endif %}
+                            <a class="sb-btn sb-btn-secondary wl-download-btn"
+                               title="Download DOCX"
+                               href="{% url 'download_work_log_docx' wl.id %}">
+                                ⬇
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}
