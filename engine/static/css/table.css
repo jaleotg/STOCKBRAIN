@@ -41,6 +41,17 @@
     line-height: 1.2;
 }
 
+.sb-table-inventory.uppercase-mode th,
+.sb-table-inventory.uppercase-mode td,
+.sb-table-inventory.uppercase-mode td .sb-multiline {
+    text-transform: uppercase;
+}
+.sb-table-inventory.uppercase-mode select,
+.sb-table-inventory.uppercase-mode input,
+.sb-table-inventory.uppercase-mode textarea {
+    text-transform: none;
+}
+
 .sb-table th.col-trash,
 .sb-table td.col-trash {
     width: 28px;
@@ -304,6 +315,31 @@
 }
 .sb-focus-toggle.is-inactive .focus-frame {
     stroke: #777;
+}
+
+.sb-add-item-btn.sb-uppercase-btn {
+    margin-left: 8px;
+    padding: 4px 10px;
+    min-width: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #e5e5e5 !important;
+    color: #444 !important;
+    border: 1px solid #ccc !important;
+}
+.sb-add-item-btn.sb-uppercase-btn .sb-uppercase-icon {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.sb-add-item-btn.sb-uppercase-btn.is-active {
+    background-color: #F5DD5D !important;
+    color: #000 !important;
+    border-color: #F5DD5D !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.sb-add-item-btn.sb-uppercase-btn.is-active .sb-uppercase-icon {
+    color: inherit;
 }
 
 .sb-filter-icon {

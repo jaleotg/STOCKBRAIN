@@ -83,6 +83,9 @@
                 <span class="sb-search-icon sb-plus-icon">+</span>
                 <span>item</span>
             </button>
+            <button type="button" id="sb-uppercase-toggle" class="sb-add-item-btn sb-uppercase-btn" aria-pressed="false" title="Toggle original / UPPERCASE view">
+                <span class="sb-uppercase-icon">A/a</span>
+            </button>
         </div>
         {% endif %}
 
@@ -192,7 +195,7 @@
         <div class="sb-progress">
             <div class="sb-progress-bar"></div>
         </div>
-        <table class="sb-table"
+        <table class="sb-table sb-table-inventory"
                data-current-sort="{{ sort_field }}"
                data-current-dir="{{ sort_dir }}"
                data-rack-filter="{{ rack_filter|default:'' }}"

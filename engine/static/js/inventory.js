@@ -5,6 +5,7 @@
     // Global flag from Django context: can user edit inventory fields?
     const CAN_EDIT = !!(window && window.CAN_EDIT);
     const HIGHLIGHT_KEY = "sb_new_item_highlight";
+    const UPPERCASE_KEY = "sb_uppercase_mode";
     let progressTimer = null;
     let progressStartedAt = 0;
 
@@ -817,6 +818,37 @@
         try {
             localStorage.removeItem(HIGHLIGHT_KEY);
         } catch (e) {}
+    }
+
+    /* ================================================
+       UPPERCASE VIEW TOGGLE
+    ================================================= */
+    function applyUppercaseMode(isOn) {
+        const tables = document.querySelectorAll(".sb-table-inventory");
+        tables.forEach(t => t.classList.toggle("uppercase-mode", isOn));
+        const btn = document.getElementById("sb-uppercase-toggle");
+        if (btn) {
+            btn.classList.toggle("is-active", isOn);
+            btn.setAttribute("aria-pressed", isOn ? "true" : "false");
+        }
+    }
+
+    function sbInitUppercaseToggle() {
+        const btn = document.getElementById("sb-uppercase-toggle");
+        let stored = false;
+        try {
+            stored = localStorage.getItem(UPPERCASE_KEY) === "1";
+        } catch (e) {}
+        applyUppercaseMode(stored);
+
+        if (!btn) return;
+        btn.addEventListener("click", () => {
+            stored = !stored;
+            applyUppercaseMode(stored);
+            try {
+                localStorage.setItem(UPPERCASE_KEY, stored ? "1" : "0");
+            } catch (e) {}
+        });
     }
 
     function sbEnsureNewItemVisible(itemId, targetPage) {
@@ -2147,6 +2179,7 @@
                 sbInitNoteButtons();
                 sbInitAddItemModal();
                 sbInitDeleteModal();
+                sbInitUppercaseToggle();
                 applyPendingHighlight();
                 updateHeaderCountFromCard();
                 sbSyncUrlWithState();
@@ -2429,6 +2462,7 @@
         sbInitAddItemModal();
         sbInitDeleteModal();
         sbInitUserProfileModal();
+        sbInitUppercaseToggle();
         applyPendingHighlight();
         sbSyncUrlWithState();
     });
