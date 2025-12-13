@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (saved === "dark") {
         document.body.classList.add("sb-dark");
     }
+    updateThemeIcon();
 });
 
 // Toggle function
@@ -19,4 +20,13 @@ function sbToggleTheme() {
     } else {
         localStorage.setItem(SB_THEME_KEY, "light");
     }
+    updateThemeIcon();
+}
+
+// Update theme icon based on current state
+function updateThemeIcon() {
+    const btn = document.querySelector(".sb-theme-btn");
+    if (!btn) return;
+    const isDark = document.body.classList.contains("sb-dark");
+    btn.textContent = isDark ? "☀️" : "🌙";
 }

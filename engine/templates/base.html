@@ -35,9 +35,11 @@
         <div class="sb-header-left">
             <div class="sb-header-title">
                 DesertBrain
+                {% if request.user.is_authenticated %}
                 <span class="sb-header-count">
                     {{ item_count|default:"0" }} items in base
                 </span>
+                {% endif %}
             </div>
             {% url 'home' as home_url %}
             {% url 'home_alias' as home_alias_url %}
@@ -84,6 +86,12 @@
         </div>
 
         <div class="sb-header-right">
+            {% if request.user.is_authenticated and standard_end_time %}
+            <span class="sb-countdown-label">GTFO in</span>
+            <span class="sb-countdown" data-end="{{ standard_end_time }}">
+                --
+            </span>
+            {% endif %}
             <button
                 type="button"
                 class="sb-theme-btn"

@@ -2364,7 +2364,55 @@
         try {
             localStorage.setItem(KEY, willDark ? "dark" : "light");
         } catch (e) {}
+        updateThemeIcon();
     };
+
+    function updateThemeIcon() {
+        const btn = document.querySelector(".sb-theme-btn");
+        if (!btn) return;
+        const isDark = document.documentElement.classList.contains("sb-dark");
+        btn.textContent = isDark ? "☀️" : "🌙";
+    }
+
+    document.addEventListener("DOMContentLoaded", updateThemeIcon);
+
+    /* ================================================
+       COUNTDOWN TO STANDARD END TIME (header)
+    ================================================= */
+    function updateEndCountdown() {
+        const el = document.querySelector(".sb-countdown");
+        if (!el) return;
+        const endStr = el.dataset.end;
+        if (!endStr) return;
+        const [hh, mm] = endStr.split(":").map(Number);
+        if (Number.isNaN(hh) || Number.isNaN(mm)) return;
+
+        // Current time in Kuwait using Intl (avoid parsing issues)
+        const fmt = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Asia/Kuwait",
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+        const parts = fmt.formatToParts(new Date());
+        const curH = parseInt(parts.find(p => p.type === "hour")?.value || "0", 10);
+        const curM = parseInt(parts.find(p => p.type === "minute")?.value || "0", 10);
+
+        const nowMinutes = curH * 60 + curM;
+        const endMinutes = hh * 60 + mm;
+        let diffMinutes = endMinutes - nowMinutes;
+        // if already past, count to next day's end time instead of showing 0
+        if (diffMinutes < 0) diffMinutes += 24 * 60;
+
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+        el.textContent = `${hours}:${minutes.toString().padStart(2, "0")}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        updateEndCountdown();
+        setInterval(updateEndCountdown, 30000);
+    });
 
     // =================================================
     // SYNC URL Z AKTUALNYM STANEM (filtry, page_size, szukanie)
