@@ -184,7 +184,8 @@ def work_log_view(request):
     filter_loc = request.GET.get("loc", "").strip()
     filter_state = request.GET.get("state", "").strip()
     filter_future = request.GET.get("future", "show").strip() or "show"
-    allowed_keys = {"due_range", "loc", "state", "future"}
+    add_flag = request.GET.get("add", "").strip()
+    allowed_keys = {"due_range", "loc", "state", "future", "add"}
     extra_keys = set(request.GET.keys()) - allowed_keys
     if extra_keys:
         clean_params = {}

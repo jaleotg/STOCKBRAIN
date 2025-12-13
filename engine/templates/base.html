@@ -57,13 +57,13 @@
                     <div class="sb-dropdown-menu">
                         <div class="sb-dropdown-row">
                             <a href="{{ work_log_url }}" class="sb-dropdown-item sb-dropdown-item-main {% if current_name == 'work_log' %}sb-dd-active{% endif %}">WL List</a>
-                            <button type="button"
-                                    id="sb-wl-add-inline"
-                                    class="sb-dd-add-btn"
-                                    title="Add work log">
+                            <a href="{{ work_log_url }}?add=1"
+                               id="sb-wl-add-inline"
+                               class="sb-dd-add-btn"
+                               title="Add work log">
                                 <span class="sb-plus-icon">+</span>
                                 <span class="sb-dd-add-label">add</span>
-                            </button>
+                            </a>
                         </div>
                         <a href="{{ wl_locations_url }}" class="sb-dropdown-item {% if current_name == 'work_log_locations' %}sb-dd-active{% endif %}">Issues</a>
                         {% if has_work_log_master %}

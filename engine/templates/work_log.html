@@ -711,9 +711,19 @@
     }
     if (addInlineBtn) {
         addInlineBtn.addEventListener("click", (e) => {
+            // allow use from other pages via href, but when on WL page open modal without reload
             e.preventDefault();
             showAddModal("create", null);
-        });
+        }, false);
+        // autofocus when coming from ?add=1
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("add") === "1") {
+            showAddModal("create", null);
+            // remove param from URL
+            const url = new URL(window.location);
+            url.searchParams.delete("add");
+            window.history.replaceState({}, "", url);
+        }
     }
     // Clicking outside should not close the modal.
 
