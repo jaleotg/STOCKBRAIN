@@ -290,9 +290,9 @@
 }
 
 .sb-focus-toggle {
-    background: #2ecc71;
+    background: #F5DD5D;
     color: #fff;
-    border: 1px solid #0d6efd;
+    border: 1px solid #F5DD5D;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     display: inline-flex;
     align-items: center;
@@ -309,7 +309,7 @@
     height: 18px;
 }
 .sb-focus-icon .focus-frame {
-    stroke: #0d6efd;
+    stroke: #fff;
     stroke-width: 2;
     stroke-linecap: round;
 }
@@ -334,7 +334,7 @@
 }
 .sb-add-item-btn.sb-uppercase-btn.is-active {
     background-color: #F5DD5D !important;
-    color: #000 !important;
+    color: #fff !important;
     border-color: #F5DD5D !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }

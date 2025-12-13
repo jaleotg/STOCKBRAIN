@@ -320,19 +320,19 @@
 
 /* Add item button (match light theme) */
 .sb-dark .sb-add-item-btn {
-    background: #2ecc71;
+    background: #F5DD5D;
     color: #fff;
 }
 .sb-dark .sb-add-item-btn:hover {
-    background: #27ae60;
+    background: #e9cd50;
 }
 
 .sb-dark .sb-search-primary {
-    background: #2ecc71;
+    background: #F5DD5D;
     color: #fff;
 }
 .sb-dark .sb-search-primary:hover {
-    background: #27ae60;
+    background: #e9cd50;
 }
 
 .sb-dark .sb-btn-clear {
@@ -352,11 +352,11 @@
 }
 
 .sb-dark .sb-adv-search {
-    background: #2ecc71;
+    background: #F5DD5D;
     color: #fff;
 }
 .sb-dark .sb-adv-search:hover {
-    background: #27ae60;
+    background: #e9cd50;
 }
 
 .sb-dark .sb-header-count {

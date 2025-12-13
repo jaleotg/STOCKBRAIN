@@ -255,19 +255,19 @@
 }
 
 .sb-light .sb-add-item-btn {
-    background: #2ecc71;
+    background: #F5DD5D;
     color: #fff;
 }
 .sb-light .sb-add-item-btn:hover {
-    background: #27ae60;
+    background: #e9cd50;
 }
 
 .sb-light .sb-search-primary {
-    background: #2ecc71;
+    background: #F5DD5D;
     color: #fff;
 }
 .sb-light .sb-search-primary:hover {
-    background: #27ae60;
+    background: #e9cd50;
 }
 
 .sb-light .sb-btn-clear {
@@ -287,11 +287,11 @@
 }
 
 .sb-light .sb-adv-search {
-    background: #2ecc71;
+    background: #F5DD5D;
     color: #fff;
 }
 .sb-light .sb-adv-search:hover {
-    background: #27ae60;
+    background: #e9cd50;
 }
 
 .sb-light .sb-header-count {
