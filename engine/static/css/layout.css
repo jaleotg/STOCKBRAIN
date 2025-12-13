@@ -37,6 +37,7 @@ body {
 .sb-header-title {
     letter-spacing: 0.04em;
     line-height: 1.2;
+    color: #F5DD5D;
 }
 
 .sb-header-count {
