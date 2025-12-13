@@ -424,10 +424,10 @@ def work_log_locations_view(request):
         .distinct()
     )
     state_options = list(
-        WorkLogEntry.objects.filter(state__isnull=False)
-        .values("state_id", "state__short_name")
-        .order_by("state__short_name")
-        .distinct()
+        JobState.objects.values(
+            state_id=F("id"),
+            state__short_name=F("short_name"),
+        ).order_by("state__short_name")
     )
 
     return render(
