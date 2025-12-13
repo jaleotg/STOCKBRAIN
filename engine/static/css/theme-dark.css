@@ -362,6 +362,9 @@
 .sb-dark .sb-header-count {
     color: #dcdcdc;
 }
+.sb-dark .sb-wl-filters label {
+    color: #fff;
+}
 
 .sb-dark .sb-delete-panel {
     background: #111;

@@ -1143,10 +1143,22 @@
     vertical-align: middle;
 }
 .sb-wl-table tbody tr.wl-state-finish-later td {
-    background-color: rgba(255, 0, 0, 0.08) !important;
+    background-color: #c840408f !important;
+    color: #fff !important;
 }
 .sb-wl-table tbody tr.wl-state-finish-later td select {
-    background-color: rgba(255, 0, 0, 0.14) !important;
+    background-color: #c840408f !important;
+    color: #fff !important;
+    border-color: #c84040 !important;
+}
+.sb-wl-table tbody tr.wl-state-to-do td {
+    background-color: #f5dd5d75 !important;
+    color: #000 !important;
+}
+.sb-wl-table tbody tr.wl-state-to-do td select {
+    background-color: #f5dd5d75 !important;
+    color: #000 !important;
+    border-color: #f5dd5d !important;
 }
 .wl-loc-state {
     font-size: 10px;

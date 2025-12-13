@@ -72,7 +72,7 @@
             <tbody>
             {% if entries %}
                 {% for en in entries %}
-                    <tr class="{% if en.state and 'finish' in en.state|lower and 'later' in en.state|lower %}wl-state-finish-later{% endif %}">
+                    <tr class="{% if en.state and 'finish' in en.state|lower and 'later' in en.state|lower %}wl-state-finish-later{% endif %}{% if en.state and 'to' in en.state|lower and 'do' in en.state|lower %} wl-state-to-do{% endif %}">
                         <td>{{ en.vehicle }}</td>
                         <td class="wl-job-wrap">{{ en.job }}</td>
                         <td>
@@ -120,6 +120,11 @@
                 row.classList.add('wl-state-finish-later');
             } else {
                 row.classList.remove('wl-state-finish-later');
+            }
+            if (label.includes('to') && label.includes('do')) {
+                row.classList.add('wl-state-to-do');
+            } else {
+                row.classList.remove('wl-state-to-do');
             }
         }
 
