@@ -224,6 +224,14 @@ body {
     margin: 0;
 }
 
+.sb-auth-wrapper {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
 .sb-card {
     /* auto height to avoid large empty bottom space */
     border-radius: 0px;
