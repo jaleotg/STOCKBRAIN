@@ -1514,6 +1514,12 @@
                         finish(false);   // ANULUJ
                     }
                 });
+                textarea.addEventListener("keyup", function (e) {
+                    if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        finish(true);
+                    }
+                });
 
                 textarea.addEventListener("blur", function () {
                     // blur dalej zapisuje, ALE tylko jesli
@@ -1622,20 +1628,32 @@
                             });
                     };
 
-                    textarea.addEventListener("keydown", function (e2) {
-                        if (e2.key === "Enter" && (e2.ctrlKey || e2.metaKey)) {
-                            // Ctrl+Enter = nowa linia
-                            const pos = textarea.selectionStart;
-                            const val = textarea.value;
-                            textarea.value = val.slice(0, pos) + "\n" + val.slice(pos);
-                            textarea.selectionStart = textarea.selectionEnd = pos + 1;
-                            e2.preventDefault();
-                        } else if (e2.key === "Enter") {
+                textarea.addEventListener("keydown", function (e2) {
+                    if (e2.key === "Enter" && (e2.ctrlKey || e2.metaKey)) {
+                        // Ctrl+Enter = nowa linia
+                        const pos = textarea.selectionStart;
+                        const val = textarea.value;
+                        textarea.value = val.slice(0, pos) + "\n" + val.slice(pos);
+                        textarea.selectionStart = textarea.selectionEnd = pos + 1;
+                        e2.preventDefault();
+                    } else if (e2.key === "Enter") {
+                        e2.preventDefault();
+                        finish(true);
+                    } else if (e2.key === "Escape") {
+                        e2.preventDefault();
+                        finish(false);
+                    }
+                });
+                textarea.addEventListener("keyup", function (e2) {
+                    if (e2.key === "Enter" && !e2.ctrlKey && !e2.metaKey) {
+                        e2.preventDefault();
+                        finish(true);
+                    }
+                });
+                    textarea.addEventListener("keyup", function (e2) {
+                        if (e2.key === "Enter" && !e2.ctrlKey && !e2.metaKey) {
                             e2.preventDefault();
                             finish(true);
-                        } else if (e2.key === "Escape") {
-                            e2.preventDefault();
-                            finish(false);
                         }
                     });
 
