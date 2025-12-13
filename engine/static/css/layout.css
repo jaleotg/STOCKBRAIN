@@ -310,6 +310,10 @@ body {
     color: #fff;
 }
 
+.sb-login-form .sb-form-group {
+    margin: 0;
+}
+
 .sb-login-form .sb-label {
     color: #fff;
     margin-bottom: 6px;
@@ -319,6 +323,8 @@ body {
     background: rgba(255,255,255,0.9);
     color: #111;
     border: 1px solid rgba(255,255,255,0.7);
+    height: 30px;
+    box-sizing: border-box;
 }
 
 .sb-login-form .sb-input:focus {
@@ -326,14 +332,31 @@ body {
 }
 
 .sb-login-actions {
-    display: grid;
-    gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     align-self: end;
     color: #fff;
 }
 
-.sb-login-actions .sb-checkbox-row {
-    color: #fff;
+.sb-login-actions .sb-btn {
+    height: 30px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sb-login-button-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.sb-pin-toggle {
+    position: absolute;
+    top: -10px;
+    right: -10px;
 }
 
 .sb-pin-toggle input {
@@ -344,20 +367,20 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 38px;
-    height: 38px;
+    width: 26px;
+    height: 26px;
     border-radius: 8px;
-    background: #F5DD5D;
-    color: #1c1c1c;
-    font-size: 18px;
+    background: transparent;
+    color: #F5DD5D;
+    font-size: 26px;
     cursor: pointer;
-    border: 1px solid rgba(0,0,0,0.1);
+    border: none;
     transition: filter 0.2s ease, transform 0.1s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .sb-pin-toggle input:not(:checked) + .sb-pin-icon {
-    background: #777;
-    color: #e5e5e5;
+    background: transparent;
+    color: #888;
 }
 
 .sb-pin-toggle input:checked + .sb-pin-icon:hover {

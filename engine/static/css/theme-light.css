@@ -36,13 +36,6 @@
     text-decoration: underline;
 }
 
-/* Cards */
-.sb-light .sb-card {
-    background-color: #fff;
-    border-color: #ccc;
-    color: #333;
-}
-
 /* Inputs */
 .sb-light .sb-input {
     background-color: #fff;

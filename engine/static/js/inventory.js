@@ -97,15 +97,16 @@
     (function applyInitialTheme() {
         const root = document.documentElement;
         const body = document.body;
-        root.classList.add("sb-light");
-        if (body) body.classList.add("sb-light");
+        // Default to dark
+        root.classList.add("sb-dark");
+        if (body) body.classList.add("sb-dark");
         try {
-            if (localStorage.getItem(KEY) === "dark") {
-                root.classList.remove("sb-light");
-                root.classList.add("sb-dark");
+            if (localStorage.getItem(KEY) === "light") {
+                root.classList.remove("sb-dark");
+                root.classList.add("sb-light");
                 if (body) {
-                    body.classList.remove("sb-light");
-                    body.classList.add("sb-dark");
+                    body.classList.remove("sb-dark");
+                    body.classList.add("sb-light");
                 }
             }
         } catch (e) {}
