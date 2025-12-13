@@ -8,6 +8,46 @@ body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+.sb-login-hero {
+    width: min(600px, 80vw);
+    margin: 0 auto 8px;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.sb-login-logo {
+    width: 100%;
+    display: block;
+}
+
+.sb-logo-stroke {
+    stroke: #2e7d32;
+    stroke-width: 3;
+    fill: transparent;
+    stroke-dasharray: 800;
+    stroke-dashoffset: 800;
+    animation: sb-draw 2.6s ease forwards;
+}
+
+.sb-logo-fill {
+    fill: #2e7d32;
+    opacity: 0;
+    animation: sb-fill 1.4s ease forwards;
+    animation-delay: 2.4s;
+}
+
+@keyframes sb-draw {
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes sb-fill {
+    to { opacity: 1; }
+}
+
 .sb-page {
     display: block;
     min-height: auto;
@@ -227,9 +267,105 @@ body {
 .sb-auth-wrapper {
     min-height: calc(100vh - 80px);
     display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0 24px 24px;
+}
+
+.sb-login-hero {
+    width: min(600px, 80vw);
+    margin: 0 auto 8px;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.sb-login-logo {
+    width: 100%;
+    display: block;
+}
+
+.sb-login-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 33%;
+    background: transparent;
+    padding: 12px 16px 10px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-end;
+}
+
+.sb-login-form {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.2fr 1.2fr 1fr;
+    gap: 14px;
+    align-items: end;
+    color: #fff;
+}
+
+.sb-login-form .sb-label {
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.sb-login-form .sb-input {
+    background: rgba(255,255,255,0.9);
+    color: #111;
+    border: 1px solid rgba(255,255,255,0.7);
+}
+
+.sb-login-form .sb-input:focus {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.35);
+}
+
+.sb-login-actions {
+    display: grid;
+    gap: 10px;
+    align-self: end;
+    color: #fff;
+}
+
+.sb-login-actions .sb-checkbox-row {
+    color: #fff;
+}
+
+.sb-pin-toggle input {
+    display: none;
+}
+
+.sb-pin-icon {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: #F5DD5D;
+    color: #1c1c1c;
+    font-size: 18px;
+    cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.1);
+    transition: filter 0.2s ease, transform 0.1s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.sb-pin-toggle input:not(:checked) + .sb-pin-icon {
+    background: #777;
+    color: #e5e5e5;
+}
+
+.sb-pin-toggle input:checked + .sb-pin-icon:hover {
+    filter: brightness(0.95);
+}
+
+.sb-pin-toggle input:checked + .sb-pin-icon:active {
+    transform: translateY(1px);
 }
 
 .sb-card {
