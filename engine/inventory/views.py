@@ -369,6 +369,15 @@ def work_log_view(request):
 
     now_dt = timezone.now()
     worklogs = []
+    # Human-readable edit rules (global for this request)
+    rule_parts = []
+    if hours_limit > 0:
+        rule_parts.append(f"Editable within {hours_limit} hours from creation.")
+    else:
+        rule_parts.append("No time limit.")
+    if only_last:
+        rule_parts.append("Only your latest work log can be edited.")
+    rule_summary = " ".join(rule_parts)
     for wl in worklogs_qs:
         locations = sorted(
             {entry.vehicle_location.name for entry in wl.entries.all()}
@@ -380,6 +389,22 @@ def work_log_view(request):
         time_ok = (hours_limit == 0) or (diff_hours <= hours_limit)
         last_ok = (not only_last) or (wl.id == last_wl_id)
         can_edit = time_ok and last_ok
+        # Build tooltip describing current rules and status
+        status_parts = []
+        if hours_limit > 0:
+            status_parts.append(
+                f"Age {diff_hours:.1f}h; limit {hours_limit}h "
+                f"({'ok' if time_ok else 'blocked'})"
+            )
+        if only_last:
+            status_parts.append(
+                "Latest required "
+                f"({'ok' if last_ok else 'blocked'})"
+            )
+        if not status_parts:
+            status_parts.append("Editable (no restrictions).")
+        edit_hint = ("Edit allowed. " if can_edit else "Edit blocked. ") + " ".join(status_parts)
+        edit_hint += " " + rule_summary
         worklogs.append(
             {
                 "id": wl.id,
@@ -390,6 +415,7 @@ def work_log_view(request):
                 "created": wl.created_at,
                 "updated": wl.updated_at,
                 "can_edit": can_edit,
+                "edit_hint": edit_hint,
                 "email_pending": wl.email_pending,
                 "email_scheduled_at": wl.email_scheduled_at,
                 "email_sent_at": wl.email_sent_at,

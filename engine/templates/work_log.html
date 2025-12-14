@@ -115,27 +115,35 @@
                         <td>{{ wl.created|date:"Y-m-d H:i" }}</td>
                         <td>{{ wl.updated|date:"Y-m-d H:i" }}</td>
                         <td class="wl-actions">
-                            <button class="sb-btn sb-btn-primary wl-view-btn"
-                                    type="button"
-                                    title="View"
-                                    data-wl-pk="{{ wl.id }}"
-                                    data-wl-id="{{ wl.number }}">
-                                <span class="sb-search-icon wl-view-icon">🔍</span>
-                            </button>
-                            {% if not is_master %}
+                            {% if is_master %}
+                                <button class="sb-btn sb-btn-primary wl-view-btn"
+                                        type="button"
+                                        title="View"
+                                        data-wl-pk="{{ wl.id }}"
+                                        data-wl-id="{{ wl.number }}">
+                                    <span class="sb-search-icon wl-view-icon">🔍</span>
+                                </button>
+                            {% else %}
                                 {% if wl.can_edit %}
-                            <button class="sb-btn sb-btn-primary wl-edit-btn" type="button" title="Edit" data-wl-pk="{{ wl.id }}">
-                                <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M12 20H21" />
-                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
-                                </svg>
-                            </button>
-                        {% else %}
-                            <button class="sb-btn sb-btn-secondary wl-locked-btn" type="button" disabled title="Locked">
-                                <span class="wl-lock-icon" aria-hidden="true">🔒</span>
-                            </button>
-                        {% endif %}
-                    {% endif %}
+                                    <button class="sb-btn sb-btn-primary wl-edit-btn"
+                                            type="button"
+                                            title="{{ wl.edit_hint }}"
+                                            data-wl-pk="{{ wl.id }}">
+                                        <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M12 20H21" />
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+                                        </svg>
+                                    </button>
+                                {% else %}
+                                    <button class="sb-btn sb-btn-primary wl-view-btn"
+                                            type="button"
+                                            title="{{ wl.edit_hint }}"
+                                            data-wl-pk="{{ wl.id }}"
+                                            data-wl-id="{{ wl.number }}">
+                                        <span class="sb-search-icon wl-view-icon">🔍</span>
+                                    </button>
+                                {% endif %}
+                            {% endif %}
                             {% if wl.email_sent_at %}
                                 <span class="wl-status-icon wl-delivered" title="Delivered {{ wl.email_sent_at|date:'Y-m-d H:i' }}">
                                     ✔✉️
