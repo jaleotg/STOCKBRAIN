@@ -157,6 +157,20 @@ class WorkLog(models.Model):
     start_time = models.TimeField(blank=True, null=True, help_text="Start time")
     end_time = models.TimeField(blank=True, null=True, help_text="End time")
     notes = models.TextField(blank=True)
+    email_pending = models.BooleanField(
+        default=False,
+        help_text="If true, an e-mail send is scheduled.",
+    )
+    email_scheduled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Planned send time (Kuwait).",
+    )
+    email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the work log e-mail was actually sent.",
+    )
 
     class Meta:
         ordering = ["-due_date", "-created_at"]
@@ -231,6 +245,10 @@ class WorklogEmailSettings(models.Model):
     send_edit = models.BooleanField(
         default=False,
         help_text="Send notification when a work log is edited",
+    )
+    enable_scheduled_send = models.BooleanField(
+        default=True,
+        help_text="If disabled, scheduled worklogs will not be auto-sent by the background task.",
     )
     recipient_email = models.EmailField(help_text="Docelowy adres e-mail do wysyłki worklogów")
     users = models.ManyToManyField(

@@ -26,6 +26,8 @@ from django.db.models import Func
 from django.utils import timezone
 from django.http import HttpResponseForbidden, Http404
 from django.http import HttpResponse
+from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
 
 from .models import (
     InventoryItem,
@@ -37,12 +39,20 @@ from .models import (
     InventorySettings,
     get_user_profile,
 )
-from worklog.models import WorkLog, WorkLogEntry, VehicleLocation, JobState, EditCondition
+from worklog.models import (
+    WorkLog,
+    WorkLogEntry,
+    VehicleLocation,
+    JobState,
+    EditCondition,
+    WorklogEmailSettings,
+    StandardWorkHours,
+    get_default_work_hours,
+)
 from worklog.docx_utils import render_worklog_docx, generate_and_store_docx
 from worklog.models import WorkLogEntryStateChange
 from worklog.email_utils import send_worklog_docx_email
 from decimal import Decimal, InvalidOperation
-from datetime import datetime
 from calendar import month_name, monthrange
 from urllib.parse import urlencode
 
@@ -78,6 +88,69 @@ def user_can_edit(user):
     - purchase_manager
     """
     return user_is_editor(user) or user_is_purchase_admin(user)
+
+
+# ============================================
+# HELPERS: WORKLOG EMAIL SCHEDULING
+# ============================================
+
+KUWAIT_TZ = ZoneInfo("Asia/Kuwait")
+
+
+def _get_email_rule(user, is_new):
+    """
+    Returns (recipient_email or None, rule or None) if sending is allowed
+    for this user and operation (new/edit).
+    """
+    rule = WorklogEmailSettings.objects.first()
+    if not rule:
+        return None, None
+    if is_new and not rule.send_new:
+        return None, None
+    if (not is_new) and (not rule.send_edit):
+        return None, None
+    if not rule.recipient_email:
+        return None, None
+    if rule.users.exists() and not rule.users.filter(pk=user.pk).exists():
+        return None, None
+    return rule.recipient_email, rule
+
+
+def _compute_schedule_dt(due_date, end_time):
+    """
+    Build a Kuwait-aware datetime for the given due_date and end_time.
+    If end_time is missing, use StandardWorkHours.end_time.
+    If resulting datetime is in the past (<= now), return a time on the next day.
+    """
+    if not due_date:
+        return None
+    target_time = end_time
+    if target_time is None:
+        _, target_time = get_default_work_hours()
+    if target_time is None:
+        return None
+    naive_dt = datetime.combine(due_date, target_time)
+    sched_dt = naive_dt.replace(tzinfo=KUWAIT_TZ)
+    now_kw = timezone.now().astimezone(KUWAIT_TZ)
+    if sched_dt <= now_kw:
+        sched_dt = sched_dt + timedelta(days=1)
+    return sched_dt
+
+
+def _mark_email_pending(wl, sched_dt):
+    wl.email_pending = True
+    wl.email_scheduled_at = sched_dt
+    wl.email_sent_at = None
+    wl.save(update_fields=["email_pending", "email_scheduled_at", "email_sent_at"])
+
+
+def _mark_email_sent(wl):
+    now_val = timezone.now()
+    wl.email_pending = False
+    wl.email_scheduled_at = None
+    wl.email_sent_at = now_val
+    wl.save(update_fields=["email_pending", "email_scheduled_at", "email_sent_at"])
+    return now_val
 
 
 # ============================================
@@ -165,14 +238,20 @@ def user_profile(request):
 
 @login_required
 def work_log_view(request):
-    # defaults from StandardWorkHours
+    # defaults from StandardWorkHours + scheduling flag
     default_start = ""
     default_end = ""
+    allow_schedule = False
     from worklog.models import StandardWorkHours  # lazy import to avoid circulars
-    cfg = StandardWorkHours.objects.first()
-    if cfg:
-        default_start = cfg.start_time.isoformat(timespec="minutes")
-        default_end = cfg.end_time.isoformat(timespec="minutes")
+    try:
+        cfg = StandardWorkHours.objects.first()
+        if cfg:
+            default_start = cfg.start_time.isoformat(timespec="minutes")
+            default_end = cfg.end_time.isoformat(timespec="minutes")
+        rule = WorklogEmailSettings.objects.first()
+        allow_schedule = bool(rule and rule.enable_scheduled_send)
+    except Exception:
+        pass
 
     # edit conditions
     cond = EditCondition.objects.first()
@@ -311,6 +390,9 @@ def work_log_view(request):
                 "created": wl.created_at,
                 "updated": wl.updated_at,
                 "can_edit": can_edit,
+                "email_pending": wl.email_pending,
+                "email_scheduled_at": wl.email_scheduled_at,
+                "email_sent_at": wl.email_sent_at,
             }
         )
 
@@ -333,6 +415,7 @@ def work_log_view(request):
             ),
             "wl_default_start": default_start,
             "wl_default_end": default_end,
+            "wl_allow_schedule": allow_schedule,
             "due_range_options": due_range_options,
             "due_range_selected": filter_due,
             "filter_loc": filter_loc,
@@ -511,14 +594,20 @@ def work_log_master_view(request):
     if not request.user.groups.filter(name__iexact="work_log_master").exists():
         return HttpResponseForbidden("Not allowed")
 
-    # defaults from StandardWorkHours
+    # defaults from StandardWorkHours + scheduling flag
     default_start = ""
     default_end = ""
+    allow_schedule = False
     from worklog.models import StandardWorkHours  # lazy import to avoid circulars
-    cfg = StandardWorkHours.objects.first()
-    if cfg:
-        default_start = cfg.start_time.isoformat(timespec="minutes")
-        default_end = cfg.end_time.isoformat(timespec="minutes")
+    try:
+        cfg = StandardWorkHours.objects.first()
+        if cfg:
+            default_start = cfg.start_time.isoformat(timespec="minutes")
+            default_end = cfg.end_time.isoformat(timespec="minutes")
+        rule = WorklogEmailSettings.objects.first()
+        allow_schedule = bool(rule and rule.enable_scheduled_send)
+    except Exception:
+        pass
 
     now = timezone.now().date()
     filter_due = request.GET.get("due_range", "last_90")
@@ -631,6 +720,9 @@ def work_log_master_view(request):
                 "updated": wl.updated_at,
                 "author": wl.author.username if wl.author else "—",
                 "can_edit": False,
+                "email_pending": wl.email_pending,
+                "email_scheduled_at": wl.email_scheduled_at,
+                "email_sent_at": wl.email_sent_at,
             }
         )
 
@@ -659,6 +751,7 @@ def work_log_master_view(request):
             ),
             "wl_default_start": default_start,
             "wl_default_end": default_end,
+            "wl_allow_schedule": allow_schedule,
             "due_range_options": due_range_options,
             "due_range_selected": filter_due,
             "filter_loc": filter_loc,
@@ -857,6 +950,7 @@ def create_work_log(request):
     start_time_str = request.POST.get("start_time", "").strip()
     end_time_str = request.POST.get("end_time", "").strip()
     notes = request.POST.get("notes", "").strip()
+    send_mode = (request.POST.get("send_mode") or "email_now").strip()
 
     if not due_date_str:
         return JsonResponse({"ok": False, "error": "Due date is required."}, status=400)
@@ -913,14 +1007,44 @@ def create_work_log(request):
     except Exception:
         return JsonResponse({"ok": False, "error": "Save failed. Please try again."}, status=500)
 
-    # DOCX is generated on demand (download/email); no need to persist here
+    # email handling
     email_recipient = None
-    try:
-        email_recipient = send_worklog_docx_email(wl, is_new=True)
-    except Exception:
-        pass
+    scheduled_at = None
+    if send_mode == "schedule":
+        recipient, _rule = _get_email_rule(request.user, is_new=True)
+        if not recipient:
+            return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
+        sched_dt = _compute_schedule_dt(wl.due_date, wl.end_time)
+        if sched_dt is None:
+            return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number})
+        now_kw = timezone.now().astimezone(KUWAIT_TZ)
+        if sched_dt <= now_kw:
+            try:
+                email_recipient = send_worklog_docx_email(wl, is_new=True)
+                if email_recipient:
+                    _mark_email_sent(wl)
+            except Exception:
+                pass
+        else:
+            _mark_email_pending(wl, sched_dt)
+            scheduled_at = sched_dt.isoformat()
+    else:
+        try:
+            email_recipient = send_worklog_docx_email(wl, is_new=True)
+            if email_recipient:
+                _mark_email_sent(wl)
+        except Exception:
+            pass
 
-    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number, "email_recipient": email_recipient})
+    return JsonResponse(
+        {
+            "ok": True,
+            "id": wl.id,
+            "number": wl.wl_number,
+            "email_recipient": email_recipient,
+            "scheduled_at": scheduled_at,
+        }
+    )
 
 
 @login_required
@@ -957,6 +1081,7 @@ def update_work_log(request, pk):
     start_time_str = request.POST.get("start_time", "").strip()
     end_time_str = request.POST.get("end_time", "").strip()
     notes = request.POST.get("notes", "").strip()
+    send_mode = (request.POST.get("send_mode") or "email_now").strip()
 
     if not due_date_str:
         return JsonResponse({"ok": False, "error": "Due date is required."}, status=400)
@@ -1010,14 +1135,75 @@ def update_work_log(request, pk):
     except Exception:
         return JsonResponse({"ok": False, "error": "Update failed. Please try again."}, status=500)
 
-    # DOCX is generated on demand (download/email); no need to persist here
     email_recipient = None
+    scheduled_at = None
+    if send_mode == "schedule":
+        recipient, _rule = _get_email_rule(request.user, is_new=False)
+        if recipient:
+            sched_dt = _compute_schedule_dt(wl.due_date, wl.end_time)
+            if sched_dt:
+                now_kw = timezone.now().astimezone(KUWAIT_TZ)
+                if sched_dt <= now_kw:
+                    try:
+                        email_recipient = send_worklog_docx_email(wl, is_new=False)
+                        if email_recipient:
+                            _mark_email_sent(wl)
+                    except Exception:
+                        pass
+                else:
+                    _mark_email_pending(wl, sched_dt)
+                    scheduled_at = sched_dt.isoformat()
+    else:
+        try:
+            email_recipient = send_worklog_docx_email(wl, is_new=False)
+            if email_recipient:
+                _mark_email_sent(wl)
+        except Exception:
+            pass
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "id": wl.id,
+            "number": wl.wl_number,
+            "email_recipient": email_recipient,
+            "scheduled_at": scheduled_at,
+        }
+    )
+
+
+@login_required
+@require_POST
+def send_work_log_now(request, pk):
+    """Send a pending/scheduled work log immediately."""
+    try:
+        wl = WorkLog.objects.get(pk=pk)
+    except WorkLog.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Work log not found."}, status=404)
+
+    if wl.author != request.user and not request.user.is_staff:
+        return JsonResponse({"ok": False, "error": "Not allowed."}, status=403)
+
+    recipient, _rule = _get_email_rule(request.user, is_new=False)
+    if not recipient:
+        return JsonResponse({"ok": False, "error": "E-mail rule not configured for this user."}, status=400)
+
     try:
         email_recipient = send_worklog_docx_email(wl, is_new=False)
+        if email_recipient:
+            _mark_email_sent(wl)
+        else:
+            return JsonResponse({"ok": False, "error": "Send failed (no recipient)."}, status=500)
     except Exception:
-        pass
+        return JsonResponse({"ok": False, "error": "Send failed. Please try again."}, status=500)
 
-    return JsonResponse({"ok": True, "id": wl.id, "number": wl.wl_number, "email_recipient": email_recipient})
+    return JsonResponse(
+        {
+            "ok": True,
+            "number": wl.wl_number,
+            "recipient": email_recipient,
+        }
+    )
 
 
 @login_required

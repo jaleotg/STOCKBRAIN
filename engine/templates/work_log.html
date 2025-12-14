@@ -82,7 +82,13 @@
                 <th class="wl-col-note">Note</th>
                 <th class="wl-col-created">Created</th>
                 <th class="wl-col-updated">Last edited</th>
-                <th class="wl-col-edit">{% if is_master %}View / Download{% else %}View / Edit / Download{% endif %}</th>
+                <th class="wl-col-edit">
+                    {% if is_master %}
+                        View / Send / Download
+                    {% else %}
+                        View / Edit / Send / Download
+                    {% endif %}
+                </th>
                 {% if request.user.username == "leo-admin" %}
                     <th class="wl-col-delete">Delete</th>
                 {% endif %}
@@ -118,17 +124,32 @@
                             </button>
                             {% if not is_master %}
                                 {% if wl.can_edit %}
-                                    <button class="sb-btn sb-btn-primary wl-edit-btn" type="button" title="Edit" data-wl-pk="{{ wl.id }}">
-                                        <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path d="M12 20H21" />
-                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
-                                        </svg>
-                                    </button>
-                                {% else %}
-                                    <button class="sb-btn sb-btn-secondary wl-locked-btn" type="button" disabled title="Locked">
-                                        <span class="wl-lock-icon" aria-hidden="true">🔒</span>
-                                    </button>
-                                {% endif %}
+                            <button class="sb-btn sb-btn-primary wl-edit-btn" type="button" title="Edit" data-wl-pk="{{ wl.id }}">
+                                <svg class="sb-icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 20H21" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+                                </svg>
+                            </button>
+                        {% else %}
+                            <button class="sb-btn sb-btn-secondary wl-locked-btn" type="button" disabled title="Locked">
+                                <span class="wl-lock-icon" aria-hidden="true">🔒</span>
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                            {% if wl.email_sent_at %}
+                                <span class="wl-status-icon wl-delivered" title="Delivered {{ wl.email_sent_at|date:'Y-m-d H:i' }}">
+                                    ✔✉️
+                                </span>
+                            {% else %}
+                                <button class="wl-send-now-btn"
+                                        type="button"
+                                        data-wl-pk="{{ wl.id }}"
+                                        data-is-pending="1"
+                                        data-default-icon="{% if wl.email_pending %}🕒{% else %}?{% endif %}"
+                                        data-hover-icon="▶️"
+                                        title="{% if wl.email_pending %}This work log is scheduled to send at {{ wl.email_scheduled_at|date:'H:i'|default:wl_default_end|default:'end time' }}&#10;Click to send now{% else %}Click to send now{% endif %}">
+                                    <span class="wl-send-now-icon">{% if wl.email_pending %}🕒{% else %}?{% endif %}</span>
+                                </button>
                             {% endif %}
                             <a class="sb-btn sb-btn-secondary wl-download-btn"
                                title="Download DOCX"
@@ -281,7 +302,12 @@
             </div>
             <div class="sb-modal-footer">
                 <button type="button" class="sb-btn sb-btn-secondary" id="wl-add-cancel">Cancel</button>
-                <button type="submit" class="sb-btn sb-btn-primary" id="wl-add-save">Save</button>
+                {% if wl_allow_schedule %}
+                    <button type="button" class="sb-btn sb-btn-secondary" id="wl-add-save-later">
+                        Save and send at {{ wl_default_end|default:"end time" }}
+                    </button>
+                {% endif %}
+                <button type="submit" class="sb-btn sb-btn-primary" id="wl-add-save">Save &amp; email</button>
             </div>
         </form>
     </div>
@@ -429,6 +455,7 @@
     const addClose = document.getElementById("wl-add-close");
     const addCancel = document.getElementById("wl-add-cancel");
     const addForm = document.getElementById("wl-add-form");
+    let submitMode = "email_now";
     const modeInput = document.createElement("input");
     modeInput.type = "hidden";
     modeInput.name = "mode";
@@ -440,11 +467,32 @@
     addForm.appendChild(wlIdInput);
 
     const addEntryBtn = document.getElementById("wl-add-entry-btn");
+    const saveLaterBtn = document.getElementById("wl-add-save-later");
     const entriesBodyAdd = document.getElementById("wl-add-entries-body");
     const vehicleOptions = JSON.parse(document.getElementById("wl-vehicle-options").textContent);
     const stateOptions = JSON.parse(document.getElementById("wl-state-options").textContent);
     const unitOptions = JSON.parse(document.getElementById("wl-unit-options").textContent);
     const defaultsHolder = document.getElementById("wl-defaults");
+
+    function toggleScheduleButton() {
+        if (!saveLaterBtn) return;
+        const startStr = defaultsHolder?.dataset.defaultStart || "";
+        const endStr = defaultsHolder?.dataset.defaultEnd || "";
+        if (!startStr || !endStr) {
+            saveLaterBtn.style.display = "none";
+            return;
+        }
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0, 10);
+        const start = new Date(`${todayStr}T${startStr}`);
+        const endRaw = new Date(`${todayStr}T${endStr}`);
+        const endMinus = new Date(endRaw.getTime() - 5 * 60 * 1000);
+        if (now >= start && now <= endMinus) {
+            saveLaterBtn.style.display = "";
+        } else {
+            saveLaterBtn.style.display = "none";
+        }
+    }
 
     function hideAddModal() {
         addModal.style.display = "none";
@@ -490,6 +538,7 @@
             if (notesInput) notesInput.value = "";
             if (!entriesBodyAdd.children.length) addEntryRow();
         }
+        toggleScheduleButton();
     }
 
     // Custom validation messages (force English)
@@ -665,6 +714,12 @@
         if (btn) btn.addEventListener("click", hideAddModal);
     });
     if (addEntryBtn) addEntryBtn.addEventListener("click", addEntryRow);
+    if (saveLaterBtn) {
+        saveLaterBtn.addEventListener("click", () => {
+            submitMode = "schedule";
+            addForm.requestSubmit();
+        });
+    }
     if (addForm) {
         addForm.addEventListener("submit", (e) => {
             e.preventDefault();
@@ -674,6 +729,7 @@
             const url = mode === "edit" && wlId
                 ? `/api/work-log/${wlId}/update/`
                 : "/api/work-log/create/";
+            fd.append("send_mode", submitMode || "email_now");
             fetch(url, {
                 method: "POST",
                 headers: { "X-CSRFToken": getCsrfToken() },
@@ -687,11 +743,14 @@
                     return r.json();
                 })
                 .then(data => {
+                    submitMode = "email_now";
                     if (!data.ok) {
                         throw new Error(data.error || "Save failed");
                     }
                     hideAddModal();
-                    if (data.email_recipient) {
+                    if (data.scheduled_at) {
+                        alert(`Work log ${data.number} scheduled to send at ${data.scheduled_at}`);
+                    } else if (data.email_recipient) {
                         alert(`Work log ${data.number} sent to ${data.email_recipient}`);
                     }
                     // After create, reset filters so the new item is visible.
@@ -702,6 +761,7 @@
                     }
                 })
                 .catch(err => {
+                    submitMode = "email_now";
                     alert("Save work log failed: " + err.message);
                 });
         });
@@ -751,6 +811,43 @@
                     window.location.reload();
                 })
                 .catch(err => alert("Delete failed: " + err.message));
+        });
+    });
+
+    // Send now (for scheduled emails)
+    document.querySelectorAll(".wl-send-now-btn").forEach(btn => {
+        const iconEl = btn.querySelector(".wl-send-now-icon");
+        const defIcon = btn.dataset.defaultIcon || (btn.dataset.isPending === "1" ? "🕒" : "?");
+        const hoverIcon = btn.dataset.hoverIcon || "▶️";
+        if (iconEl) iconEl.textContent = defIcon;
+        btn.addEventListener("mouseenter", () => {
+            if (iconEl) iconEl.textContent = hoverIcon;
+        });
+        btn.addEventListener("mouseleave", () => {
+            if (iconEl) iconEl.textContent = defIcon;
+        });
+        btn.addEventListener("click", () => {
+            const pk = btn.dataset.wlPk;
+            if (!pk) return;
+            fetch(`/api/work-log/${pk}/send-now/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": getCsrfToken() },
+            })
+                .then(async (r) => {
+                    if (!r.ok) {
+                        const t = await r.text();
+                        throw new Error(`HTTP ${r.status}: ${t.slice(0, 200)}`);
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    if (!data.ok) throw new Error(data.error || "Send failed");
+                    if (iconEl) iconEl.textContent = "✔✉️";
+                    btn.classList.add("wl-sent");
+                    btn.disabled = true;
+                    alert(`Work log ${data.number || pk} sent now.`);
+                })
+                .catch(err => alert("Send now failed: " + err.message));
         });
     });
 })();
