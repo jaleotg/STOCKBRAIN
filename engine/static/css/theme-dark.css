@@ -359,6 +359,11 @@
 .sb-dark .sb-wl-filters label * {
     color: #fff !important;
 }
+.sb-dark .sb-wl-filters select,
+.sb-dark .sb-wl-filters select option {
+    color: #000 !important;
+    background: #f5f5f5 !important;
+}
 
 .sb-dark .sb-delete-panel {
     background: #111;
