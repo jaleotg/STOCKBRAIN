@@ -221,6 +221,7 @@
     /* line-height: 32px; */
     display: inline-flex;
     align-items: center;
+    color: #000;
 }
 
 .sb-search-buttons .sb-btn:active {
@@ -234,6 +235,7 @@
     width: 38px;
     /* height: 32px; */
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    color: #000;
 }
 
 .sb-search-icon {
@@ -251,7 +253,7 @@
     font-size: 14px;
     font-weight: 700;
     background: rgba(255, 255, 255, 0.18);
-    color: #fff;
+    color: #000;
     box-shadow:
         inset 0 1px 2px rgba(255, 255, 255, 0.2),
         0 1px 4px rgba(0, 0, 0, 0.18);
@@ -288,10 +290,13 @@
 .sb-adv-search {
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
+.sb-adv-search {
+    color: #000;
+}
 
 .sb-focus-toggle {
     background: #F5DD5D;
-    color: #fff;
+    color: #000;
     border: 1px solid #F5DD5D;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     display: inline-flex;
@@ -309,7 +314,7 @@
     height: 18px;
 }
 .sb-focus-icon .focus-frame {
-    stroke: #fff;
+    stroke: #000;
     stroke-width: 2;
     stroke-linecap: round;
 }
@@ -331,12 +336,27 @@
 .sb-add-item-btn.sb-uppercase-btn .sb-uppercase-icon {
     font-weight: 700;
     letter-spacing: 0.5px;
+    color: #000;
 }
 .sb-add-item-btn.sb-uppercase-btn.is-active {
     background-color: #F5DD5D !important;
-    color: #fff !important;
+    color: #000 !important;
     border-color: #F5DD5D !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Force black text on key controls (overrides theme defaults) */
+.sb-search-primary,
+.sb-adv-search,
+.sb-add-item-btn,
+.sb-focus-toggle,
+.sb-uppercase-inline,
+.sb-add-item-btn .sb-search-icon,
+.sb-add-item-btn .sb-plus-icon {
+    color: #000 !important;
+}
+.sb-plus-icon {
+    color: #000 !important;
 }
 .sb-add-item-btn.sb-uppercase-btn.is-active .sb-uppercase-icon {
     color: inherit;
