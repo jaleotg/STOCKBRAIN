@@ -800,7 +800,12 @@
                 {% endwith %}
 
                     <!-- LOCATION -->
-                    <td class="col-location" data-id="{{ item.id }}">
+                    <td class="col-location"
+                        data-id="{{ item.id }}"
+                        data-rack="{{ item.rack }}"
+                        data-shelf="{{ item.shelf }}"
+                        data-box="{{ item.box }}"
+                        data-name="{{ item.name|escape }}">
                         <span class="sb-multiline" title="{{ item.rack }}-{{ item.shelf }}-{{ item.box }}">
                             {{ item.rack }}-{{ item.shelf }}-{{ item.box }}
                         </span>
@@ -1110,13 +1115,40 @@
                     {% with col=columns.rack %}
                         <div class="sb-add-field sb-mandatory">
                             <label>{{ col.full_label|default:col.field_name|default:"Rack" }} <span class="sb-mandatory-badge">mandatory</span></label>
-                            <input type="text" name="rack" required>
+                            <select name="rack" required>
+                                <option value="" selected disabled>Select</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                                <option value="13">13</option>
+                                <option value="14">14</option>
+                                <option value="15">15</option>
+                                <option value="16">16</option>
+                                <option value="17">17</option>
+                                <option value="18">18</option>
+                                <option value="19">19</option>
+                                <option value="20">20</option>
+                            </select>
                         </div>
                     {% endwith %}
                     {% with col=columns.shelf %}
                         <div class="sb-add-field sb-mandatory">
                             <label>{{ col.full_label|default:col.field_name|default:"Shelf" }} <span class="sb-mandatory-badge">mandatory</span></label>
-                            <input type="text" name="shelf" required>
+                            <select name="shelf" required>
+                                <option value="" selected disabled>Select</option>
+                                {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                                    <option value="{{ letter }}">{{ letter }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     {% endwith %}
                     {% with col=columns.box %}
@@ -1303,6 +1335,73 @@
             <button type="button" class="sb-modal-save" data-mode="save">Save</button>
             <button type="button" class="sb-modal-save" data-mode="save-next">Save and next</button>
             <button type="button" class="sb-modal-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- MOVE LOCATION MODAL -->
+<div id="sb-move-location-modal" class="sb-modal" aria-hidden="true">
+    <div class="sb-modal-dialog sb-add-item-dialog">
+        <div class="sb-modal-header">
+            <div><strong>Edit location</strong></div>
+            <div><button type="button" class="sb-modal-close" aria-label="Close">&times;</button></div>
+        </div>
+        <div class="sb-modal-body">
+            <div class="sb-add-row">
+                <div class="sb-add-field">
+                    <label>Item</label>
+                    <div class="sb-delete-readonly" id="sb-move-loc-name"></div>
+                </div>
+                <div class="sb-add-field">
+                    <label>Current location</label>
+                    <div class="sb-delete-readonly" id="sb-move-loc-from"></div>
+                </div>
+            </div>
+            <div class="sb-add-row rsb-row">
+                <div class="sb-add-field sb-mandatory">
+                    <label>Rack <span class="sb-mandatory-badge">mandatory</span></label>
+                    <select id="sb-move-loc-rack" required>
+                        <option value="" selected disabled>Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+                <div class="sb-add-field sb-mandatory">
+                    <label>Shelf <span class="sb-mandatory-badge">mandatory</span></label>
+                    <select id="sb-move-loc-shelf" required>
+                        <option value="" selected disabled>Select</option>
+                        {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                            <option value="{{ letter }}">{{ letter }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="sb-add-field sb-mandatory">
+                    <label>Box <span class="sb-mandatory-badge">mandatory</span></label>
+                    <input type="text" id="sb-move-loc-box" required>
+                </div>
+            </div>
+        </div>
+        <div class="sb-modal-footer">
+            <button type="button" class="sb-modal-save" id="sb-move-loc-save">Save</button>
+            <button type="button" class="sb-modal-cancel" id="sb-move-loc-cancel">Cancel</button>
         </div>
     </div>
 </div>

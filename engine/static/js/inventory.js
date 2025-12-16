@@ -1433,6 +1433,212 @@
     }
 
     /* ================================================
+       MOVE LOCATION MODAL (dblclick on location cell)
+    ================================================= */
+    function sbInitMoveLocationModal() {
+        if (!CAN_EDIT) return;
+
+        const modal = document.getElementById("sb-move-location-modal");
+        if (!modal) return;
+        if (modal.dataset.sbMoveInit === "1") {
+            if (typeof window.sbBindLocationCells === "function") {
+                window.sbBindLocationCells();
+            }
+            return;
+        }
+
+        const dialog = modal.querySelector(".sb-modal-dialog");
+        const closeBtn = modal.querySelector(".sb-modal-close");
+        const cancelBtn = document.getElementById("sb-move-loc-cancel");
+        const saveBtn = document.getElementById("sb-move-loc-save");
+        const rackSelect = document.getElementById("sb-move-loc-rack");
+        const shelfSelect = document.getElementById("sb-move-loc-shelf");
+        const boxInput = document.getElementById("sb-move-loc-box");
+        const nameEl = document.getElementById("sb-move-loc-name");
+        const fromEl = document.getElementById("sb-move-loc-from");
+
+        let isOpen = false;
+        let activeCell = null;
+        let activeItemId = null;
+        let oldLocation = "";
+        let activeName = "";
+
+        function fillForm(rack, shelf, box) {
+            if (rackSelect) rackSelect.value = rack || "";
+            if (shelfSelect) shelfSelect.value = (shelf || "").toUpperCase();
+            if (boxInput) boxInput.value = box || "";
+        }
+
+        function closeModal(resetState = true, stateAfterClose = "focus") {
+            const cell = activeCell;
+            modal.style.display = "none";
+            isOpen = false;
+            if (resetState) {
+                fillForm("", "", "");
+                if (nameEl) nameEl.textContent = "";
+                if (fromEl) fromEl.textContent = "";
+                activeCell = null;
+                activeItemId = null;
+                activeName = "";
+                oldLocation = "";
+            }
+            if (cell) {
+                setActiveCellState(stateAfterClose, cell);
+            } else {
+                clearActiveCellState();
+            }
+        }
+
+        function openModal(cell) {
+            if (!cell) return;
+            const rack = cell.dataset.rack || "";
+            const shelf = (cell.dataset.shelf || "").toUpperCase();
+            const box = cell.dataset.box || "";
+            const name = cell.dataset.name || "";
+            const itemId = cell.dataset.id;
+
+            if (!itemId) return;
+
+            activeCell = cell;
+            activeItemId = itemId;
+            activeName = name;
+            oldLocation = `${rack}-${shelf}-${box}`.replace(/--+/g, "-");
+
+            fillForm(rack, shelf, box);
+
+            if (nameEl) nameEl.textContent = name;
+            if (fromEl) fromEl.textContent = oldLocation;
+
+            modal.style.display = "flex";
+            isOpen = true;
+            setActiveCellState("edited", cell);
+
+            if (rackSelect) rackSelect.focus();
+        }
+
+        function handleOutside(e) {
+            if (!isOpen) return;
+            if (dialog && !dialog.contains(e.target)) {
+                closeModal(false);
+            }
+        }
+
+        function handleKeydown(e) {
+            if (!isOpen) return;
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeModal(false);
+            }
+        }
+
+        function bindCell(cell) {
+            if (!cell || cell.dataset.sbLocBound === "1") return;
+            cell.addEventListener("dblclick", () => openModal(cell));
+            cell.dataset.sbLocBound = "1";
+        }
+
+        function bindCells() {
+            const cells = document.querySelectorAll("td.col-location");
+            cells.forEach(bindCell);
+        }
+
+        function validateForm() {
+            const rackVal = rackSelect ? rackSelect.value : "";
+            const shelfVal = shelfSelect ? shelfSelect.value : "";
+            const boxVal = boxInput ? boxInput.value.trim() : "";
+            if (!rackVal || !shelfVal || !boxVal) {
+                alert("Please fill Rack, Shelf and Box.");
+                return null;
+            }
+            return { rack: rackVal, shelf: shelfVal.toUpperCase(), box: boxVal };
+        }
+
+        function saveLocation() {
+            const values = validateForm();
+            if (!values || !activeItemId) return;
+
+            const filters = collectActiveFilters();
+            const pageSizeSel = document.getElementById("page-size-select");
+            const fd = new FormData();
+            fd.append("item_id", activeItemId);
+            fd.append("rack", values.rack);
+            fd.append("shelf", values.shelf);
+            fd.append("box", values.box);
+            fd.append("sort", filters.sort || "rack");
+            fd.append("dir", filters.dir || "asc");
+            fd.append("page_size", pageSizeSel ? pageSizeSel.value : "");
+
+            fd.append("rack_filter", filters.rack || "");
+            fd.append("group_filter", filters.group || "");
+            fd.append("condition_filter", filters.condition || "");
+            fd.append("unit_filter", filters.unit || "");
+            fd.append("instock_filter", filters.instock || "");
+            fd.append("price_filter", filters.price || "");
+            fd.append("disc_filter", filters.disc || "");
+            fd.append("rev_filter", filters.rev || "");
+            fd.append("fav_filter", filters.fav || "");
+            fd.append("reorder_filter", filters.reorder || "");
+            fd.append("search", filters.search || "");
+            if (filters.searchFields && filters.searchFields.length) {
+                fd.append("search_fields", filters.searchFields.join(","));
+            }
+
+            fetch("/api/move-location/", {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken },
+                body: fd,
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) {
+                        alert(data.error || "Move failed");
+                        setActiveCellState("focus", activeCell || null);
+                        return;
+                    }
+
+                    const newLocation = data.new_location || data.location || `${values.rack}-${values.shelf}-${values.box}`;
+                    const span = activeCell ? activeCell.querySelector(".sb-multiline") : null;
+                    if (activeCell) {
+                        activeCell.dataset.rack = data.rack || values.rack;
+                        activeCell.dataset.shelf = data.shelf || values.shelf;
+                        activeCell.dataset.box = data.box || values.box;
+                        if (span) {
+                            span.textContent = newLocation;
+                            span.setAttribute("title", newLocation);
+                        }
+                    setActiveCellState("saved", activeCell);
+                }
+
+                    closeModal(true, "saved");
+
+                    const itemLabel = data.name || activeName || "Item";
+                    const fromLoc = data.old_location || oldLocation;
+                    alert(`${itemLabel} moved \nfrom:\n${fromLoc}\nto:\n${newLocation}`);
+
+                    sbEnsureNewItemVisible(activeItemId, data.page);
+                })
+                .catch(err => {
+                    console.error("Move location error", err);
+                    alert("Move failed");
+                    setActiveCellState("focus", activeCell || null);
+                });
+        }
+
+        bindCells();
+
+        modal.addEventListener("mousedown", handleOutside);
+        document.addEventListener("keydown", handleKeydown);
+        if (closeBtn) closeBtn.addEventListener("click", () => closeModal(true));
+        if (cancelBtn) cancelBtn.addEventListener("click", () => closeModal(true));
+        if (saveBtn) saveBtn.addEventListener("click", saveLocation);
+
+        // rebind after AJAX reload
+        modal.dataset.sbMoveInit = "1";
+
+        // expose rebind for pagination reloads
+        window.sbBindLocationCells = bindCells;
+    }
+    /* ================================================
        INLINE TEXT EDITING (dla td.inline) - tylko CAN_EDIT
     ================================================= */
     function sbInitInlineEditing() {
@@ -2179,6 +2385,7 @@
                 sbInitQuillTriggers();
                 sbInitNoteButtons();
                 sbInitAddItemModal();
+                sbInitMoveLocationModal();
                 sbInitDeleteModal();
                 sbInitUppercaseToggle();
                 applyPendingHighlight();
@@ -2509,6 +2716,7 @@
         sbInitQuillTriggers();
         sbInitNoteButtons();
         sbInitAddItemModal();
+        sbInitMoveLocationModal();
         sbInitDeleteModal();
         sbInitUserProfileModal();
         sbInitUppercaseToggle();

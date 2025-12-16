@@ -2049,6 +2049,419 @@ def update_field(request):
 
 
 # ============================================
+# SHARED HELPERS FOR INVENTORY PAGINATION / SORT
+# ============================================
+
+
+def _base_order_annotations(user):
+    user_meta_qs = InventoryUserMeta.objects.filter(user=user, item_id=OuterRef("pk"))
+    fav_color_subq = user_meta_qs.values("favorite_color")[:1]
+    note_present_expr = Exists(user_meta_qs.exclude(note__isnull=True).exclude(note=""))
+
+    return {
+        "user_note_present": note_present_expr,
+        "user_fav_color": Subquery(fav_color_subq),
+        "desc_present": Case(
+            When(part_description__isnull=True, then=Value(0)),
+            When(part_description__exact="", then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        ),
+        "for_reorder_ann": Case(
+            When(discontinued=True, then=Value(0)),
+            When(reorder_level__isnull=True, then=Value(0)),
+            When(quantity_in_stock__lte=F("reorder_level"), then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+        "note_present_int": Case(
+            When(user_note_present=True, then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+        "fav_present_int": Case(
+            When(user_fav_color__isnull=True, then=Value(0)),
+            When(user_fav_color__exact="", then=Value(0)),
+            When(user_fav_color__iexact="NONE", then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        ),
+    }
+
+
+def _get_order_by_args(sort_field, sort_dir):
+    annotate_kwargs = {}
+    order_by_args = []
+
+    if sort_field == "name":
+        annotate_kwargs.update({
+            "name_lower": Lower("name"),
+            "first_char": Substr("name", 1, 1),
+            "name_digit_flag": Case(
+                When(first_char__in=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], then=0),
+                default=1,
+                output_field=IntegerField(),
+            ),
+        })
+        if sort_dir == "desc":
+            order_by_args.extend(["name_digit_flag", "-name_lower"])
+        else:
+            order_by_args.extend(["name_digit_flag", "name_lower"])
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "shelf":
+        order_by_args.append("-shelf" if sort_dir == "desc" else "shelf")
+        order_by_args.extend(["rack", "box", "name"])
+    elif sort_field == "group":
+        order_by_args.append("-group__name" if sort_dir == "desc" else "group__name")
+        order_by_args.extend(["rack", "shelf", "box", "name"])
+    elif sort_field == "location":
+        annotate_kwargs.update({
+            "location_box_num": Cast(
+                NullIf(
+                    Func(F("box"), Value(r"^([0-9]+).*$"), Value(r"\1"), function="regexp_replace"),
+                    Value(""),
+                ),
+                IntegerField(),
+            ),
+            "location_box_num_last": Cast(
+                NullIf(
+                    Func(F("box"), Value(r".*?([0-9]+)(?!.*[0-9]).*$"), Value(r"\1"), function="regexp_replace"),
+                    Value(""),
+                ),
+                IntegerField(),
+            ),
+            "location_box_tail": Func(
+                Func(F("box"), Value(r"^([0-9]+)"), Value(""), function="regexp_replace"),
+                Value(r"([0-9]+)(?!.*[0-9]).*$"),
+                Value(""),
+                function="regexp_replace",
+            ),
+            "location_box_num_missing": Case(
+                When(location_box_num__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+            "location_box_num_last_missing": Case(
+                When(location_box_num_last__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+        })
+        if sort_dir == "desc":
+            order_by_args.extend([
+                "-rack",
+                "-shelf",
+                "location_box_num_missing",
+                "-location_box_num",
+                "location_box_num_last_missing",
+                "-location_box_num_last",
+                "-location_box_tail",
+                "name",
+            ])
+        else:
+            order_by_args.extend([
+                "rack",
+                "shelf",
+                "location_box_num_missing",
+                "location_box_num",
+                "location_box_num_last_missing",
+                "location_box_num_last",
+                "location_box_tail",
+                "name",
+            ])
+    elif sort_field == "part_description":
+        if sort_dir == "desc":
+            order_by_args.extend(["desc_present", "name"])
+        else:
+            order_by_args.extend(["-desc_present", "name"])
+    elif sort_field == "part_number":
+        order_by_args.append("-part_number" if sort_dir == "desc" else "part_number")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "dcm_number":
+        order_by_args.append("-dcm_number" if sort_dir == "desc" else "dcm_number")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "oem_name":
+        order_by_args.append("-oem_name" if sort_dir == "desc" else "oem_name")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "oem_number":
+        order_by_args.append("-oem_number" if sort_dir == "desc" else "oem_number")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "vendor":
+        order_by_args.append("-vendor" if sort_dir == "desc" else "vendor")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "source_location":
+        order_by_args.append("-source_location" if sort_dir == "desc" else "source_location")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "unit":
+        order_by_args.append("-unit__code" if sort_dir == "desc" else "unit__code")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "quantity_in_stock":
+        order_by_args.append("-quantity_in_stock" if sort_dir == "desc" else "quantity_in_stock")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "price":
+        order_by_args.append("-price" if sort_dir == "desc" else "price")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "reorder_level":
+        order_by_args.append("-reorder_level" if sort_dir == "desc" else "reorder_level")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "reorder_time_days":
+        order_by_args.append("-reorder_time_days" if sort_dir == "desc" else "reorder_time_days")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "quantity_in_reorder":
+        order_by_args.append("-quantity_in_reorder" if sort_dir == "desc" else "quantity_in_reorder")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "condition_status":
+        order_by_args.append("-condition_status" if sort_dir == "desc" else "condition_status")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "discontinued":
+        order_by_args.append("-discontinued" if sort_dir == "desc" else "discontinued")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "verify":
+        order_by_args.append("-verify" if sort_dir == "desc" else "verify")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "favorite":
+        if sort_dir == "desc":
+            order_by_args.extend(["fav_present_int", "user_fav_color", "rack", "shelf", "box"])
+        else:
+            order_by_args.extend(["-fav_present_int", "user_fav_color", "rack", "shelf", "box"])
+    elif sort_field == "note":
+        if sort_dir == "desc":
+            order_by_args.extend(["note_present_int", "rack", "shelf", "box"])
+        else:
+            order_by_args.extend(["-note_present_int", "rack", "shelf", "box"])
+    elif sort_field == "for_reorder":
+        order_by_args.append("-for_reorder_ann" if sort_dir == "asc" else "for_reorder_ann")
+        order_by_args.extend(["rack", "shelf", "box"])
+    elif sort_field == "rack":
+        order_by_args.append("-rack" if sort_dir == "desc" else "rack")
+        order_by_args.extend(["shelf", "box", "name"])
+
+    if not order_by_args:
+        order_by_args = ["rack", "shelf", "box", "name"]
+
+    return annotate_kwargs, order_by_args
+
+
+def _build_filtered_inventory_queryset(user, params):
+    base_qs = InventoryItem.objects.annotate(**_base_order_annotations(user))
+
+    rack_filter = params.get("rack_filter")
+    rack_filter_int = None
+    if rack_filter not in (None, ""):
+        try:
+            rack_filter_int = int(rack_filter)
+        except (TypeError, ValueError):
+            rack_filter_int = None
+
+    group_filter = params.get("group_filter")
+    group_filter_int = None
+    if group_filter not in (None, ""):
+        try:
+            group_filter_int = int(group_filter)
+        except (TypeError, ValueError):
+            group_filter_int = None
+
+    condition_filter = params.get("condition_filter") or ""
+    unit_filter_code = (params.get("unit_filter") or "").strip()
+    instock_filter = params.get("instock_filter") or ""
+    price_filter = params.get("price_filter") or ""
+    disc_filter = params.get("disc_filter") or ""
+    rev_filter = params.get("rev_filter") or ""
+    fav_filter = params.get("fav_filter") or ""
+    reorder_filter = params.get("reorder_filter") or ""
+    search_query = (params.get("search") or "").strip()
+    search_fields_param = params.get("search_fields", "")
+
+    allowed_search_fields = [
+        "name",
+        "part_description",
+        "part_number",
+        "dcm_number",
+        "oem_name",
+        "oem_number",
+        "vendor",
+        "source_location",
+        "box",
+        "group_name",
+    ]
+    if search_fields_param and search_fields_param.lower() in {"__all__", "all"}:
+        selected_search_fields = allowed_search_fields
+    else:
+        selected_search_fields = [
+            f for f in (s.strip() for s in search_fields_param.split(","))
+            if f in allowed_search_fields
+        ]
+
+    if rack_filter_int is not None:
+        base_qs = base_qs.filter(rack=rack_filter_int)
+    if group_filter_int is not None:
+        base_qs = base_qs.filter(group_id=group_filter_int)
+    if condition_filter:
+        base_qs = base_qs.filter(condition_status=condition_filter)
+
+    if unit_filter_code:
+        code_up = unit_filter_code.upper()
+        unit_exists = Unit.objects.filter(code__iexact=code_up).exists()
+        if unit_exists:
+            synonyms = {
+                "ROLL": ["ROLL", "ROLLS"],
+                "M": ["M", "METER", "METERS"],
+                "CM": ["CM"],
+                "MM": ["MM"],
+                "LTR": ["LTR", "LITRE", "LITERS", "LITRES"],
+                "ML": ["ML"],
+                "PCS": ["PCS", "PC", "PIECES"],
+                "PAIR": ["PAIR", "PAIRS"],
+                "SET": ["SET", "SETS"],
+                "KIT": ["KIT", "KITS"],
+                "ORGANISER": ["ORGANISER", "ORGANIZER"],
+                "BOX": ["BOX", "BOXES"],
+                "CAN": ["CAN", "CANS"],
+                "KGM": ["KGM", "KG", "KGS", "KILOGRAM", "KILOGRAMS"],
+            }
+            accepted_units = synonyms.get(code_up, [code_up])
+            base_qs = base_qs.filter(
+                Q(unit__code__iexact=code_up) |
+                Q(units__in=accepted_units) |
+                Q(units__iexact=code_up)
+            )
+        else:
+            unit_filter_code = ""
+
+    if instock_filter == "yes":
+        base_qs = base_qs.filter(quantity_in_stock__gte=1)
+    elif instock_filter == "no":
+        base_qs = base_qs.filter(Q(quantity_in_stock__lt=1) | Q(quantity_in_stock__isnull=True))
+
+    if price_filter == "yes":
+        base_qs = base_qs.filter(Q(price__gt=0) & Q(price__isnull=False))
+    elif price_filter == "no":
+        base_qs = base_qs.filter(Q(price__isnull=True) | Q(price__lte=0))
+
+    if disc_filter == "yes":
+        base_qs = base_qs.filter(discontinued=True)
+    elif disc_filter == "no":
+        base_qs = base_qs.filter(discontinued=False)
+
+    if rev_filter == "yes":
+        base_qs = base_qs.filter(verify=True)
+    elif rev_filter == "no":
+        base_qs = base_qs.filter(verify=False)
+
+    if fav_filter == "yes":
+        base_qs = base_qs.filter(fav_present_int=1)
+    elif fav_filter == "no":
+        base_qs = base_qs.filter(fav_present_int=0)
+
+    if reorder_filter == "yes":
+        base_qs = base_qs.filter(for_reorder_ann=1)
+    elif reorder_filter == "no":
+        base_qs = base_qs.filter(for_reorder_ann=0)
+
+    if search_query:
+        fields_to_search = selected_search_fields or allowed_search_fields
+        search_q = Q()
+        for field in fields_to_search:
+            search_q |= Q(**{f"{field}__icontains": search_query})
+        if fields_to_search:
+            base_qs = base_qs.filter(search_q)
+
+    return base_qs
+
+
+def _compute_page_for_item(user, queryset, item_id, sort_field, sort_dir, page_size_raw):
+    try:
+        if page_size_raw == "all":
+            page_size_int = None
+        else:
+            page_size_int = int(page_size_raw) if page_size_raw else 50
+    except (TypeError, ValueError):
+        page_size_int = 50
+
+    base_annotations = _base_order_annotations(user)
+    extra_annotations, order_by_args = _get_order_by_args(sort_field, sort_dir)
+    base_annotations.update(extra_annotations)
+
+    ordered_ids = list(
+        queryset.annotate(**base_annotations)
+        .order_by(*order_by_args)
+        .values_list("id", flat=True)
+    )
+    try:
+        idx = ordered_ids.index(item_id)
+        row_number = idx + 1
+    except ValueError:
+        row_number = None
+
+    page_for_item = 1
+    if row_number is not None:
+        if page_size_int:
+            page_for_item = (row_number - 1) // page_size_int + 1
+        else:
+            page_for_item = 1
+    return page_for_item
+
+
+@login_required
+@require_POST
+def move_location(request):
+    if not user_can_edit(request.user):
+        return JsonResponse({"ok": False, "error": "Not allowed"}, status=403)
+
+    item_id = request.POST.get("item_id")
+    rack_raw = request.POST.get("rack")
+    shelf_raw = (request.POST.get("shelf") or "").strip().upper()
+    box = (request.POST.get("box") or "").strip()
+
+    if not item_id:
+        return JsonResponse({"ok": False, "error": "Missing item_id"}, status=400)
+    try:
+        rack = int(rack_raw)
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "Invalid rack value"}, status=400)
+    if rack < 1 or rack > 20:
+        return JsonResponse({"ok": False, "error": "Rack must be between 1 and 20."}, status=400)
+    if not shelf_raw or len(shelf_raw) != 1 or not shelf_raw.isalpha():
+        return JsonResponse({"ok": False, "error": "Invalid shelf value"}, status=400)
+    if not box:
+        return JsonResponse({"ok": False, "error": "Box is required"}, status=400)
+
+    try:
+        item = InventoryItem.objects.get(pk=item_id)
+    except InventoryItem.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Item not found"}, status=404)
+
+    old_location = f"{item.rack}-{item.shelf}-{item.box}"
+
+    item.rack = rack
+    item.shelf = shelf_raw
+    item.box = box
+    item.save()
+
+    params = request.POST
+    sort_field = params.get("sort") or "rack"
+    sort_dir = params.get("dir") or "asc"
+    page_size_param = params.get("page_size")
+
+    queryset = _build_filtered_inventory_queryset(request.user, params)
+    page_for_item = _compute_page_for_item(
+        request.user, queryset, item.id, sort_field, sort_dir, page_size_param
+    )
+
+    new_location = f"{item.rack}-{item.shelf}-{item.box}"
+    return JsonResponse({
+        "ok": True,
+        "page": page_for_item,
+        "name": item.name,
+        "old_location": old_location,
+        "new_location": new_location,
+        "rack": item.rack,
+        "shelf": item.shelf,
+        "box": item.box,
+    })
+
+
+# ============================================
 # AJAX: PER-USER FAVORITE COLOR (STAR)
 # ============================================
 
@@ -2181,14 +2594,7 @@ def create_item(request):
 
     sort_field = data.get("sort") or "rack"
     sort_dir = data.get("dir") or "asc"
-    try:
-        page_size_val = data.get("page_size")
-        if page_size_val == "all":
-            page_size_int = None
-        else:
-            page_size_int = int(page_size_val) if page_size_val else 50
-    except (TypeError, ValueError):
-        page_size_int = 50
+    page_size_val = data.get("page_size")
 
     for f in required_fields:
         if not data.get(f):
@@ -2243,154 +2649,14 @@ def create_item(request):
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
-    # --- compute page where item would appear with current sort + page size ---
-    order_by_args = []
-    annotate_kwargs = {}
-
-    # per-user meta for note/fav
-    user_meta_qs = InventoryUserMeta.objects.filter(user=request.user, item_id=OuterRef("pk"))
-    fav_color_subq = user_meta_qs.values("favorite_color")[:1]
-    note_present_expr = Exists(user_meta_qs.exclude(note__isnull=True).exclude(note=""))
-
-    annotate_kwargs.update({
-        "user_note_present": note_present_expr,
-        "user_fav_color": Subquery(fav_color_subq),
-        "desc_present": Case(
-            When(part_description__isnull=True, then=Value(0)),
-            When(part_description__exact="", then=Value(0)),
-            default=Value(1),
-            output_field=IntegerField(),
-        ),
-        "for_reorder_ann": Case(
-            When(discontinued=True, then=Value(0)),
-            When(reorder_level__isnull=True, then=Value(0)),
-            When(quantity_in_stock__lte=F("reorder_level"), then=Value(1)),
-            default=Value(0),
-            output_field=IntegerField(),
-        ),
-        "note_present_int": Case(
-            When(user_note_present=True, then=Value(1)),
-            default=Value(0),
-            output_field=IntegerField(),
-        ),
-        "fav_present_int": Case(
-            When(user_fav_color__isnull=True, then=Value(0)),
-            When(user_fav_color__exact="", then=Value(0)),
-            When(user_fav_color__iexact="NONE", then=Value(0)),
-            default=Value(1),
-            output_field=IntegerField(),
-        ),
-    })
-
-    if sort_field == "rack":
-        order_by_args.append("-rack" if sort_dir == "desc" else "rack")
-        order_by_args.extend(["shelf", "box", "name"])
-    elif sort_field == "shelf":
-        order_by_args.append("-shelf" if sort_dir == "desc" else "shelf")
-        order_by_args.extend(["rack", "box", "name"])
-    elif sort_field == "name":
-        annotate_kwargs["name_lower"] = Lower("name")
-        annotate_kwargs["first_char"] = Substr("name", 1, 1)
-        annotate_kwargs["name_digit_flag"] = Case(
-            When(first_char__in=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], then=0),
-            default=1,
-            output_field=IntegerField(),
-        )
-        if sort_dir == "desc":
-            order_by_args.extend(["name_digit_flag", "-name_lower"])
-        else:
-            order_by_args.extend(["name_digit_flag", "name_lower"])
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "group":
-        order_by_args.append("-group__name" if sort_dir == "desc" else "group__name")
-        order_by_args.extend(["rack", "shelf", "box", "name"])
-    elif sort_field == "location":
-        if sort_dir == "desc":
-            order_by_args.extend(["-rack", "-shelf", "-box", "name"])
-        else:
-            order_by_args.extend(["rack", "shelf", "box", "name"])
-    elif sort_field == "part_description":
-        if sort_dir == "desc":
-            order_by_args.extend(["desc_present", "name"])
-        else:
-            order_by_args.extend(["-desc_present", "name"])
-    elif sort_field == "part_number":
-        order_by_args.append("-part_number" if sort_dir == "desc" else "part_number")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "dcm_number":
-        order_by_args.append("-dcm_number" if sort_dir == "desc" else "dcm_number")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "oem_name":
-        order_by_args.append("-oem_name" if sort_dir == "desc" else "oem_name")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "oem_number":
-        order_by_args.append("-oem_number" if sort_dir == "desc" else "oem_number")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "vendor":
-        order_by_args.append("-vendor" if sort_dir == "desc" else "vendor")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "source_location":
-        order_by_args.append("-source_location" if sort_dir == "desc" else "source_location")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "unit":
-        order_by_args.append("-unit__code" if sort_dir == "desc" else "unit__code")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "quantity_in_stock":
-        order_by_args.append("-quantity_in_stock" if sort_dir == "desc" else "quantity_in_stock")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "reorder_level":
-        order_by_args.append("-reorder_level" if sort_dir == "desc" else "reorder_level")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "reorder_time_days":
-        order_by_args.append("-reorder_time_days" if sort_dir == "desc" else "reorder_time_days")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "quantity_in_reorder":
-        order_by_args.append("-quantity_in_reorder" if sort_dir == "desc" else "quantity_in_reorder")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "condition_status":
-        order_by_args.append("-condition_status" if sort_dir == "desc" else "condition_status")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "discontinued":
-        order_by_args.append("-discontinued" if sort_dir == "desc" else "discontinued")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "verify":
-        order_by_args.append("-verify" if sort_dir == "desc" else "verify")
-        order_by_args.extend(["rack", "shelf", "box"])
-    elif sort_field == "favorite":
-        if sort_dir == "desc":
-            order_by_args.extend(["fav_present_int", "user_fav_color", "rack", "shelf", "box"])
-        else:
-            order_by_args.extend(["-fav_present_int", "user_fav_color", "rack", "shelf", "box"])
-    elif sort_field == "note":
-        if sort_dir == "desc":
-            order_by_args.extend(["note_present_int", "rack", "shelf", "box"])
-        else:
-            order_by_args.extend(["-note_present_int", "rack", "shelf", "box"])
-    elif sort_field == "for_reorder":
-        order_by_args.append("-for_reorder_ann" if sort_dir == "asc" else "for_reorder_ann")
-        order_by_args.extend(["rack", "shelf", "box"])
-    else:
-        order_by_args = ["rack", "shelf", "box", "name"]
-
-    # Oblicz pozycję nowego rekordu w aktualnym sortowaniu (prosto w Pythonie,
-    # żeby uniknąć problemów z window functions)
-    ordered_ids = list(
-        InventoryItem.objects.annotate(**annotate_kwargs)
-        .order_by(*order_by_args)
-        .values_list("id", flat=True)
+    page_for_item = _compute_page_for_item(
+        request.user,
+        InventoryItem.objects.all(),
+        item.id,
+        sort_field,
+        sort_dir,
+        page_size_val,
     )
-    try:
-        idx = ordered_ids.index(item.id)
-        row_number = idx + 1  # 1-based
-    except ValueError:
-        row_number = None
-
-    page_for_item = 1
-    if row_number is not None:
-        if page_size_int:
-            page_for_item = (row_number - 1) // page_size_int + 1
-        else:
-            page_for_item = 1
 
     return JsonResponse({"ok": True, "id": item.id, "page": page_for_item})
 

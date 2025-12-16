@@ -16,6 +16,7 @@ from inventory.views import (
     update_unit,
     update_group,
     update_field,
+    move_location,
     update_favorite,
     update_note,
     create_item,
@@ -54,6 +55,7 @@ urlpatterns = [
     path("api/update-unit/", update_unit, name="update_unit"),
     path("api/update-group/", update_group, name="update_group"),
     path("api/update-field/", update_field, name="update_field"),
+    path("api/move-location/", move_location, name="move_location"),
     path("api/create-item/", create_item, name="create_item"),
     path("api/delete-item/", delete_item, name="delete_item"),
 
