@@ -4,6 +4,7 @@ from django.db.models import Max
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import path, reverse
 from django.utils.html import format_html
+from types import MethodType
 from .models import (
     VehicleLocation,
     StandardWorkHours,
@@ -187,3 +188,30 @@ class WorklogEmailSettingsAdmin(admin.ModelAdmin):
         if not obj:
             obj = WorklogEmailSettings.objects.create(recipient_email="")
         return self.change_view(request, object_id=str(obj.pk), extra_context=extra_context)
+
+
+# --- Custom admin menu ordering for worklog app ---
+_original_get_app_list = admin.site.get_app_list
+_MODEL_ORDER = [
+    "Log List",
+    "Log Edition Conditions",
+    "Log Email Rules",
+]
+
+
+def _worklog_sorted_app_list(self, request):
+    app_list = _original_get_app_list(request)
+    for app in app_list:
+        if app.get("app_label") == "worklog":
+            app["models"].sort(
+                key=lambda m: (
+                    _MODEL_ORDER.index(m["name"])
+                    if m["name"] in _MODEL_ORDER
+                    else len(_MODEL_ORDER),
+                    m["name"],
+                )
+            )
+    return app_list
+
+
+admin.site.get_app_list = MethodType(_worklog_sorted_app_list, admin.site)

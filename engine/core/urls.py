@@ -38,6 +38,7 @@ def public_asset(filename):
     return _view
 
 urlpatterns = [
+    path("admin/db-tools/", db_tools, name="db_tools"),
     path("admin/", admin.site.urls),
 
     # Authentication
@@ -58,7 +59,6 @@ urlpatterns = [
     path("api/work-log-entry/<int:pk>/state/", change_worklog_entry_state, name="change_worklog_entry_state"),
     path("api/work-log/<int:pk>/delete/", delete_work_log, name="delete_work_log"),
     path("api/user/profile/", user_profile, name="user_profile"),
-    path("admin/db-tools/", db_tools, name="db_tools"),
 
     # AJAX API endpoints (InventoryItem)
     path("api/update-unit/", update_unit, name="update_unit"),

@@ -46,3 +46,13 @@ class DataJob(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_direction_display()} / {self.get_mode_display()})"
+
+
+class DatabaseToolsEntry(models.Model):
+    class Meta:
+        managed = False
+        verbose_name = "Database Tools"
+        verbose_name_plural = "Database Tools"
+
+    def __str__(self):
+        return "Database Tools"

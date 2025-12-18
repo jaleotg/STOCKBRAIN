@@ -103,8 +103,8 @@ class EditCondition(models.Model):
     )
 
     class Meta:
-        verbose_name = "Edit Condition"
-        verbose_name_plural = "Edit Condition"
+        verbose_name = "Log Edition Condition"
+        verbose_name_plural = "Log Edition Conditions"
 
     def save(self, *args, **kwargs):
         self.singleton = 1
@@ -179,7 +179,7 @@ class WorkLog(models.Model):
     class Meta:
         ordering = ["-due_date", "-created_at"]
         verbose_name = "Work Log"
-        verbose_name_plural = "Work Logs"
+        verbose_name_plural = "Log List"
 
     def clean(self):
         if self.end_time and self.start_time and self.end_time <= self.start_time:
@@ -280,8 +280,8 @@ class WorklogEmailSettings(models.Model):
     )
 
     class Meta:
-        verbose_name = "Worklog E-mail Rule"
-        verbose_name_plural = "Worklog E-mail Rules"
+        verbose_name = "Log Email Rule"
+        verbose_name_plural = "Log Email Rules"
 
     def __str__(self):
         return self.recipient_email
