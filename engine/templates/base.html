@@ -18,7 +18,7 @@
             try {
                 saved = localStorage.getItem(KEY);
             } catch (e) {}
-            var isDark = saved === "dark";
+            var isDark = saved !== "light";
             root.classList.remove("sb-light", "sb-dark");
             root.classList.add(isDark ? "sb-dark" : "sb-light");
         })();
