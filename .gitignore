@@ -5,3 +5,7 @@ __pycache__/
 *.sqlite3
 *.log
 startserver.txt
+engine_backup/
+its-STOCKBRAIN-at-raspberrypi
+notatnik.odt
+notatnik.txt
