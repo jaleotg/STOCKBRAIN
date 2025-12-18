@@ -3,7 +3,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import PROTECT, CASCADE
 
-from inventory.models import InventoryItem, Unit
+from inventory.models import Unit
 
 
 class VehicleLocation(models.Model):
@@ -40,9 +40,13 @@ class VehicleLocation(models.Model):
         blank=True,
         help_text="Opis (dla Outdoor/Office)",
     )
+    sort_index = models.PositiveIntegerField(
+        default=0,
+        help_text="Manual order for dropdowns (lower = higher).",
+    )
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["sort_index", "name"]
         verbose_name = "Vehicle & Location"
         verbose_name_plural = "Vehicles & Locations"
 
@@ -206,7 +210,9 @@ class WorkLogEntry(models.Model):
     vehicle_location = models.ForeignKey(VehicleLocation, on_delete=PROTECT, related_name="worklog_entries")
     job_description = models.TextField()
     state = models.ForeignKey(JobState, on_delete=PROTECT, related_name="worklog_entries")
-    part = models.ForeignKey(InventoryItem, null=True, blank=True, on_delete=PROTECT, related_name="used_in_worklog_entries")
+    inventory_rack = models.IntegerField(null=True, blank=True)
+    inventory_shelf = models.CharField(max_length=4, blank=True)
+    inventory_box = models.CharField(max_length=50, blank=True)
     part_description = models.TextField(blank=True)
     unit = models.ForeignKey(Unit, null=True, blank=True, on_delete=PROTECT)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -219,6 +225,22 @@ class WorkLogEntry(models.Model):
 
     def __str__(self):
         return f"{self.worklog} - {self.vehicle_location}"
+
+    @property
+    def inventory_location_display(self):
+        parts = []
+        if self.inventory_rack is not None:
+            parts.append(str(self.inventory_rack))
+        if self.inventory_shelf:
+            parts.append(str(self.inventory_shelf).upper())
+        if self.inventory_box:
+            parts.append(self.inventory_box)
+        return "-".join(parts)
+
+    def save(self, *args, **kwargs):
+        if self.inventory_shelf:
+            self.inventory_shelf = self.inventory_shelf.upper()
+        super().save(*args, **kwargs)
 
 
 class WorkLogEntryStateChange(models.Model):
@@ -263,26 +285,3 @@ class WorklogEmailSettings(models.Model):
 
     def __str__(self):
         return self.recipient_email
-
-
-class WorkLogDocument(models.Model):
-    worklog = models.OneToOneField(
-        WorkLog,
-        related_name="docx_document",
-        on_delete=models.CASCADE,
-        help_text="Work log this DOCX file belongs to",
-    )
-    docx_file = models.FileField(
-        upload_to="worklogs/docx/",
-        blank=True,
-        null=True,
-        help_text="Generated DOCX representation (WL-YYMMDD-Name_Surname.docx)",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "Work Log DOCX"
-        verbose_name_plural = "Work Log DOCX files"
-
-    def __str__(self):
-        return f"{self.worklog} docx"

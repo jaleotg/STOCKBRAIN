@@ -49,7 +49,7 @@ from worklog.models import (
     StandardWorkHours,
     get_default_work_hours,
 )
-from worklog.docx_utils import render_worklog_docx, generate_and_store_docx
+from worklog.docx_utils import render_worklog_docx
 from worklog.models import WorkLogEntryStateChange
 from worklog.email_utils import send_worklog_docx_email
 from decimal import Decimal, InvalidOperation
@@ -235,6 +235,30 @@ def user_profile(request):
 # ============================================
 # WORK LOG (simple placeholder)
 # ============================================
+
+def _get_inventory_location_options():
+    rack_values = (
+        InventoryItem.objects.order_by("rack")
+        .values_list("rack", flat=True)
+        .distinct()
+    )
+    shelf_values = (
+        InventoryItem.objects.order_by("shelf")
+        .values_list("shelf", flat=True)
+        .distinct()
+    )
+    rack_options = [
+        {"value": str(r), "label": str(r)}
+        for r in rack_values
+        if r is not None
+    ]
+    shelf_options = [
+        {"value": str(s), "label": str(s).upper()}
+        for s in shelf_values
+        if s
+    ]
+    return rack_options, shelf_options
+
 
 @login_required
 def work_log_view(request):
@@ -422,6 +446,8 @@ def work_log_view(request):
             }
         )
 
+    rack_options, shelf_options = _get_inventory_location_options()
+
     return render(
         request,
         "work_log.html",
@@ -431,7 +457,7 @@ def work_log_view(request):
             "hide_add": False,
             "worklogs": worklogs,
             "wl_vehicle_options": list(
-                VehicleLocation.objects.values("id", "name").order_by("name")
+                VehicleLocation.objects.values("id", "name").order_by("sort_index", "name")
             ),
             "wl_state_options": list(
                 JobState.objects.values("id", "short_name", "full_name").order_by("short_name")
@@ -439,6 +465,8 @@ def work_log_view(request):
             "wl_unit_options": list(
                 Unit.objects.values("id", "code").order_by("code")
             ),
+            "wl_rack_options": rack_options,
+            "wl_shelf_options": shelf_options,
             "wl_default_start": default_start,
             "wl_default_end": default_end,
             "wl_allow_schedule": allow_schedule,
@@ -758,6 +786,8 @@ def work_log_master_view(request):
         .distinct()
     )
 
+    rack_options, shelf_options = _get_inventory_location_options()
+
     return render(
         request,
         "work_log.html",
@@ -767,7 +797,7 @@ def work_log_master_view(request):
             "hide_add": True,
             "worklogs": worklogs,
             "wl_vehicle_options": list(
-                VehicleLocation.objects.values("id", "name").order_by("name")
+                VehicleLocation.objects.values("id", "name").order_by("sort_index", "name")
             ),
             "wl_state_options": list(
                 JobState.objects.values("id", "short_name", "full_name").order_by("short_name")
@@ -775,6 +805,8 @@ def work_log_master_view(request):
             "wl_unit_options": list(
                 Unit.objects.values("id", "code").order_by("code")
             ),
+            "wl_rack_options": rack_options,
+            "wl_shelf_options": shelf_options,
             "wl_default_start": default_start,
             "wl_default_end": default_end,
             "wl_allow_schedule": allow_schedule,
@@ -800,7 +832,7 @@ def work_log_detail(request, pk):
                 Prefetch(
                     "entries",
                     queryset=WorkLogEntry.objects.select_related(
-                        "vehicle_location", "state", "part", "unit"
+                        "vehicle_location", "state", "unit"
                     ),
                 )
             )
@@ -821,9 +853,11 @@ def work_log_detail(request, pk):
                 "state": entry.state.short_name,
                 "state_id": entry.state.id,
                 "job_description": entry.job_description,
-                "part": entry.part.name if entry.part else "",
-                "part_id": entry.part.id if entry.part else None,
                 "part_description": entry.part_description,
+                "inventory_rack": entry.inventory_rack,
+                "inventory_shelf": entry.inventory_shelf or "",
+                "inventory_box": entry.inventory_box or "",
+                "inventory_location": entry.inventory_location_display,
                 "quantity": entry.quantity,
                 "unit": entry.unit.code if entry.unit else "",
                 "unit_id": entry.unit.id if entry.unit else None,
@@ -895,7 +929,9 @@ def _prepare_entries_payload(request):
     jobs = request.POST.getlist("entry_job[]")
     states = request.POST.getlist("entry_state[]")
     times = request.POST.getlist("entry_time[]")
-    parts = request.POST.getlist("entry_part[]")
+    racks = request.POST.getlist("entry_rack[]")
+    shelves = request.POST.getlist("entry_shelf[]")
+    boxes = request.POST.getlist("entry_box[]")
     part_descs = request.POST.getlist("entry_part_desc[]")
     units = request.POST.getlist("entry_unit[]")
     qtys = request.POST.getlist("entry_qty[]")
@@ -904,7 +940,19 @@ def _prepare_entries_payload(request):
     n = len(vehicles)
     if not n:
         raise ValidationError("At least one entry is required.")
-    if not (len(jobs) == len(states) == len(times) == len(parts) == len(part_descs) == len(units) == len(qtys) == len(entry_notes) == n):
+    if not (
+        len(jobs)
+        == len(states)
+        == len(times)
+        == len(racks)
+        == len(shelves)
+        == len(boxes)
+        == len(part_descs)
+        == len(units)
+        == len(qtys)
+        == len(entry_notes)
+        == n
+    ):
         raise ValidationError("Entries payload is inconsistent.")
 
     entries = []
@@ -928,14 +976,6 @@ def _prepare_entries_payload(request):
         except (InvalidOperation, ValueError):
             raise ValidationError(f"Row {idx+1}: invalid time value.")
 
-        part_obj = None
-        part_val = parts[idx].strip()
-        if part_val:
-            try:
-                part_obj = InventoryItem.objects.get(pk=int(part_val))
-            except (InventoryItem.DoesNotExist, ValueError):
-                part_obj = None
-
         unit_obj = None
         unit_val = units[idx].strip()
         if unit_val:
@@ -952,13 +992,30 @@ def _prepare_entries_payload(request):
             except (InvalidOperation, ValueError):
                 raise ValidationError(f"Row {idx+1}: invalid quantity.")
 
+        rack_val = racks[idx].strip()
+        rack_int = None
+        if not rack_val:
+            raise ValidationError(f"Row {idx+1}: rack is required.")
+        try:
+            rack_int = int(rack_val)
+        except ValueError:
+            raise ValidationError(f"Row {idx+1}: invalid rack value.")
+        shelf_val = shelves[idx].strip().upper()[:4]
+        if not shelf_val:
+            raise ValidationError(f"Row {idx+1}: shelf is required.")
+        box_val = boxes[idx].strip()[:50]
+        if not box_val:
+            raise ValidationError(f"Row {idx+1}: box is required.")
+
         entries.append(
             {
                 "vehicle": vehicle_obj,
                 "state": state_obj,
                 "job": job_text,
                 "time": time_hours,
-                "part": part_obj,
+                "rack": rack_int,
+                "shelf": shelf_val,
+                "box": box_val,
                 "part_desc": part_descs[idx].strip(),
                 "unit": unit_obj,
                 "qty": qty_dec,
@@ -1012,7 +1069,9 @@ def create_work_log(request):
                     vehicle_location=entry["vehicle"],
                     job_description=entry["job"],
                     state=entry["state"],
-                    part=entry["part"],
+                    inventory_rack=entry["rack"],
+                    inventory_shelf=entry["shelf"],
+                    inventory_box=entry["box"],
                     part_description=entry["part_desc"],
                     unit=entry["unit"],
                     quantity=entry["qty"],
@@ -1141,7 +1200,9 @@ def update_work_log(request, pk):
                     vehicle_location=entry["vehicle"],
                     job_description=entry["job"],
                     state=entry["state"],
-                    part=entry["part"],
+                    inventory_rack=entry["rack"],
+                    inventory_shelf=entry["shelf"],
+                    inventory_box=entry["box"],
                     part_description=entry["part_desc"],
                     unit=entry["unit"],
                     quantity=entry["qty"],

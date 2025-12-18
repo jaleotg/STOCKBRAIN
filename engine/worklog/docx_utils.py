@@ -3,11 +3,6 @@ import io
 from datetime import datetime, timedelta
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
-
-from .models import WorkLogDocument
-
 
 DOCX_XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 
@@ -47,7 +42,7 @@ def render_worklog_docx(worklog):
     name_display = author_first or author_username
     surname_display = author_last or ""
 
-    entries = list(worklog.entries.select_related("vehicle_location", "state", "part", "unit"))
+    entries = list(worklog.entries.select_related("vehicle_location", "state", "unit"))
 
     total_hours = ""
     if worklog.start_time and worklog.end_time:
@@ -73,13 +68,14 @@ def render_worklog_docx(worklog):
 
     # Build rows for the main table (ensure at least 8 rows)
     table_rows = [
-        ["Vehicle", "Job description", "Parts Utilize", "Time"],
+        ["Vehicle", "Job description", "Location (R/S/B)", "Part description", "Time"],
     ]
     max_rows = max(len(entries), 8)
     for idx in range(max_rows):
         if idx < len(entries):
             en = entries[idx]
-            parts_text = en.part.name if en.part else en.part_description
+            location_text = en.inventory_location_display or ""
+            part_desc_text = en.part_description or ""
             time_str = (
                 f"{float(en.time_hours):.2f}".rstrip("0").rstrip(".")
                 if en.time_hours is not None
@@ -90,12 +86,14 @@ def render_worklog_docx(worklog):
         else:
             veh_name = ""
             job_text = ""
-            parts_text = ""
+            location_text = ""
+            part_desc_text = ""
             time_str = ""
         table_rows.append([
             veh_name,
             job_text,
-            parts_text or "",
+            location_text or "",
+            part_desc_text or "",
             time_str,
         ])
 
@@ -222,22 +220,3 @@ def render_worklog_docx(worklog):
 
     return buffer.getvalue()
 
-
-def generate_and_store_docx(worklog):
-    """
-    Build DOCX bytes and persist to WorkLogDocument (FileField).
-    Returns WorkLogDocument instance.
-    """
-    content = render_worklog_docx(worklog)
-    filename = f"worklogs/docx/{worklog.wl_number}.docx".replace(" ", "_")
-
-    doc_obj, _ = WorkLogDocument.objects.get_or_create(worklog=worklog)
-    # remove old file if exists
-    if doc_obj.docx_file:
-        try:
-            default_storage.delete(doc_obj.docx_file.name)
-        except Exception:
-            pass
-
-    doc_obj.docx_file.save(filename, ContentFile(content), save=True)
-    return doc_obj

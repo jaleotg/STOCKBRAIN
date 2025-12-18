@@ -4,7 +4,7 @@ from django.core.mail import EmailMessage, get_connection
 
 from config.models import AdminEmailSettings
 from .models import WorklogEmailSettings
-from .docx_utils import generate_and_store_docx, render_worklog_docx
+from .docx_utils import render_worklog_docx
 
 logger = logging.getLogger(__name__)
 

@@ -5,6 +5,8 @@
 {{ wl_vehicle_options|json_script:"wl-vehicle-options" }}
 {{ wl_state_options|json_script:"wl-state-options" }}
 {{ wl_unit_options|json_script:"wl-unit-options" }}
+{{ wl_rack_options|json_script:"wl-rack-options" }}
+{{ wl_shelf_options|json_script:"wl-shelf-options" }}
 <div id="wl-defaults"
      data-default-start="{{ wl_default_start|default:'' }}"
      data-default-end="{{ wl_default_end|default:'' }}"></div>
@@ -228,7 +230,9 @@
                             <th class="wl-job">Job description <span class="sb-required-asterisk">*</span></th>
                             <th>State <span class="sb-required-asterisk">*</span></th>
                             <th class="col-time">Time <span class="sb-required-asterisk">*</span></th>
-                            <th class="wl-part">Part Utilize</th>
+                            <th class="wl-rack">Rack</th>
+                            <th class="wl-shelf">Shelf</th>
+                            <th class="wl-box">Box</th>
                             <th>Part description</th>
                             <th>Unit</th>
                             <th>Qty</th>
@@ -290,7 +294,9 @@
                                 <th class="wl-job">Job description <span class="sb-required-asterisk">*</span></th>
                                 <th>State <span class="sb-required-asterisk">*</span></th>
                                 <th class="col-time">Time <span class="sb-required-asterisk">*</span></th>
-                                <th class="wl-part">Part Utilize</th>
+                                <th class="wl-rack">Rack</th>
+                                <th class="wl-shelf">Shelf</th>
+                                <th class="wl-box">Box</th>
                                 <th>Part description</th>
                                 <th>Unit</th>
                                 <th>Qty</th>
@@ -362,7 +368,7 @@
         if (!entries.length) {
             const tr = document.createElement("tr");
             const td = document.createElement("td");
-            td.colSpan = 9;
+            td.colSpan = 11;
             td.className = "wl-empty-row";
             td.textContent = "No entries.";
             tr.appendChild(td);
@@ -375,7 +381,9 @@
                     {val: en.job_description || "", cls: "wl-job"},
                     {val: en.state || ""},
                     {val: en.time_hours || "", cls: "col-time"},
-                    {val: en.part || ""},
+                    {val: en.inventory_rack ?? "", cls: "wl-rack"},
+                    {val: en.inventory_shelf || "", cls: "wl-shelf"},
+                    {val: en.inventory_box || "", cls: "wl-box"},
                     {val: en.part_description || ""},
                     {val: en.unit || ""},
                     {val: en.quantity || ""},
@@ -480,6 +488,8 @@
     const vehicleOptions = JSON.parse(document.getElementById("wl-vehicle-options").textContent);
     const stateOptions = JSON.parse(document.getElementById("wl-state-options").textContent);
     const unitOptions = JSON.parse(document.getElementById("wl-unit-options").textContent);
+    const rackOptions = JSON.parse(document.getElementById("wl-rack-options").textContent);
+    const shelfOptions = JSON.parse(document.getElementById("wl-shelf-options").textContent);
     const defaultsHolder = document.getElementById("wl-defaults");
 
     function toggleScheduleButton() {
@@ -595,8 +605,14 @@
         sel.appendChild(opt);
         options.forEach((o) => {
             const optEl = document.createElement("option");
-            optEl.value = o.id;
-            optEl.textContent = o.name || o.short_name || o.code;
+            const optionValue = (o.value !== undefined && o.value !== null)
+                ? o.value
+                : (o.id !== undefined && o.id !== null)
+                    ? o.id
+                    : (o.code !== undefined ? o.code : o.short_name);
+            const optionLabel = o.label || o.name || o.short_name || o.code || optionValue || "";
+            optEl.value = optionValue != null ? optionValue.toString() : "";
+            optEl.textContent = optionLabel;
             sel.appendChild(optEl);
         });
         return sel;
@@ -652,16 +668,46 @@
         tdTime.appendChild(timeInput);
         tr.appendChild(tdTime);
 
-        // Part
-        const tdPart = document.createElement("td");
-        const partInput = document.createElement("input");
-        partInput.type = "text";
-        partInput.name = "entry_part[]";
-        partInput.placeholder = "Part name/id";
-        attachValidation(partInput);
-        if (prefill && prefill.part_id) partInput.value = prefill.part_id;
-        tdPart.appendChild(partInput);
-        tr.appendChild(tdPart);
+        // Rack
+        const tdRack = document.createElement("td");
+        tdRack.className = "wl-rack";
+        const rackSel = buildSelect(rackOptions, "Rack");
+        rackSel.name = "entry_rack[]";
+        rackSel.required = true;
+        attachValidation(rackSel);
+        if (prefill && prefill.inventory_rack !== undefined && prefill.inventory_rack !== null) {
+            rackSel.value = String(prefill.inventory_rack);
+        }
+        tdRack.appendChild(rackSel);
+        tr.appendChild(tdRack);
+
+        // Shelf
+        const tdShelf = document.createElement("td");
+        tdShelf.className = "wl-shelf";
+        const shelfSel = buildSelect(shelfOptions, "Shelf");
+        shelfSel.name = "entry_shelf[]";
+        shelfSel.required = true;
+        attachValidation(shelfSel);
+        if (prefill && prefill.inventory_shelf) {
+            shelfSel.value = prefill.inventory_shelf;
+        }
+        tdShelf.appendChild(shelfSel);
+        tr.appendChild(tdShelf);
+
+        // Box
+        const tdBox = document.createElement("td");
+        tdBox.className = "wl-box";
+        const boxInput = document.createElement("input");
+        boxInput.type = "text";
+        boxInput.name = "entry_box[]";
+        boxInput.placeholder = "Box";
+        boxInput.required = true;
+        attachValidation(boxInput);
+        if (prefill && prefill.inventory_box) {
+            boxInput.value = prefill.inventory_box;
+        }
+        tdBox.appendChild(boxInput);
+        tr.appendChild(tdBox);
 
         // Part description
         const tdPartDesc = document.createElement("td");

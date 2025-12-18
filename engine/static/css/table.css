@@ -1353,7 +1353,13 @@
 .sb-wl-entries-table td:nth-child(3) select {
     max-width: 140px;
 }
-.sb-wl-entries-table .wl-part { min-width: 180px; }
+.sb-wl-entries-table .wl-rack,
+.sb-wl-entries-table .wl-shelf {
+    min-width: 80px;
+}
+.sb-wl-entries-table .wl-box {
+    min-width: 140px;
+}
 .sb-wl-entries-table .col-time {
     width: 6ch;
     max-width: 6ch;
