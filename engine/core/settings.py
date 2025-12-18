@@ -14,7 +14,8 @@ ALLOWED_HOSTS = [
     "192.168.0.200", #lokal Hydrotec LAN
     "localhost",
     "127.0.0.1",
-    "100.120.14.89" #tailscale
+    "100.120.14.89", #tailscale kmoid
+    "100.120.120.120", #tailscale raspberry
 ]
 
 # ------------------------------------------
@@ -169,6 +170,9 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",     # engine/static/
 ]
+
+# Root-level assets like favicons and manifest.
+PUBLIC_ROOT = BASE_DIR / "public"
 
 # Media uploads (docx exports, etc.)
 MEDIA_URL = "/media/"

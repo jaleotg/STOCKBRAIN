@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve
+
 from inventory.views import (
     login_view,
     logout_view,
@@ -27,6 +29,13 @@ from inventory.views import (
     delete_work_log,
 )
 from datatools.views import db_tools
+
+
+def public_asset(filename):
+    def _view(request):
+        return serve(request, filename, document_root=settings.PUBLIC_ROOT)
+
+    return _view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -63,6 +72,19 @@ urlpatterns = [
     path("api/update-favorite/", update_favorite, name="update_favorite"),
     path("api/update-note/", update_note, name="update_note"),
 ]
+
+public_files = [
+    "favicon.ico",
+    "favicon-32x32.png",
+    "favicon-16x16.png",
+    "apple-touch-icon.png",
+    "android-chrome-192x192.png",
+    "android-chrome-512x512.png",
+    "site.webmanifest",
+]
+
+# Serve favicon + manifest assets from the /public directory.
+urlpatterns += [path(file_name, public_asset(file_name)) for file_name in public_files]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
