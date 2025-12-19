@@ -1,18 +1,71 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
-{% block branding %}
-<h1 id="site-name" style="margin:0;">
-    <a href="{% url 'admin:index' %}"
-       style="
-           text-decoration:none;
-           color:#F5DD5D;
-           font-family:'Roboto', 'Segoe UI', sans-serif;
-           font-size:28px;
-           font-weight:700;
-           letter-spacing:2px;
-       ">
-        DesertBrain
-    </a>
-</h1>
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+<style>
+    #header {
+        padding: 0 !important;
+        margin: 0;
+        border: none;
+        background: transparent !important;
+        display: block;
+    }
+    #header *,
+    #header::before,
+    #header::after {
+        box-sizing: border-box;
+    }
+    .sb-admin-header-wrapper {
+        width: 100%;
+        background: transparent;
+    }
+    .sb-admin-header-wrapper .sb-header {
+        width: 100%;
+        padding: 10px 20px;
+    }
+    @media (max-width: 1024px) {
+        #header {
+            padding: 0 !important;
+        }
+        .sb-admin-header-wrapper .sb-header {
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+</style>
 {% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+(function applyInitialAdminTheme() {
+    var KEY = "stockbrain_theme";
+    var root = document.documentElement;
+    var body = document.body;
+    if (!root) return;
+    root.classList.add("sb-dark");
+    if (body) body.classList.add("sb-dark");
+    try {
+        if (localStorage.getItem(KEY) === "light") {
+            root.classList.remove("sb-dark");
+            root.classList.add("sb-light");
+            if (body) {
+                body.classList.remove("sb-dark");
+                body.classList.add("sb-light");
+            }
+        }
+    } catch (e) {}
+})();
+</script>
+<script defer src="{% static 'js/admin-header.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+<header id="header" class="sb-admin-header-wrapper">
+    {% include "partials/app_header.html" with admin_header=True sb_header_logout_view="admin:logout" sb_header_show_user_edit=False %}
+</header>
+{% endblock %}
+
+{% block nav-breadcrumbs %}{% endblock %}
