@@ -29,6 +29,7 @@ from inventory.views import (
     delete_work_log,
 )
 from datatools.views import db_tools
+from django.shortcuts import redirect
 
 
 def public_asset(filename):
@@ -37,8 +38,13 @@ def public_asset(filename):
 
     return _view
 
+def datatools_app_redirect(request):
+    return redirect("db_tools")
+
+
 urlpatterns = [
     path("admin/db-tools/", db_tools, name="db_tools"),
+    path("admin/datatools/", datatools_app_redirect, name="datatools_app_redirect"),
     path("admin/", admin.site.urls),
 
     # Authentication

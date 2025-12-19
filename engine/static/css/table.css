@@ -1353,9 +1353,14 @@
 .sb-wl-entries-table td:nth-child(3) select {
     max-width: 140px;
 }
-.sb-wl-entries-table .wl-rack,
-.sb-wl-entries-table .wl-shelf {
-    min-width: 80px;
+.sb-wl-entries-table th:nth-child(4),
+.sb-wl-entries-table td:nth-child(4) {
+    border-right: 2px solid rgba(0, 0, 0, 0.12);
+}
+.sb-wl-entries-table .wl-rack select,
+.sb-wl-entries-table .wl-shelf select {
+    width: 5ch;
+    min-width: 5ch;
 }
 .sb-wl-entries-table .wl-box {
     min-width: 140px;
@@ -1366,11 +1371,12 @@
     white-space: nowrap;
 }
 .sb-wl-entries-table .col-time input {
-    width: 5ch;
-    min-width: 5ch;
+    width: 6ch;
+    min-width: 6ch;
     text-align: center;
     padding: 4px;
     box-sizing: border-box;
+    margin-right: 6px;
 }
 .sb-wl-entries-table .wl-notes-col { min-width: 180px; }
 

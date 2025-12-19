@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib import admin
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, HttpResponseForbidden
@@ -177,4 +178,5 @@ def db_tools(request):
         "default_export_path": default_path,
         "backup_dir": str(BACKUP_DIR),
     }
+    context.update(admin.site.each_context(request))
     return render(request, "datatools/db_tools.html", context)

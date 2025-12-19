@@ -199,8 +199,8 @@ _MODEL_ORDER = [
 ]
 
 
-def _worklog_sorted_app_list(self, request):
-    app_list = _original_get_app_list(request)
+def _worklog_sorted_app_list(self, request, *args, **kwargs):
+    app_list = _original_get_app_list(request, *args, **kwargs)
     for app in app_list:
         if app.get("app_label") == "worklog":
             app["models"].sort(

@@ -51,8 +51,8 @@ class DataJob(models.Model):
 class DatabaseToolsEntry(models.Model):
     class Meta:
         managed = False
-        verbose_name = "Database Tools"
-        verbose_name_plural = "Database Tools"
+        verbose_name = "Data Base Export / Delete+Import"
+        verbose_name_plural = "Data Base Export / Delete+Import"
 
     def __str__(self):
-        return "Database Tools"
+        return "Data Base Export / Delete+Import"

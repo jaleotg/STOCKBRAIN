@@ -601,7 +601,7 @@
         const sel = document.createElement("select");
         const opt = document.createElement("option");
         opt.value = "";
-        opt.textContent = placeholder;
+        opt.textContent = "---";
         sel.appendChild(opt);
         options.forEach((o) => {
             const optEl = document.createElement("option");
@@ -673,7 +673,6 @@
         tdRack.className = "wl-rack";
         const rackSel = buildSelect(rackOptions, "Rack");
         rackSel.name = "entry_rack[]";
-        rackSel.required = true;
         attachValidation(rackSel);
         if (prefill && prefill.inventory_rack !== undefined && prefill.inventory_rack !== null) {
             rackSel.value = String(prefill.inventory_rack);
@@ -686,7 +685,6 @@
         tdShelf.className = "wl-shelf";
         const shelfSel = buildSelect(shelfOptions, "Shelf");
         shelfSel.name = "entry_shelf[]";
-        shelfSel.required = true;
         attachValidation(shelfSel);
         if (prefill && prefill.inventory_shelf) {
             shelfSel.value = prefill.inventory_shelf;
@@ -701,7 +699,6 @@
         boxInput.type = "text";
         boxInput.name = "entry_box[]";
         boxInput.placeholder = "Box";
-        boxInput.required = true;
         attachValidation(boxInput);
         if (prefill && prefill.inventory_box) {
             boxInput.value = prefill.inventory_box;

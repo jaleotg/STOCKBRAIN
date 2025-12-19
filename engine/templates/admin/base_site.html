@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block branding %}
+<h1 id="site-name" style="margin:0;">
+    <a href="{% url 'admin:index' %}"
+       style="
+           text-decoration:none;
+           color:#F5DD5D;
+           font-family:'Roboto', 'Segoe UI', sans-serif;
+           font-size:28px;
+           font-weight:700;
+           letter-spacing:2px;
+       ">
+        DesertBrain
+    </a>
+</h1>
+{% endblock %}

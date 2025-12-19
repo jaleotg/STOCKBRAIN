@@ -994,18 +994,13 @@ def _prepare_entries_payload(request):
 
         rack_val = racks[idx].strip()
         rack_int = None
-        if not rack_val:
-            raise ValidationError(f"Row {idx+1}: rack is required.")
-        try:
-            rack_int = int(rack_val)
-        except ValueError:
-            raise ValidationError(f"Row {idx+1}: invalid rack value.")
+        if rack_val:
+            try:
+                rack_int = int(rack_val)
+            except ValueError:
+                raise ValidationError(f"Row {idx+1}: invalid rack value.")
         shelf_val = shelves[idx].strip().upper()[:4]
-        if not shelf_val:
-            raise ValidationError(f"Row {idx+1}: shelf is required.")
         box_val = boxes[idx].strip()[:50]
-        if not box_val:
-            raise ValidationError(f"Row {idx+1}: box is required.")
 
         entries.append(
             {
