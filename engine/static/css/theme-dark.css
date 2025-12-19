@@ -199,15 +199,15 @@
 
 .sb-dark .sb-table thead th {
     background-color: #3a3a3a;
-    border-bottom: 2px solid #777;
     color: #ddd;
 }
 
 .sb-dark .sb-table td,
 .sb-dark .sb-table th {
-    border-color: #777;
-    border-left-color: #888;
-    border-right-color: #888;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    border-top: none;
+    border-bottom: none;
 }
 
 .sb-dark .sb-table td {
@@ -219,8 +219,8 @@
 
 /* Wyraźniejsze pionowe linie wierszy (body) */
 .sb-dark .sb-table tbody td {
-    border-left-color: #888;
-    border-right-color: #888;
+    border-left-color: #000;
+    border-right-color: #000;
 }
 
 .sb-dark .sb-table td.col-location {

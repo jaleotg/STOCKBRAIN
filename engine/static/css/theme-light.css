@@ -207,15 +207,16 @@
 
 .sb-light .sb-table thead th {
     background-color: #f5f5f5;
-    border-bottom: 2px solid #d0d0d0;
     color: #333;
-    border: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
 }
 
 .sb-light .sb-table td {
     background-color: transparent;
     color: #333;
-    border-color: #ddd;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
 }
 
 .sb-light .sb-table td.col-location {
@@ -224,7 +225,8 @@
 
 .sb-light .sb-table th,
 .sb-light .sb-table td {
-    border: 1px solid #ddd;
+    border-top: none;
+    border-bottom: none;
 }
 
 .sb-light .sb-table tbody tr:nth-child(even) {
