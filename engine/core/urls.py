@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, reverse
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
@@ -39,7 +39,7 @@ def public_asset(filename):
     return _view
 
 def datatools_app_redirect(request):
-    return redirect("db_tools")
+    return redirect(f"{reverse('db_tools')}?section=export")
 
 
 urlpatterns = [

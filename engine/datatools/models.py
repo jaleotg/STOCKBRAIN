@@ -48,11 +48,31 @@ class DataJob(models.Model):
         return f"{self.name} ({self.get_direction_display()} / {self.get_mode_display()})"
 
 
-class DatabaseToolsEntry(models.Model):
+class DatabaseExportEntry(models.Model):
     class Meta:
         managed = False
-        verbose_name = "Data Base Export / Delete+Import"
-        verbose_name_plural = "Data Base Export / Delete+Import"
+        verbose_name = "Data Base Export"
+        verbose_name_plural = "Data Base Export"
 
     def __str__(self):
-        return "Data Base Export / Delete+Import"
+        return "Data Base Export"
+
+
+class DatabaseRestoreEntry(models.Model):
+    class Meta:
+        managed = False
+        verbose_name = "Database Tools / Restore from File (Import)"
+        verbose_name_plural = "Database Tools / Restore from File (Import)"
+
+    def __str__(self):
+        return "Database Tools / Restore from File (Import)"
+
+
+class DatabaseDeleteEntry(models.Model):
+    class Meta:
+        managed = False
+        verbose_name = "Delete All Data Base"
+        verbose_name_plural = "Delete All Data Base"
+
+    def __str__(self):
+        return "Delete All Data Base"

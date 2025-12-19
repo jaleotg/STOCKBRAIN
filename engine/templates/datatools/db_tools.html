@@ -6,77 +6,89 @@
 <link rel="stylesheet" href="{% static 'css/main.css' %}">
 {% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("id-import-file");
+    const fileLabel = document.getElementById("import-file-name");
+    if (fileInput && fileLabel) {
+        fileInput.addEventListener("change", function () {
+            fileLabel.textContent = fileInput.files && fileInput.files.length
+                ? fileInput.files[0].name
+                : "No file selected";
+        });
+    }
+});
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="sb-card">
-    <h2 class="sb-title">Data Base Export / Delete+Import</h2>
+    {% if show_export %}
+        <h2 class="sb-title">Data Base Export</h2>
+        <section class="sb-db-section">
+            <h3>Export entire database</h3>
+            <p>
+                Generates a full plain-SQL backup (pg_dump). Your browser will download the file
+                <strong>{{ default_export_filename }}</strong>.
+            </p>
+            <form method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="export">
+                <button type="submit" class="sb-btn sb-btn-primary" style="margin-top:12px;">Download SQL backup</button>
+            </form>
+        </section>
+    {% endif %}
 
-    <section class="sb-db-section">
-        <h3>Export entire database</h3>
-        <p>
-            Tworzy pełny zrzut SQL (pg_dump). Domyślnie zapisze się jako
-            <strong>{{ default_export_path }}</strong>.
-        </p>
-        <form method="post" action="">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="export">
-            <label>
-                Destination file:
-                <input id="id-export-path"
-                       type="text"
-                       name="export_path"
-                       class="sb-input"
-                       value="{{ default_export_path }}"
-                       autocomplete="off">
-            </label>
-            <button type="submit" class="sb-btn sb-btn-primary" style="margin-top:12px;">Export full database</button>
-        </form>
-    </section>
+    {% if show_restore %}
+        <h2 class="sb-title">DATABASE TOOLS / Restore from File (Import)</h2>
+        <section class="sb-db-section">
+            <h3>Delete &amp; Restore from file</h3>
+            <p class="sb-warning">
+                Deletes the entire database and immediately restores it from the uploaded SQL backup. The admin interface will be unavailable during the import.
+            </p>
+            <form method="post" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="import_restore">
+                <div class="sb-file-upload">
+                    <span class="sb-file-upload-label">SQL backup file:</span>
+                    <label for="id-import-file" class="sb-btn sb-btn-primary">Choose file</label>
+                    <span id="import-file-name" class="sb-file-upload-name">No file selected</span>
+                    <input id="id-import-file" type="file" name="import_file" accept=".sql" required style="display:none;">
+                </div>
+                <label>
+                    Confirm with your password:
+                    <input id="id-import-password" type="password" name="import_password" required autocomplete="off">
+                </label>
+                <button type="submit" class="sb-btn sb-btn-secondary">Delete &amp; Restore</button>
+            </form>
+        </section>
+    {% endif %}
 
-    <hr style="border:4px solid #444; margin:30px 0;">
-
-    <section class="sb-db-section">
-        <h3>Delete &amp; Restore from file</h3>
-        <p class="sb-warning">
-            Kasuje całą bazę i natychmiast przywraca ją z wybranego dumpa. W trakcie importu panel jest niedostępny.
-        </p>
-        <form method="post" action="" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="import_restore">
-            <label>
-                SQL dump file:
-                <input id="id-import-file" type="file" name="import_file" accept=".sql" required>
-            </label>
-            <label>
-                Confirm with your password:
-                <input id="id-import-password" type="password" name="import_password" required autocomplete="off">
-            </label>
-            <p class="sb-hint">Wymagany jest pełny dump SQL wygenerowany przez <code>pg_dump</code>.</p>
-            <button type="submit" class="sb-btn sb-btn-secondary">Delete &amp; Restore</button>
-        </form>
-    </section>
-
-    <section class="sb-db-section">
-        <h3>Delete ALL data</h3>
-        <p class="sb-danger">
-            Usuwa całą bazę <strong>bez</strong> przywracania. Interfejs przestaje działać, dopóki ręcznie nie wgrasz dumpa z shell.
-        </p>
-        <form method="post" action="">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete_all">
-            <label>
-                Password (step 1):
-                <input id="id-pass-step1" type="password" name="password_step1" required autocomplete="off">
-            </label>
-            <label>
-                Password (step 2):
-                <input id="id-pass-step2" type="password" name="password_step2" required autocomplete="off">
-            </label>
-            <label class="sb-confirm-checkbox" style="margin-top:10px;">
-                <input type="checkbox" name="confirm_backup" required>
-                I confirm that I possess a full backup and understand the consequences.
-            </label>
-            <button type="submit" class="sb-btn sb-btn-clear-strong">Delete ALL data (irreversible)</button>
-        </form>
-    </section>
+    {% if show_delete %}
+        <h2 class="sb-title">Delete All Data Base</h2>
+        <section class="sb-db-section">
+            <h3>Delete ALL data</h3>
+            <p class="sb-danger">
+                Permanently wipes the entire database <strong>without</strong> restoring anything. The site will remain offline until you manually import a backup via shell.
+            </p>
+            <form method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_all">
+                <label>
+                    Password:
+                    <input id="id-delete-password" type="password" name="delete_password" required autocomplete="off">
+                </label>
+                <div class="sb-delete-warning-box">
+                    <label class="sb-delete-warning-label">
+                        <input type="checkbox" name="confirm_backup" required>
+                        I CONFIRM THAT I POSSESS A FULL BACKUP AND UNDERSTAND THE CONSEQUENCES.
+                    </label>
+                </div>
+                <button type="submit" class="sb-btn sb-btn-danger" style="margin-top:18px;">Delete ALL data (irreversible)</button>
+            </form>
+        </section>
+    {% endif %}
 </div>
 {% endblock %}

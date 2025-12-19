@@ -11,10 +11,11 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils import timezone
+from zoneinfo import ZoneInfo
 
 
 BACKUP_DIR = Path(settings.BASE_DIR).parent / "db-backups"
+KUWAIT_TZ = ZoneInfo("Asia/Kuwait")
 
 
 def _pg_env():
@@ -53,6 +54,12 @@ def _export_database(dest_path):
     return result.returncode, result.stdout, result.stderr
 
 
+def _export_database_bytes():
+    cmd = _base_db_cmd("pg_dump")
+    cmd.extend(["-F", "p", "--no-owner", "--no-privileges"])
+    return subprocess.run(cmd, capture_output=True, text=False, env=_pg_env())
+
+
 def _run_psql(sql):
     cmd = _base_db_cmd("psql")
     cmd.extend(["-v", "ON_ERROR_STOP=1", "-c", sql])
@@ -81,7 +88,7 @@ def _import_sql_file(path):
 
 
 def _default_export_path():
-    timestamp = timezone.now().strftime("%Y%m%d-%H%M")
+    timestamp = datetime.now(tz=KUWAIT_TZ).strftime("%Y%m%d-%H%M")
     filename = f"DesertBrain-DB-{timestamp}.sql"
     return str(BACKUP_DIR / filename)
 
@@ -92,26 +99,28 @@ def db_tools(request):
         return HttpResponseForbidden("Superuser access required.")
 
     default_path = _default_export_path()
+    default_filename = os.path.basename(default_path)
+    section = request.GET.get("section") or "export"
+    if section not in {"export", "restore", "delete"}:
+        section = "export"
 
     if request.method == "POST":
         action = request.POST.get("action")
 
         if action == "export":
-            export_path = request.POST.get("export_path") or default_path
-            expanded_path = os.path.expanduser(export_path)
-            export_dir = os.path.dirname(expanded_path)
-            try:
-                os.makedirs(export_dir, exist_ok=True)
-            except OSError as exc:
-                messages.error(request, f"Cannot create directory {export_dir}: {exc}")
-                return redirect(reverse("db_tools"))
-
-            code, stdout, stderr = _export_database(expanded_path)
-            if code == 0:
-                messages.success(request, f"Database exported to {expanded_path}")
-            else:
-                messages.error(request, f"Export failed: {stderr or stdout}")
-            return redirect(reverse("db_tools"))
+            result = _export_database_bytes()
+            if result.returncode == 0:
+                response = HttpResponse(
+                    result.stdout,
+                    content_type="application/sql",
+                )
+                response["Content-Disposition"] = f'attachment; filename="{default_filename}"'
+                return response
+            error_msg = ""
+            if result.stderr:
+                error_msg = result.stderr.decode(errors="ignore")
+            messages.error(request, f"Export failed: {error_msg}")
+            return redirect(f"{reverse('db_tools')}?section=export")
 
         if action == "import_restore":
             upload = request.FILES.get("import_file")
@@ -121,7 +130,7 @@ def db_tools(request):
                 return redirect(reverse("db_tools"))
             if not request.user.check_password(password):
                 messages.error(request, "Password verification failed. Import aborted.")
-                return redirect(reverse("db_tools"))
+                return redirect(f"{reverse('db_tools')}?section=restore")
 
             with tempfile.NamedTemporaryFile(suffix=".sql", delete=False) as tmp:
                 for chunk in upload.chunks():
@@ -143,23 +152,22 @@ def db_tools(request):
                     os.remove(tmp_path)
                 except OSError:
                     pass
-            return redirect(reverse("db_tools"))
+            return redirect(f"{reverse('db_tools')}?section=restore")
 
         if action == "delete_all":
-            pwd1 = request.POST.get("password_step1", "")
-            pwd2 = request.POST.get("password_step2", "")
+            delete_password = request.POST.get("delete_password", "")
             confirm_backup = request.POST.get("confirm_backup") == "on"
-            if not (request.user.check_password(pwd1) and request.user.check_password(pwd2)):
+            if not request.user.check_password(delete_password):
                 messages.error(request, "Password verification failed. Deletion cancelled.")
-                return redirect(reverse("db_tools"))
+                return redirect(f"{reverse('db_tools')}?section=delete")
             if not confirm_backup:
                 messages.error(request, "You must confirm that you have a full backup.")
-                return redirect(reverse("db_tools"))
+                return redirect(f"{reverse('db_tools')}?section=delete")
 
             result = _drop_and_recreate_schema()
             if result.returncode != 0:
                 messages.error(request, f"Delete failed: {result.stderr or result.stdout}")
-                return redirect(reverse("db_tools"))
+                return redirect(f"{reverse('db_tools')}?section=delete")
             warning = (
                 "<h2>Database deleted</h2>"
                 "<p>The entire database has been dropped. "
@@ -172,11 +180,15 @@ def db_tools(request):
             return HttpResponse(warning)
 
         messages.error(request, "Unknown action.")
-        return redirect(reverse("db_tools"))
+        return redirect(f"{reverse('db_tools')}?section={section}")
 
     context = {
-        "default_export_path": default_path,
+        "default_export_filename": default_filename,
         "backup_dir": str(BACKUP_DIR),
+        "section": section,
+        "show_export": section == "export",
+        "show_restore": section == "restore",
+        "show_delete": section == "delete",
     }
     context.update(admin.site.each_context(request))
     return render(request, "datatools/db_tools.html", context)

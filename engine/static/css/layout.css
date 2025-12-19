@@ -40,6 +40,20 @@ body {
     animation-delay: 2.4s;
 }
 
+.sb-file-upload {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+.sb-file-upload-label {
+    font-weight: 600;
+}
+.sb-file-upload-name {
+    font-style: italic;
+    color: #555;
+}
+
 @keyframes sb-draw {
     to { stroke-dashoffset: 0; }
 }
@@ -269,6 +283,31 @@ body {
 .sb-btn-primary { background: #28a745; color: #fff; }
 .sb-btn-secondary { background: #2c7be5; color: #fff; }
 .sb-btn-danger { background: #d9534f; color: #fff; }
+.sb-delete-warning-box {
+    margin-top: 16px;
+}
+.sb-delete-warning-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    color: #b30000;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 2px solid #f2c94c;
+    background: #fff4b3;
+    animation: sb-delete-pulse 2.6s ease-in-out infinite;
+}
+.sb-delete-warning-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+@keyframes sb-delete-pulse {
+    0%, 100% { background: #fff4b3; }
+    50% { background: #ffe47a; }
+}
 
 
 /* =========================================

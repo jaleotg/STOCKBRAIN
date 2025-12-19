@@ -318,6 +318,22 @@
     stroke-width: 2;
     stroke-linecap: round;
 }
+.sb-page-size-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.1);
+    cursor: default;
+}
+.sb-page-size-label svg {
+    width: 18px;
+    height: 18px;
+    fill: #000;
+}
 .sb-focus-toggle.is-inactive .focus-frame {
     stroke: #777;
 }
