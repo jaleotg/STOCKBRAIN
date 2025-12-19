@@ -14,7 +14,9 @@
 
         <div class="sb-login-overlay">
             {% if error %}
-                <div class="sb-alert-error">{{ error }}</div>
+                <div class="sb-notice sb-notice--error">
+                    <div class="sb-notice__text">{{ error }}</div>
+                </div>
             {% endif %}
 
             

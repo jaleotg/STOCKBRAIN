@@ -301,10 +301,28 @@
     color: #2c3e50;
 }
 
-.sb-light .sb-alert-error {
-    color: #ba2121;
-    background-color: #fbeaea;
-    border: 1px solid #ba2121;
+.sb-light .sb-notice {
+    --sb-notice-bg: #fff8eb;
+    --sb-notice-border: #f4c98c;
+    --sb-notice-color: #7a4c00;
+}
+
+.sb-light .sb-notice--success {
+    --sb-notice-bg: #e6f4ea;
+    --sb-notice-border: #b7dfc4;
+    --sb-notice-color: #1d7a34;
+}
+
+.sb-light .sb-notice--warning {
+    --sb-notice-bg: #fff6e0;
+    --sb-notice-border: #ffd89a;
+    --sb-notice-color: #b06800;
+}
+
+.sb-light .sb-notice--error {
+    --sb-notice-bg: #fbeaea;
+    --sb-notice-border: #f2b6b6;
+    --sb-notice-color: #8a1c1c;
 }
 
 .sb-light .sb-tag-warning {

@@ -212,12 +212,14 @@
     <!-- ===================================== -->
 
     {% if wl_location_filters_display %}
-        <div class="wl-location-banner">
-            <div class="wl-location-banner__text">
+        <div class="sb-notice sb-notice--info">
+            <div class="sb-notice__text">
                 Filtered by work log locations:
                 <strong>{{ wl_location_filters_display|join:", " }}</strong>
             </div>
-            <a href="{% url 'home' %}" class="wl-location-banner__clear">Clear</a>
+            <div class="sb-notice__actions">
+                <a href="{% url 'home' %}" class="sb-notice__action">Clear</a>
+            </div>
         </div>
     {% endif %}
 

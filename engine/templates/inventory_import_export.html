@@ -38,7 +38,9 @@
 
     {% if messages %}
         {% for message in messages %}
-            <div class="messagelist"><div class="message {{ message.tags }}">{{ message }}</div></div>
+            <div class="sb-notice{% if 'error' in message.tags %} sb-notice--error{% elif 'success' in message.tags %} sb-notice--success{% elif 'warning' in message.tags %} sb-notice--warning{% else %} sb-notice--info{% endif %}">
+                <div class="sb-notice__text">{{ message }}</div>
+            </div>
         {% endfor %}
     {% endif %}
 
