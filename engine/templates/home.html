@@ -76,10 +76,10 @@
                    placeholder="Search..."
                    value="{{ search_query|default:'' }}">
             <div class="sb-search-buttons" style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button type="button" class="sb-btn sb-search-primary" id="sb-search-btn" aria-label="Search">
+                <button type="button" class="sb-btn sb-search-primary" id="sb-search-btn" aria-label="Search" title="Search within regular-search columns (restricted columns excluded)">
                     <span class="sb-search-icon">&#128269;</span>
                 </button>
-                <button type="button" class="sb-btn sb-adv-search" id="sb-advanced-search-btn">
+                <button type="button" class="sb-btn sb-adv-search" id="sb-advanced-search-btn" title="Search across all allowed columns (restricted columns excluded)">
                     <span class="sb-search-icon">&#128269;</span>&nbsp;All
                 </button>
                 <button type="button" class="sb-btn sb-btn-clear" id="sb-search-clear-btn">Clear</button>

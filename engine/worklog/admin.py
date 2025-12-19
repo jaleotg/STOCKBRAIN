@@ -211,6 +211,7 @@ def _worklog_sorted_app_list(self, request, *args, **kwargs):
                     m["name"],
                 )
             )
+    app_list.sort(key=lambda app: 1 if app.get("app_label") == "lifemotivation" else 0)
     return app_list
 
 

@@ -92,6 +92,13 @@ def user_can_edit(user):
     return user_is_editor(user) or user_is_purchase_admin(user)
 
 
+def _get_restricted_inventory_fields():
+    settings_obj = InventorySettings.objects.order_by("-id").first()
+    if settings_obj is None:
+        settings_obj = InventorySettings.objects.create()
+    return set(settings_obj.restricted_columns.values_list("field_name", flat=True))
+
+
 # ============================================
 # HELPERS: WORKLOG EMAIL SCHEDULING
 # ============================================
@@ -1468,6 +1475,34 @@ def home_view(request):
             display = f"{rack_val}-{shelf_val or '---'}-{box_val or '---'}"
             wl_locations_display.append(display)
 
+    # --- ROLES & COLUMN VISIBILITY ---
+    user = request.user
+
+    is_editor = user_is_editor(user)
+    is_purchase_admin = user_is_purchase_admin(user)
+    can_edit = is_editor or is_purchase_admin
+
+    restricted_fields = _get_restricted_inventory_fields()
+
+    # Słownik definicji kolumn (pod tooltipy / pełne nazwy)
+    columns = {col.field_name: col for col in InventoryColumn.objects.all()}
+    # Historycznie R/S/B były usunięte z InventoryColumn, ale szablon add‑item
+    # wciąż odwołuje się do rack/shelf/box. Gdy brak wpisu w bazie – dodaj
+    # tymczasowe „kolumny” żeby nie wywalać szablonu.
+    from types import SimpleNamespace
+    for _field, _label in [
+        ("rack", "Rack"),
+        ("shelf", "Shelf"),
+        ("box", "Box"),
+    ]:
+        if _field not in columns:
+            columns[_field] = SimpleNamespace(
+                field_name=_field,
+                full_label=_label,
+                short_label="",
+                functional_description="",
+            )
+
     # --- SEARCH (simple text, AND with filters) ---
     search_query = (request.GET.get("search") or "").strip()
 
@@ -1490,6 +1525,10 @@ def home_view(request):
         "box",
         "group_name",
     ]
+    if restricted_fields and not is_purchase_admin:
+        allowed_search_fields = [
+            field for field in allowed_search_fields if field not in restricted_fields
+        ]
     if search_fields_param.lower() in ("all", "__all__"):
         selected_search_fields = allowed_search_fields
     else:
@@ -1935,42 +1974,6 @@ def home_view(request):
 
             show_first_ellipsis = start > 2
             show_last_ellipsis = end < (num_pages - 1)
-
-    # --- ROLES & COLUMN VISIBILITY ---
-    user = request.user
-
-    is_editor = user_is_editor(user)
-    is_purchase_admin = user_is_purchase_admin(user)
-    can_edit = is_editor or is_purchase_admin
-
-    # Wczytanie ustawień i listy kolumn ograniczonych
-    restricted_fields = set()
-    settings_obj = InventorySettings.objects.order_by("-id").first()
-    if settings_obj is None:
-        # Ensure there is always a settings row, so admin choices take effect.
-        settings_obj = InventorySettings.objects.create()
-    restricted_fields = set(
-        settings_obj.restricted_columns.values_list("field_name", flat=True)
-    )
-
-    # Słownik definicji kolumn (pod tooltipy / pełne nazwy)
-    columns = {col.field_name: col for col in InventoryColumn.objects.all()}
-    # Historycznie R/S/B były usunięte z InventoryColumn, ale szablon add‑item
-    # wciąż odwołuje się do rack/shelf/box. Gdy brak wpisu w bazie – dodaj
-    # tymczasowe „kolumny” żeby nie wywalać szablonu.
-    from types import SimpleNamespace
-    for _field, _label in [
-        ("rack", "Rack"),
-        ("shelf", "Shelf"),
-        ("box", "Box"),
-    ]:
-        if _field not in columns:
-            columns[_field] = SimpleNamespace(
-                field_name=_field,
-                full_label=_label,
-                short_label="",
-                functional_description="",
-            )
 
     units = Unit.objects.all().order_by("code")
     groups = ItemGroup.objects.all().order_by("name")
@@ -2456,6 +2459,11 @@ def _build_filtered_inventory_queryset(user, params):
         "box",
         "group_name",
     ]
+    restricted_fields = _get_restricted_inventory_fields()
+    if restricted_fields and not user_is_purchase_admin(user):
+        allowed_search_fields = [
+            field for field in allowed_search_fields if field not in restricted_fields
+        ]
     if search_fields_param and search_fields_param.lower() in {"__all__", "all"}:
         selected_search_fields = allowed_search_fields
     else:
