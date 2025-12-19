@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "worklog",
     "datatools",
     "config",
+    "lifemotivation",
 ]
 
 

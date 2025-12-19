@@ -84,6 +84,51 @@ body {
     transform: translateX(22px);
 }
 
+.sb-gtfo-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sb-gtfo-popup {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--sb-border, #cfd8dc);
+    background: var(--sb-table-header-bg, #fff);
+    color: var(--sb-text, #1f2933);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    font-size: 13px;
+    line-height: 1.4;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+}
+
+.sb-gtfo-wrap:hover .sb-gtfo-popup {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.sb-gtfo-popup .sb-gtfo-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.sb-gtfo-popup .sb-gtfo-author {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
 .sb-logo-stroke {
     stroke: #2e7d32;
     stroke-width: 3;

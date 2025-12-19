@@ -75,10 +75,15 @@
 
     <div class="sb-header-right">
         {% if request.user.is_authenticated and standard_end_time %}
-        <span class="sb-countdown-label">GTFO in</span>
-        <span class="sb-countdown" data-end="{{ standard_end_time }}">
-            --
-        </span>
+        <div class="sb-gtfo-wrap">
+            <span class="sb-countdown-label">GTFO in</span>
+            <span class="sb-countdown"
+                  data-start="{{ standard_start_time }}"
+                  data-end="{{ standard_end_time }}">
+                --
+            </span>
+            <div class="sb-gtfo-popup" aria-live="polite"></div>
+        </div>
         {% endif %}
         <button
             type="button"

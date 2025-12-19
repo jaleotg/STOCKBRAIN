@@ -29,6 +29,7 @@ from inventory.views import (
     delete_work_log,
 )
 from datatools.views import db_tools
+from lifemotivation.views import random_poetry_text
 from django.shortcuts import redirect
 
 
@@ -65,6 +66,7 @@ urlpatterns = [
     path("api/work-log-entry/<int:pk>/state/", change_worklog_entry_state, name="change_worklog_entry_state"),
     path("api/work-log/<int:pk>/delete/", delete_work_log, name="delete_work_log"),
     path("api/user/profile/", user_profile, name="user_profile"),
+    path("api/poetry/random/", random_poetry_text, name="random_poetry_text"),
 
     # AJAX API endpoints (InventoryItem)
     path("api/update-unit/", update_unit, name="update_unit"),

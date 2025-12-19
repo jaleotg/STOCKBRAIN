@@ -2762,10 +2762,20 @@
     function updateEndCountdown() {
         const el = document.querySelector(".sb-countdown");
         if (!el) return;
-        const endStr = el.dataset.end;
-        if (!endStr) return;
+        const labelEl = document.querySelector(".sb-countdown-label");
+        const startStr = el.dataset.start || "";
+        const endStr = el.dataset.end || "";
+        if (!endStr) {
+            if (labelEl) labelEl.style.display = "none";
+            el.textContent = "☕🌿✨";
+            return;
+        }
         const [hh, mm] = endStr.split(":").map(Number);
-        if (Number.isNaN(hh) || Number.isNaN(mm)) return;
+        if (Number.isNaN(hh) || Number.isNaN(mm)) {
+            if (labelEl) labelEl.style.display = "none";
+            el.textContent = "☕🌿✨";
+            return;
+        }
 
         // Current time in Kuwait using Intl (avoid parsing issues)
         const fmt = new Intl.DateTimeFormat("en-GB", {
@@ -2773,25 +2783,112 @@
             hour12: false,
             hour: "2-digit",
             minute: "2-digit",
+            weekday: "short",
         });
         const parts = fmt.formatToParts(new Date());
         const curH = parseInt(parts.find(p => p.type === "hour")?.value || "0", 10);
         const curM = parseInt(parts.find(p => p.type === "minute")?.value || "0", 10);
+        const weekday = parts.find(p => p.type === "weekday")?.value || "";
+        const workdaySet = new Set(["Sun", "Mon", "Tue", "Wed", "Thu"]);
 
         const nowMinutes = curH * 60 + curM;
         const endMinutes = hh * 60 + mm;
-        let diffMinutes = endMinutes - nowMinutes;
-        // if already past, count to next day's end time instead of showing 0
-        if (diffMinutes < 0) diffMinutes += 24 * 60;
+        let startMinutes = 0;
+        if (startStr) {
+            const [sh, sm] = startStr.split(":").map(Number);
+            if (!Number.isNaN(sh) && !Number.isNaN(sm)) {
+                startMinutes = sh * 60 + sm;
+            }
+        }
 
+        const isWorkDay = workdaySet.has(weekday);
+        const inHours = nowMinutes >= startMinutes && nowMinutes <= endMinutes;
+        if (!isWorkDay || !inHours) {
+            if (labelEl) labelEl.style.display = "none";
+            el.textContent = "☕🌿✨";
+            return;
+        }
+
+        if (labelEl) labelEl.style.display = "";
+        let diffMinutes = endMinutes - nowMinutes;
+        if (diffMinutes < 0) diffMinutes = 0;
         const hours = Math.floor(diffMinutes / 60);
         const minutes = diffMinutes % 60;
         el.textContent = `${hours}:${minutes.toString().padStart(2, "0")}`;
     }
 
+    function getPoetryTypeForNow() {
+        const el = document.querySelector(".sb-countdown");
+        if (!el) return null;
+        const startStr = el.dataset.start || "";
+        const endStr = el.dataset.end || "";
+        if (!endStr) return "Personal time";
+
+        const fmt = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Asia/Kuwait",
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+            weekday: "short",
+        });
+        const parts = fmt.formatToParts(new Date());
+        const curH = parseInt(parts.find(p => p.type === "hour")?.value || "0", 10);
+        const curM = parseInt(parts.find(p => p.type === "minute")?.value || "0", 10);
+        const weekday = parts.find(p => p.type === "weekday")?.value || "";
+        const workdaySet = new Set(["Sun", "Mon", "Tue", "Wed", "Thu"]);
+        const nowMinutes = curH * 60 + curM;
+
+        let startMinutes = 0;
+        if (startStr) {
+            const [sh, sm] = startStr.split(":").map(Number);
+            if (!Number.isNaN(sh) && !Number.isNaN(sm)) {
+                startMinutes = sh * 60 + sm;
+            }
+        }
+        const [eh, em] = endStr.split(":").map(Number);
+        const endMinutes = Number.isNaN(eh) || Number.isNaN(em) ? null : (eh * 60 + em);
+
+        const isWorkDay = workdaySet.has(weekday);
+        const inHours = endMinutes !== null && nowMinutes >= startMinutes && nowMinutes <= endMinutes;
+        if (!isWorkDay || !inHours) return "Personal time";
+
+        if (nowMinutes >= 10 * 60 && nowMinutes <= 10 * 60 + 15) return "Tea time";
+        if (nowMinutes >= 12 * 60 && nowMinutes <= 13 * 60) return "Lunch time";
+        return "Work time";
+    }
+
+    function updatePoetryPopup() {
+        const popup = document.querySelector(".sb-gtfo-popup");
+        if (!popup) return;
+        const typeName = getPoetryTypeForNow();
+        if (!typeName) return;
+        fetch(`/api/poetry/random/?type=${encodeURIComponent(typeName)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok || !data.text) {
+                    popup.textContent = "";
+                    return;
+                }
+                const safeText = String(data.text);
+                const safeAuthor = data.author ? String(data.author) : "";
+                popup.innerHTML = `
+                    <div class="sb-gtfo-title">${data.type || typeName}</div>
+                    <div>${safeText}</div>
+                    ${safeAuthor ? `<div class="sb-gtfo-author">— ${safeAuthor}</div>` : ""}
+                `;
+            })
+            .catch(() => {
+                popup.textContent = "";
+            });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         updateEndCountdown();
         setInterval(updateEndCountdown, 30000);
+        const gtfoWrap = document.querySelector(".sb-gtfo-wrap");
+        if (gtfoWrap) {
+            gtfoWrap.addEventListener("mouseenter", updatePoetryPopup);
+        }
     });
 
     // =================================================
