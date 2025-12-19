@@ -255,10 +255,10 @@ body {
     max-width: 320px;
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1px solid var(--sb-border, #cfd8dc);
-    background: var(--sb-table-header-bg, #fff);
-    color: var(--sb-text, #1f2933);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--sb-popup-border, var(--sb-border, #cfd8dc));
+    background: var(--sb-popup-bg, var(--sb-table-header-bg, #fff));
+    color: var(--sb-popup-text, var(--sb-text, #1f2933));
+    box-shadow: 0 10px 24px var(--sb-popup-shadow, rgba(0, 0, 0, 0.18));
     font-size: 13px;
     line-height: 1.4;
     opacity: 0;

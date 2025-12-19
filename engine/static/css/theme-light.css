@@ -84,6 +84,118 @@
     box-shadow: 0 0 0 2px rgba(65, 118, 144, 0.2);
 }
 
+/* Search + text inputs */
+.sb-light input[type="text"],
+.sb-light input[type="search"],
+.sb-light .sb-search-input {
+    background-color: #f6f9fb;
+    border: 1px solid #b8c6cf;
+    color: #1f3c4a;
+}
+
+.sb-light input[type="text"]:focus,
+.sb-light input[type="search"]:focus,
+.sb-light .sb-search-input:focus {
+    border-color: #417690;
+    box-shadow: 0 0 0 2px rgba(65, 118, 144, 0.2);
+}
+
+.sb-light input[type="text"]:-webkit-autofill,
+.sb-light input[type="search"]:-webkit-autofill,
+.sb-light .sb-search-input:-webkit-autofill,
+.sb-light input[type="text"]:-webkit-autofill:hover,
+.sb-light input[type="search"]:-webkit-autofill:hover,
+.sb-light .sb-search-input:-webkit-autofill:hover,
+.sb-light input[type="text"]:-webkit-autofill:focus,
+.sb-light input[type="search"]:-webkit-autofill:focus,
+.sb-light .sb-search-input:-webkit-autofill:focus {
+    box-shadow: 0 0 0 1000px #f6f9fb inset;
+    -webkit-text-fill-color: #1f3c4a;
+    caret-color: #1f3c4a;
+}
+
+/* Checkboxes */
+.sb-light input[type="checkbox"] {
+    accent-color: #417690;
+}
+
+.sb-light .rev-checkbox,
+.sb-light .disc-checkbox {
+    accent-color: #417690;
+}
+
+.sb-light .rev-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #8ea2ad;
+    background-color: #eef3f6;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 10px 10px;
+}
+
+.sb-light .rev-checkbox:hover {
+    border-color: #6f8b99;
+    background-color: #e4ecf1;
+}
+
+.sb-light .rev-checkbox:checked {
+    border: none;
+    background-color: transparent;
+    background-size: 16px 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cg transform='skewX(-10)'%3E%3Cpath d='M5.6 1.2 10.4 1.2 9.6 9.8 6.4 9.8 Z' fill='%23ffd24d' stroke='%23b30000' stroke-width='1.2'/%3E%3Ccircle cx='8.2' cy='12.6' r='2' fill='%23ffd24d' stroke='%23b30000' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.sb-light .disc-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #8ea2ad;
+    background-color: #eef3f6;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+}
+
+.sb-light .disc-checkbox:hover {
+    border-color: #6f8b99;
+    background-color: #e4ecf1;
+}
+
+.sb-light .disc-checkbox:checked {
+    border: none;
+    background-color: transparent;
+    background-size: 16px 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.4' fill='none' stroke='%23b30000' stroke-width='2'/%3E%3Cpath d='M4.5 11.5 11.5 4.5' stroke='%23b30000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Global selects */
+.sb-light select {
+    background-color: #f6f9fb;
+    border: 1px solid #b8c6cf;
+    color: #1f3c4a;
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%233b5663' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.sb-light select:focus {
+    border-color: #417690;
+    box-shadow: 0 0 0 2px rgba(65, 118, 144, 0.2);
+}
+
+.sb-light select:disabled {
+    color: #6c7a82;
+    background-color: #eef3f6;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23909aa1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 /* Table */
 .sb-light .sb-table {
     background-color: #fff;
@@ -250,6 +362,13 @@
 .sb-light .sb-modal-footer {
     background: #f0f0f0;
     border-top: 1px solid #e0e0e0;
+}
+
+.sb-light {
+    --sb-popup-bg: #f7fbfd;
+    --sb-popup-border: rgba(65, 118, 144, 0.25);
+    --sb-popup-text: #1f3c4a;
+    --sb-popup-shadow: rgba(18, 50, 65, 0.18);
 }
 
 .sb-light .sb-modal-save {
