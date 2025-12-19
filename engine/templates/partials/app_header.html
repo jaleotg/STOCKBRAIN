@@ -74,7 +74,7 @@
     </div>
 
     <div class="sb-header-right">
-        {% if request.user.is_authenticated and standard_end_time %}
+{% if not admin_header and request.user.is_authenticated and standard_end_time %}
         <div class="sb-gtfo-wrap">
             <span class="sb-tea-steam" aria-hidden="true">☕</span>
             <span class="sb-lunch-steam" aria-hidden="true">🍽️</span>
