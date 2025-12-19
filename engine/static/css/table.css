@@ -156,8 +156,8 @@
     top: 0;
     z-index: 4;
     background: inherit;
-    padding: 4px 6px;
-    height: 34px;
+    padding: 2px 6px;
+    height: 26px;
 }
 
 .sb-restricted-badge {
@@ -173,7 +173,7 @@
 }
 
 .sb-table thead tr.sb-header-filter-row + tr th {
-    top: 44px; /* dopasowane do wysokości filtra */
+    top: 34px; /* dopasowane do wysokości filtra */
 }
 
 .sb-add-item-btn {
