@@ -29,47 +29,18 @@
 .sb-light .sb-header .sb-link {
     color: #ffffff;
     font-weight: 500;
-    background-color: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .sb-light .sb-header .sb-link:hover {
     color: #e2f0f7;
-    text-decoration: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.28);
+    text-decoration: underline;
+    background-color: #d00;
 }
 
 .sb-light .sb-header .sb-drop-trigger:hover {
     color: #e2f0f7;
-    text-decoration: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.28);
-}
-
-.sb-light .sb-header .sb-drop-trigger {
-    background-color: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.sb-light .sb-header .sb-link-active,
-.sb-light .sb-header .sb-dropdown-active .sb-drop-trigger {
-    background-color: rgba(0, 0, 0, 0.18);
-    border-color: rgba(0, 0, 0, 0.22);
-}
-
-.sb-light .sb-dropdown-menu {
-    background-color: #f0f6f9;
-    border: 1px solid rgba(65, 118, 144, 0.25);
-    box-shadow: 0 10px 24px rgba(18, 50, 65, 0.2);
-}
-
-.sb-light .sb-dropdown-item {
-    color: #1f3c4a;
-}
-
-.sb-light .sb-dropdown-item:hover {
-    background-color: rgba(65, 118, 144, 0.12);
+    text-decoration: underline;
+    background-color: #d00;
 }
 
 /* Inputs */

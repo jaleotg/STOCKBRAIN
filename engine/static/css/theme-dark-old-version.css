@@ -21,47 +21,11 @@
 .sb-dark .sb-header .sb-link {
     color: #9cd2f5;
     font-weight: 500;
-    background-color: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .sb-dark .sb-header .sb-link:hover {
     color: #c0e4ff;
-    text-decoration: none;
-    background-color: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.sb-dark .sb-header .sb-drop-trigger {
-    background-color: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.sb-dark .sb-header .sb-drop-trigger:hover {
-    color: #c0e4ff;
-    text-decoration: none;
-    background-color: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.sb-dark .sb-header .sb-link-active,
-.sb-dark .sb-header .sb-dropdown-active .sb-drop-trigger {
-    background-color: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.25);
-}
-
-.sb-dark .sb-dropdown-menu {
-    background-color: #20262b;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
-}
-
-.sb-dark .sb-dropdown-item {
-    color: #dce6ee;
-}
-
-.sb-dark .sb-dropdown-item:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    text-decoration: underline;
 }
 
 /* Inputs */
