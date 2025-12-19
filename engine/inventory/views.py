@@ -209,6 +209,8 @@ def login_view(request):
                 profile.previous_login = user.last_login
                 profile.save(update_fields=["previous_login"])
             login(request, user)
+            if profile and profile.after_login_go_to_wl:
+                return redirect("work_log")
             return redirect("home")
         else:
             error = "Invalid username or password."
@@ -249,6 +251,8 @@ def user_profile(request):
                 "previous_login": profile.previous_login.isoformat() if profile and profile.previous_login else None,
                 "previous_login_display": prev_login_display,
                 "current_login_display": current_login_display,
+                "after_login_go_to_wl": profile.after_login_go_to_wl if profile else True,
+                "prefer_dark_theme": profile.prefer_dark_theme if profile else True,
             },
         }
         return JsonResponse(data)
@@ -259,14 +263,20 @@ def user_profile(request):
         old_pw = (request.POST.get("old_password") or "").strip()
         new_pw = (request.POST.get("new_password") or "").strip()
         new_pw_confirm = (request.POST.get("new_password_confirm") or "").strip()
-        if email != request.user.email:
+        if "email" in request.POST and email != request.user.email:
             return JsonResponse(
                 {"ok": False, "error": "Email changes require confirmation and are currently disabled."},
                 status=400,
             )
         if profile:
             profile.preferred_name = preferred
-            profile.save(update_fields=["preferred_name"])
+            if "after_login_go_to_wl" in request.POST:
+                raw_val = (request.POST.get("after_login_go_to_wl") or "").strip().lower()
+                profile.after_login_go_to_wl = raw_val in ("1", "true", "on", "yes")
+            if "prefer_dark_theme" in request.POST:
+                raw_val = (request.POST.get("prefer_dark_theme") or "").strip().lower()
+                profile.prefer_dark_theme = raw_val in ("1", "true", "on", "yes")
+            profile.save(update_fields=["preferred_name", "after_login_go_to_wl", "prefer_dark_theme"])
         if new_pw:
             if not old_pw:
                 return JsonResponse({"ok": False, "error": "Current password is required to change password."}, status=400)

@@ -18,6 +18,13 @@
             try {
                 saved = localStorage.getItem(KEY);
             } catch (e) {}
+            var serverPref = "{{ sb_prefer_dark_theme|yesno:'dark,light,' }}";
+            if (serverPref) {
+                saved = serverPref;
+                try {
+                    localStorage.setItem(KEY, serverPref);
+                } catch (e) {}
+            }
             var isDark = saved !== "light";
             root.classList.remove("sb-light", "sb-dark");
             root.classList.add(isDark ? "sb-dark" : "sb-light");
@@ -154,6 +161,43 @@
                 </div>
                 <div class="sb-modal-footer">
                     <button type="button" class="sb-btn sb-btn-secondary" id="sb-user-cancel">Cancel</button>
+                    <button type="submit" class="sb-btn sb-btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- USER SETTINGS MODAL -->
+    <div id="sb-settings-modal" class="sb-modal" style="display:none;">
+        <div class="sb-modal-dialog">
+            <div class="sb-modal-header">
+                <h2 class="sb-modal-title">Settings</h2>
+                <button type="button" class="sb-modal-close" id="sb-settings-close">✕</button>
+            </div>
+            <form id="sb-settings-form">
+                <div class="sb-modal-body">
+                    <div class="sb-setting-row">
+                        <div class="sb-setting-text">After Log In Go To WL list</div>
+                        <label class="sb-toggle">
+                            <input type="checkbox" id="sb-setting-wl" checked>
+                            <span class="sb-toggle-track">
+                                <span class="sb-toggle-thumb"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="sb-setting-row">
+                        <div class="sb-setting-text">Prefer dark theme</div>
+                        <label class="sb-toggle">
+                            <input type="checkbox" id="sb-setting-dark" checked>
+                            <span class="sb-toggle-track">
+                                <span class="sb-toggle-thumb"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div id="sb-settings-error" class="sb-validation" style="display:none;"></div>
+                </div>
+                <div class="sb-modal-footer">
+                    <button type="button" class="sb-btn sb-btn-secondary" id="sb-settings-cancel">Cancel</button>
                     <button type="submit" class="sb-btn sb-btn-primary">Save</button>
                 </div>
             </form>

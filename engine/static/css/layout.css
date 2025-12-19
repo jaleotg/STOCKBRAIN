@@ -30,6 +30,60 @@ body {
     color: #666;
 }
 
+.sb-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+}
+
+.sb-setting-text {
+    font-weight: 600;
+}
+
+.sb-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.sb-toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.sb-toggle-track {
+    width: 48px;
+    height: 26px;
+    border-radius: 999px;
+    background: #bfc5cc;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.sb-toggle-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s ease;
+}
+
+.sb-toggle input:checked + .sb-toggle-track {
+    background: #3bb54a;
+}
+
+.sb-toggle input:checked + .sb-toggle-track .sb-toggle-thumb {
+    transform: translateX(22px);
+}
+
 .sb-logo-stroke {
     stroke: #2e7d32;
     stroke-width: 3;

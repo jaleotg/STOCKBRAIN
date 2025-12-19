@@ -1127,6 +1127,30 @@
     /* ================================================
        USER PROFILE MODAL (edit e-mail / preferred name)
     ================================================= */
+    function applyThemePreference(preferDark) {
+        const root = document.documentElement;
+        const body = document.body;
+        if (preferDark) {
+            root.classList.add("sb-dark");
+            root.classList.remove("sb-light");
+            if (body) {
+                body.classList.add("sb-dark");
+                body.classList.remove("sb-light");
+            }
+        } else {
+            root.classList.remove("sb-dark");
+            root.classList.add("sb-light");
+            if (body) {
+                body.classList.remove("sb-dark");
+                body.classList.add("sb-light");
+            }
+        }
+        try {
+            localStorage.setItem(KEY, preferDark ? "dark" : "light");
+        } catch (e) {}
+        updateThemeIcon();
+    }
+
     function sbInitUserProfileModal() {
         const trigger = document.getElementById("sb-user-edit-trigger");
         const modal = document.getElementById("sb-user-modal");
@@ -1300,6 +1324,126 @@
                     })
                     .catch(err => {
                         console.error("Profile save error", err);
+                        showError("Save failed.");
+                    });
+            });
+        }
+    }
+
+    /* ================================================
+       USER SETTINGS MODAL
+    ================================================= */
+    function sbInitUserSettingsModal() {
+        const trigger = document.getElementById("sb-user-settings-trigger");
+        const modal = document.getElementById("sb-settings-modal");
+        if (!trigger || !modal) return;
+        if (trigger.dataset.sbBound === "1") return;
+        trigger.dataset.sbBound = "1";
+
+        const dialog = modal.querySelector(".sb-modal-dialog");
+        const closeBtn = modal.querySelector("#sb-settings-close");
+        const cancelBtn = modal.querySelector("#sb-settings-cancel");
+        const form = modal.querySelector("#sb-settings-form");
+        const errBox = modal.querySelector("#sb-settings-error");
+        const wlToggle = modal.querySelector("#sb-setting-wl");
+        const darkToggle = modal.querySelector("#sb-setting-dark");
+
+        let isOpen = false;
+
+        function showError(msg) {
+            if (!errBox) return;
+            errBox.textContent = msg || "";
+            errBox.style.display = msg ? "block" : "none";
+        }
+
+        function fillSettings(data) {
+            const u = (data && data.user) || {};
+            if (wlToggle) wlToggle.checked = u.after_login_go_to_wl !== false;
+            if (darkToggle) darkToggle.checked = u.prefer_dark_theme !== false;
+        }
+
+        function openModal() {
+            showError("");
+            modal.style.display = "flex";
+            isOpen = true;
+            fetch("/api/user/profile/")
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) {
+                        showError(data.error || "Failed to load settings.");
+                        return;
+                    }
+                    fillSettings(data);
+                })
+                .catch(err => {
+                    console.error("Settings load error", err);
+                    showError("Failed to load settings.");
+                });
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+            isOpen = false;
+        }
+
+        function handleOutside(e) {
+            if (!isOpen || !dialog) return;
+            if (!dialog.contains(e.target)) {
+                closeModal();
+            }
+        }
+
+        function handleKey(e) {
+            if (!isOpen) return;
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeModal();
+            }
+        }
+
+        trigger.addEventListener("click", function (e) {
+            e.preventDefault();
+            openModal();
+        });
+
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+        if (cancelBtn) cancelBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            closeModal();
+        });
+
+        modal.addEventListener("mousedown", handleOutside);
+        document.addEventListener("keydown", handleKey);
+
+        if (form) {
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                showError("");
+                const preferDark = !!(darkToggle && darkToggle.checked);
+                const afterLoginWl = !!(wlToggle && wlToggle.checked);
+                const fd = new URLSearchParams();
+                fd.append("prefer_dark_theme", preferDark ? "true" : "false");
+                fd.append("after_login_go_to_wl", afterLoginWl ? "true" : "false");
+
+                fetch("/api/user/profile/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": getCookie("csrftoken") || "",
+                    },
+                    body: fd.toString(),
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.ok) {
+                            showError(data.error || "Save failed.");
+                            return;
+                        }
+                        applyThemePreference(preferDark);
+                        closeModal();
+                    })
+                    .catch(err => {
+                        console.error("Settings save error", err);
                         showError("Save failed.");
                     });
             });
@@ -2748,6 +2892,7 @@
         sbInitMoveLocationModal();
         sbInitDeleteModal();
         sbInitUserProfileModal();
+        sbInitUserSettingsModal();
         sbInitUppercaseToggle();
         applyPendingHighlight();
         sbSyncUrlWithState();

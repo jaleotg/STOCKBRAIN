@@ -226,6 +226,8 @@ class UserProfile(models.Model):
     )
     preferred_name = models.CharField(max_length=255, blank=True, default="")
     previous_login = models.DateTimeField(null=True, blank=True)
+    after_login_go_to_wl = models.BooleanField(default=True)
+    prefer_dark_theme = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "User Profile"

@@ -101,6 +101,11 @@
                        class="sb-dropdown-item">
                         User account
                     </a>
+                    <a href="#"
+                       id="sb-user-settings-trigger"
+                       class="sb-dropdown-item">
+                        Settings
+                    </a>
                     {% if admin_header %}
                         <form method="post" action="{% url logout_view %}" class="sb-dropdown-form">
                             {% csrf_token %}
