@@ -2765,15 +2765,25 @@
         const labelEl = document.querySelector(".sb-countdown-label");
         const startStr = el.dataset.start || "";
         const endStr = el.dataset.end || "";
+        const teaIcon = document.querySelector(".sb-tea-steam");
+        const lunchIcon = document.querySelector(".sb-lunch-steam");
+        const workIcon = document.querySelector(".sb-work-gears");
+        const worklogIcon = document.querySelector(".sb-worklog-pc");
+        const overrideType = getGtfoOverrideType();
+        const displayOverride = getGtfoDisplayOverride(overrideType);
         if (!endStr) {
             if (labelEl) labelEl.style.display = "none";
             el.textContent = "☕🌿✨";
+            el.classList.add("sb-countdown--icons");
+            if (worklogIcon) worklogIcon.classList.remove("is-active");
             return;
         }
         const [hh, mm] = endStr.split(":").map(Number);
         if (Number.isNaN(hh) || Number.isNaN(mm)) {
             if (labelEl) labelEl.style.display = "none";
             el.textContent = "☕🌿✨";
+            el.classList.add("sb-countdown--icons");
+            if (worklogIcon) worklogIcon.classList.remove("is-active");
             return;
         }
 
@@ -2803,26 +2813,86 @@
 
         const isWorkDay = workdaySet.has(weekday);
         const inHours = nowMinutes >= startMinutes && nowMinutes <= endMinutes;
-        if (!isWorkDay || !inHours) {
+        const isLunchTime = (displayOverride === "Lunch Time")
+            || (isWorkDay && inHours && nowMinutes >= 12 * 60 && nowMinutes <= 13 * 60);
+        const isTeaTime = (displayOverride === "Tea Time")
+            || (isWorkDay && inHours && nowMinutes >= 10 * 60 && nowMinutes <= 10 * 60 + 15);
+        if (teaIcon) {
+            teaIcon.classList.toggle("is-active", isTeaTime);
+        }
+        if (lunchIcon) {
+            lunchIcon.classList.toggle("is-active", isLunchTime);
+        }
+        const isWorkTime = displayOverride === "Work Time"
+            || (isWorkDay && inHours && !isTeaTime && !isLunchTime);
+        if (workIcon) {
+            workIcon.classList.toggle("is-active", isWorkTime);
+        }
+        if (displayOverride === "Personal Time") {
             if (labelEl) labelEl.style.display = "none";
             el.textContent = "☕🌿✨";
+            el.classList.add("sb-countdown--icons");
+            if (worklogIcon) worklogIcon.classList.remove("is-active");
+            return;
+        }
+        if (!displayOverride && (!isWorkDay || !inHours)) {
+            if (labelEl) labelEl.style.display = "none";
+            el.textContent = "☕🌿✨";
+            el.classList.add("sb-countdown--icons");
+            if (worklogIcon) worklogIcon.classList.remove("is-active");
             return;
         }
 
         if (labelEl) labelEl.style.display = "";
+        el.classList.remove("sb-countdown--icons");
         let diffMinutes = endMinutes - nowMinutes;
-        if (diffMinutes < 0) diffMinutes = 0;
+        if (diffMinutes < 0) {
+            diffMinutes = displayOverride ? diffMinutes + 24 * 60 : 0;
+        }
         const hours = Math.floor(diffMinutes / 60);
         const minutes = diffMinutes % 60;
         el.textContent = `${hours}:${minutes.toString().padStart(2, "0")}`;
+
+        const worklogStart = Math.max(0, endMinutes - 10);
+        const isWorklogTime = isWorkDay && inHours && nowMinutes >= worklogStart && nowMinutes <= endMinutes;
+        const showWorklog = isWorklogTime && displayOverride !== "Personal Time";
+        if (worklogIcon) {
+            worklogIcon.classList.toggle("is-active", showWorklog);
+        }
+    }
+
+    function getGtfoOverrideType() {
+        const select = document.getElementById("sb-gtfo-override");
+        let value = "";
+        if (!select) {
+            return "";
+        }
+        if (select.value) {
+            value = select.value;
+        } else {
+            try {
+                value = localStorage.getItem("sb_gtfo_override") || "";
+            } catch (e) {}
+        }
+        return value || "";
+    }
+
+    function getGtfoDisplayOverride(overrideType) {
+        if (!overrideType) return "";
+        if (overrideType.toLowerCase() === "personal time") {
+            return "Personal Time";
+        }
+        return overrideType;
     }
 
     function getPoetryTypeForNow() {
         const el = document.querySelector(".sb-countdown");
         if (!el) return null;
+        const overrideType = getGtfoOverrideType();
+        if (overrideType) return overrideType;
         const startStr = el.dataset.start || "";
         const endStr = el.dataset.end || "";
-        if (!endStr) return "Personal time";
+        if (!endStr) return "Personal Time";
 
         const fmt = new Intl.DateTimeFormat("en-GB", {
             timeZone: "Asia/Kuwait",
@@ -2850,11 +2920,11 @@
 
         const isWorkDay = workdaySet.has(weekday);
         const inHours = endMinutes !== null && nowMinutes >= startMinutes && nowMinutes <= endMinutes;
-        if (!isWorkDay || !inHours) return "Personal time";
+        if (!isWorkDay || !inHours) return "Personal Time";
 
-        if (nowMinutes >= 10 * 60 && nowMinutes <= 10 * 60 + 15) return "Tea time";
-        if (nowMinutes >= 12 * 60 && nowMinutes <= 13 * 60) return "Lunch time";
-        return "Work time";
+        if (nowMinutes >= 10 * 60 && nowMinutes <= 10 * 60 + 15) return "Tea Time";
+        if (nowMinutes >= 12 * 60 && nowMinutes <= 13 * 60) return "Lunch Time";
+        return "Work Time";
     }
 
     function updatePoetryPopup() {
@@ -2883,6 +2953,24 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+        const overrideSelect = document.getElementById("sb-gtfo-override");
+        if (overrideSelect) {
+            try {
+                overrideSelect.value = localStorage.getItem("sb_gtfo_override") || "";
+            } catch (e) {}
+            overrideSelect.addEventListener("change", () => {
+                const val = overrideSelect.value || "";
+                try {
+                    if (val) {
+                        localStorage.setItem("sb_gtfo_override", val);
+                    } else {
+                        localStorage.removeItem("sb_gtfo_override");
+                    }
+                } catch (e) {}
+                updateEndCountdown();
+                updatePoetryPopup();
+            });
+        }
         updateEndCountdown();
         setInterval(updateEndCountdown, 30000);
         const gtfoWrap = document.querySelector(".sb-gtfo-wrap");

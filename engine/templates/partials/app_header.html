@@ -76,6 +76,10 @@
     <div class="sb-header-right">
         {% if request.user.is_authenticated and standard_end_time %}
         <div class="sb-gtfo-wrap">
+            <span class="sb-tea-steam" aria-hidden="true">☕</span>
+            <span class="sb-lunch-steam" aria-hidden="true">🍽️</span>
+            <span class="sb-work-gears" aria-hidden="true"></span>
+            <span class="sb-worklog-pc" aria-hidden="true">💻</span>
             <span class="sb-countdown-label">GTFO in</span>
             <span class="sb-countdown"
                   data-start="{{ standard_start_time }}"
@@ -83,6 +87,18 @@
                 --
             </span>
             <div class="sb-gtfo-popup" aria-live="polite"></div>
+            {% if request.user.username == "leo-admin" %}
+                <select class="sb-gtfo-override" id="sb-gtfo-override">
+                    <option value="">-----</option>
+                    <option value="Personal Time">Personal Time</option>
+                    <option value="Tea Time">Tea Time</option>
+                    <option value="Lunch Time">Lunch Time</option>
+                    <option value="Work Time">Work Time</option>
+                    {% for type_name in sb_poetry_types %}
+                        <option value="{{ type_name|title }}">{{ type_name|title }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
         </div>
         {% endif %}
         <button
