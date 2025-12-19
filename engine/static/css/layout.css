@@ -308,6 +308,16 @@ body {
     0%, 100% { background: #fff4b3; }
     50% { background: #ffe47a; }
 }
+.sb-warning-banner {
+    margin: 16px 0 22px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 2px solid #f2c94c;
+    background: #fff4b3;
+    color: #b30000;
+    font-weight: 700;
+    animation: sb-delete-pulse 2.6s ease-in-out infinite;
+}
 
 
 /* =========================================

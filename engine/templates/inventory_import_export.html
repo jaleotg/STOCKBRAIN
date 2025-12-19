@@ -1,4 +1,12 @@
 {% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content_title %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+{% endblock %}
 
 {% block extrahead %}
 {{ block.super }}
@@ -36,6 +44,11 @@
 <div class="container">
     <h1>Inventory import / export / delete</h1>
 
+    <div class="sb-warning-banner">
+        Exporting or importing CSV files will not recreate the additional inventory-specific features present in the current database format.
+        Use <strong>Database Tools</strong> &rarr; <strong>Database Tools</strong> (full export/import) for a complete backup and restore.
+    </div>
+
     {% if messages %}
         {% for message in messages %}
             <div class="sb-notice{% if 'error' in message.tags %} sb-notice--error{% elif 'success' in message.tags %} sb-notice--success{% elif 'warning' in message.tags %} sb-notice--warning{% else %} sb-notice--info{% endif %}">
@@ -45,7 +58,14 @@
     {% endif %}
 
     <div class="module">
-        <h2>Import inventory</h2>
+        <h2>1. Export inventory to CSV file</h2>
+        <p>
+            <a href="?export=csv" class="sb-admin-btn sb-admin-btn-green">Download CSV from server</a>
+        </p>
+    </div>
+
+    <div class="module">
+        <h2>2. Import inventory from CSV file</h2>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <p>
@@ -64,15 +84,8 @@
         </p>
     </div>
 
-    <div class="module">
-        <h2>Export</h2>
-        <p>
-            <a href="?export=csv" class="sb-admin-btn sb-admin-btn-green">Download CSV from server</a>
-        </p>
-    </div>
-
     <div class="module sb-delete-panel">
-        <h2 style="color:#a00;">Delete entire inventory</h2>
+        <h2 style="color:#a00;">3. Delete entire inventory</h2>
         <p><strong>Warning:</strong> This will remove all inventory items permanently.</p>
         <form method="post">
             {% csrf_token %}
