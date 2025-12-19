@@ -1347,6 +1347,7 @@
         const errBox = modal.querySelector("#sb-settings-error");
         const wlToggle = modal.querySelector("#sb-setting-wl");
         const darkToggle = modal.querySelector("#sb-setting-dark");
+        const gtfoToggle = modal.querySelector("#sb-setting-gtfo-override");
 
         let isOpen = false;
 
@@ -1360,6 +1361,7 @@
             const u = (data && data.user) || {};
             if (wlToggle) wlToggle.checked = u.after_login_go_to_wl !== false;
             if (darkToggle) darkToggle.checked = u.prefer_dark_theme !== false;
+            if (gtfoToggle) gtfoToggle.checked = getGtfoOverrideEnabled();
         }
 
         function openModal() {
@@ -1421,6 +1423,7 @@
                 showError("");
                 const preferDark = !!(darkToggle && darkToggle.checked);
                 const afterLoginWl = !!(wlToggle && wlToggle.checked);
+                const gtfoOverrideEnabled = !!(gtfoToggle && gtfoToggle.checked);
                 const fd = new URLSearchParams();
                 fd.append("prefer_dark_theme", preferDark ? "true" : "false");
                 fd.append("after_login_go_to_wl", afterLoginWl ? "true" : "false");
@@ -1440,6 +1443,17 @@
                             return;
                         }
                         applyThemePreference(preferDark);
+                        if (gtfoToggle) {
+                            try {
+                                localStorage.setItem(
+                                    "sb_gtfo_override_enabled",
+                                    gtfoOverrideEnabled ? "1" : "0"
+                                );
+                            } catch (e) {}
+                            applyGtfoOverrideEnabled(gtfoOverrideEnabled);
+                            updateEndCountdown();
+                            updatePoetryPopup();
+                        }
                         closeModal();
                     })
                     .catch(err => {
@@ -2877,6 +2891,28 @@
         return value || "";
     }
 
+    function getGtfoOverrideEnabled() {
+        try {
+            const raw = localStorage.getItem("sb_gtfo_override_enabled");
+            if (raw === null) return true;
+            return ["1", "true", "on", "yes"].includes(String(raw).toLowerCase());
+        } catch (e) {
+            return true;
+        }
+    }
+
+    function applyGtfoOverrideEnabled(enabled) {
+        const select = document.getElementById("sb-gtfo-override");
+        if (!select) return;
+        select.style.display = enabled ? "" : "none";
+        if (!enabled) {
+            select.value = "";
+            try {
+                localStorage.removeItem("sb_gtfo_override");
+            } catch (e) {}
+        }
+    }
+
     function getGtfoDisplayOverride(overrideType) {
         if (!overrideType) return "";
         if (overrideType.toLowerCase() === "personal time") {
@@ -2953,9 +2989,15 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         const overrideSelect = document.getElementById("sb-gtfo-override");
+        const overrideEnabled = getGtfoOverrideEnabled();
         if (overrideSelect) {
+            applyGtfoOverrideEnabled(overrideEnabled);
             try {
-                overrideSelect.value = localStorage.getItem("sb_gtfo_override") || "";
+                if (overrideEnabled) {
+                    overrideSelect.value = localStorage.getItem("sb_gtfo_override") || "";
+                } else {
+                    overrideSelect.value = "";
+                }
             } catch (e) {}
             overrideSelect.addEventListener("change", () => {
                 const val = overrideSelect.value || "";

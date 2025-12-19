@@ -194,6 +194,17 @@
                             </span>
                         </label>
                     </div>
+                    {% if request.user.username == "leo-admin" %}
+                    <div class="sb-setting-row" id="sb-setting-gtfo-row">
+                        <div class="sb-setting-text">Force time of day</div>
+                        <label class="sb-toggle">
+                            <input type="checkbox" id="sb-setting-gtfo-override" checked>
+                            <span class="sb-toggle-track">
+                                <span class="sb-toggle-thumb"></span>
+                            </span>
+                        </label>
+                    </div>
+                    {% endif %}
                     <div id="sb-settings-error" class="sb-validation" style="display:none;"></div>
                 </div>
                 <div class="sb-modal-footer">

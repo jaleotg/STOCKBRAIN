@@ -34,6 +34,7 @@
 .sb-light .sb-header .sb-link:hover {
     color: #e2f0f7;
     text-decoration: underline;
+    background-color: #d00;
 }
 
 /* Inputs */
