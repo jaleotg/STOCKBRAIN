@@ -18,59 +18,59 @@
     <div class="sb-title-row">
         <div class="sb-title-group">
             <h2 class="sb-title">{% if is_master %}Work log master{% else %}Work log list{% endif %}</h2>
-            <form class="sb-wl-filters" method="get">
-                <label for="wl-filter-due">Due</label>
-                <select id="wl-filter-due" name="due_range" onchange="this.form.submit()">
-                    {% for opt in due_range_options %}
-                        <option value="{{ opt.value }}" {% if opt.value == due_range_selected %}selected{% endif %}>
-                            {{ opt.label }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <label for="wl-filter-future">Future</label>
-                <select id="wl-filter-future" name="future" onchange="this.form.submit()">
-                    <option value="show" {% if filter_future == "show" %}selected{% endif %}>Show</option>
-                    <option value="hide" {% if filter_future == "hide" %}selected{% endif %}>Hide</option>
-                </select>
-                <label for="wl-filter-loc">Location</label>
-                <select id="wl-filter-loc" name="loc" onchange="this.form.submit()">
-                    <option value="">-----</option>
-                    {% for loc in wl_vehicle_options %}
-                        <option value="{{ loc.id }}" {% if filter_loc|stringformat:"s" == loc.id|stringformat:"s" %}selected{% endif %}>
-                            {{ loc.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <label for="wl-filter-state">State</label>
-                <select id="wl-filter-state" name="state" onchange="this.form.submit()">
-                    <option value="">-----</option>
-                    {% for st in wl_state_options %}
-                        <option value="{{ st.id }}" {% if filter_state|stringformat:"s" == st.id|stringformat:"s" %}selected{% endif %}>
-                            {{ st.short_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                {% if is_master %}
-                    <label for="wl-filter-user">User</label>
-                    <select id="wl-filter-user" name="user" onchange="this.form.submit()">
-                        <option value="">-----</option>
-                        {% for usr in wl_user_options %}
-                            <option value="{{ usr.author_id }}" {% if filter_user|stringformat:"s" == usr.author_id|stringformat:"s" %}selected{% endif %}>
-                                {{ usr.author__username }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                {% endif %}
-                <noscript><button type="submit" class="sb-btn sb-btn-secondary">Apply</button></noscript>
-            </form>
+            {% if not hide_add %}
+                <button type="button" id="sb-wl-add-btn" class="sb-add-item-btn sb-wl-add-btn">
+                    <span class="sb-search-icon sb-plus-icon">+</span>
+                    <span>work log</span>
+                </button>
+            {% endif %}
         </div>
-        {% if not hide_add %}
-            <button type="button" id="sb-wl-add-btn" class="sb-add-item-btn">
-                <span class="sb-search-icon sb-plus-icon">+</span>
-                <span>work log</span>
-            </button>
-        {% endif %}
     </div>
+    <form class="sb-wl-filters" method="get">
+        <label for="wl-filter-due">Due</label>
+        <select id="wl-filter-due" name="due_range" onchange="this.form.submit()">
+            {% for opt in due_range_options %}
+                <option value="{{ opt.value }}" {% if opt.value == due_range_selected %}selected{% endif %}>
+                    {{ opt.label }}
+                </option>
+            {% endfor %}
+        </select>
+        <label for="wl-filter-future">Future</label>
+        <select id="wl-filter-future" name="future" onchange="this.form.submit()">
+            <option value="show" {% if filter_future == "show" %}selected{% endif %}>Show</option>
+            <option value="hide" {% if filter_future == "hide" %}selected{% endif %}>Hide</option>
+        </select>
+        <label for="wl-filter-loc">Location</label>
+        <select id="wl-filter-loc" name="loc" onchange="this.form.submit()">
+            <option value="">-----</option>
+            {% for loc in wl_vehicle_options %}
+                <option value="{{ loc.id }}" {% if filter_loc|stringformat:"s" == loc.id|stringformat:"s" %}selected{% endif %}>
+                    {{ loc.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <label for="wl-filter-state">State</label>
+        <select id="wl-filter-state" name="state" onchange="this.form.submit()">
+            <option value="">-----</option>
+            {% for st in wl_state_options %}
+                <option value="{{ st.id }}" {% if filter_state|stringformat:"s" == st.id|stringformat:"s" %}selected{% endif %}>
+                    {{ st.short_name }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if is_master %}
+            <label for="wl-filter-user">User</label>
+            <select id="wl-filter-user" name="user" onchange="this.form.submit()">
+                <option value="">-----</option>
+                {% for usr in wl_user_options %}
+                    <option value="{{ usr.author_id }}" {% if filter_user|stringformat:"s" == usr.author_id|stringformat:"s" %}selected{% endif %}>
+                        {{ usr.author__username }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endif %}
+        <noscript><button type="submit" class="sb-btn sb-btn-secondary">Apply</button></noscript>
+    </form>
     <div class="sb-table-wrapper">
         <table class="sb-table sb-wl-table">
             <thead>
