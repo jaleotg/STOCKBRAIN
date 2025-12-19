@@ -81,6 +81,7 @@
                 <th class="wl-col-number">WL #</th>
                 <th>Locations</th>
                 <th>State</th>
+                <th class="wl-col-parts">Parts utilized</th>
                 <th class="wl-col-note">Note</th>
                 <th class="wl-col-created">Created</th>
                 <th class="wl-col-updated">Last edited</th>
@@ -113,6 +114,22 @@
                         </td>
                         <td>{{ wl.locations }}</td>
                         <td>{{ wl.states }}</td>
+                        <td class="wl-col-parts">
+                            {% if wl.parts_summary %}
+                                <button type="button"
+                                        class="wl-parts-btn"
+                                        data-parts="{{ wl.parts_summary_json|escape }}"
+                                        data-link="{{ wl.parts_link }}"
+                                        title="Click to open Inventory">
+                                    <svg class="wl-parts-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M12 2l6 3.5v7L12 16l-6-3.5v-7L12 2zm0 4l-2 .9v3.2l2 1.1 2-1.1V6.9l-2-.9z"/>
+                                        <path d="M6 14.5L12 18l6-3.5v4.2L12 22 6 18.7v-4.2z"/>
+                                    </svg>
+                                </button>
+                            {% else %}
+                                <span class="wl-parts-empty">—</span>
+                            {% endif %}
+                        </td>
                         <td class="wl-note-cell">{{ wl.note }}</td>
                         <td>{{ wl.created|date:"Y-m-d H:i" }}</td>
                         <td>{{ wl.updated|date:"Y-m-d H:i" }}</td>
@@ -182,13 +199,15 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="{% if is_master %}{% if request.user.username == 'leo-admin' %}9{% else %}8{% endif %}{% else %}{% if request.user.username == 'leo-admin' %}8{% else %}7{% endif %}{% endif %}" class="wl-empty-row">No work logs yet.</td>
+                    <td colspan="{% if is_master %}{% if request.user.username == 'leo-admin' %}10{% else %}9{% endif %}{% else %}{% if request.user.username == 'leo-admin' %}9{% else %}8{% endif %}{% endif %}" class="wl-empty-row">No work logs yet.</td>
                 </tr>
             {% endif %}
             </tbody>
         </table>
     </div>
 </div>
+
+<div id="wl-parts-tooltip" class="wl-parts-tooltip" aria-hidden="true"></div>
 
 <div id="wl-modal" class="sb-modal">
     <div class="sb-modal-dialog">
@@ -337,6 +356,86 @@
     }
     function getCsrfToken() {
         return getCookie("csrftoken") || "";
+    }
+
+    const partsTooltip = document.getElementById("wl-parts-tooltip");
+    let partsTooltipTarget = null;
+
+    function hidePartsTooltip() {
+        if (!partsTooltip) return;
+        partsTooltip.classList.remove("is-visible");
+        partsTooltip.setAttribute("aria-hidden", "true");
+        partsTooltipTarget = null;
+    }
+
+    function renderPartsTooltip(parts) {
+        if (!partsTooltip) return;
+        partsTooltip.innerHTML = "";
+        parts.forEach((part) => {
+            const row = document.createElement("div");
+            row.className = "wl-parts-tooltip-row";
+
+            const loc = document.createElement("div");
+            loc.className = "wl-parts-loc";
+            loc.textContent = part.location || "";
+
+            const desc = document.createElement("div");
+            desc.className = "wl-parts-desc";
+            desc.textContent = part.description || "";
+
+            const qty = document.createElement("div");
+            qty.className = "wl-parts-qty";
+            const qtyPieces = [];
+            if (part.quantity) qtyPieces.push(part.quantity);
+            if (part.unit) qtyPieces.push(part.unit);
+            qty.textContent = qtyPieces.join(" ").trim();
+
+            row.appendChild(loc);
+            row.appendChild(desc);
+            row.appendChild(qty);
+            partsTooltip.appendChild(row);
+        });
+        const hint = document.createElement("div");
+        hint.className = "wl-parts-tooltip-hint";
+        hint.textContent = "Click icon to open Inventory";
+        partsTooltip.appendChild(hint);
+    }
+
+    function positionPartsTooltip(evt, target) {
+        if (!partsTooltip || !partsTooltip.classList.contains("is-visible")) return;
+        const tooltipRect = partsTooltip.getBoundingClientRect();
+        let clientX;
+        let clientY;
+        if (evt && typeof evt.clientX === "number" && typeof evt.clientY === "number") {
+            clientX = evt.clientX;
+            clientY = evt.clientY;
+        } else if (target) {
+            const rect = target.getBoundingClientRect();
+            clientX = rect.right;
+            clientY = rect.top;
+        } else {
+            return;
+        }
+        let left = clientX + 16;
+        let top = clientY + 16;
+        if (left + tooltipRect.width > window.innerWidth - 8) {
+            left = Math.max(8, window.innerWidth - tooltipRect.width - 8);
+        }
+        if (top + tooltipRect.height > window.innerHeight - 8) {
+            top = clientY - tooltipRect.height - 12;
+            if (top < 8) top = 8;
+        }
+        partsTooltip.style.left = `${left}px`;
+        partsTooltip.style.top = `${top}px`;
+    }
+
+    function showPartsTooltip(target, parts) {
+        if (!partsTooltip || !parts || !parts.length) return;
+        renderPartsTooltip(parts);
+        partsTooltip.classList.add("is-visible");
+        partsTooltip.setAttribute("aria-hidden", "false");
+        partsTooltipTarget = target;
+        positionPartsTooltip(null, target);
     }
 
     const modal = document.getElementById("wl-modal");
@@ -837,6 +936,32 @@
         }
     }
     // Clicking outside should not close the modal.
+
+    document.querySelectorAll(".wl-parts-btn").forEach((btn) => {
+        let partsData = [];
+        try {
+            partsData = JSON.parse(btn.getAttribute("data-parts") || "[]");
+        } catch (err) {
+            partsData = [];
+        }
+        const linkUrl = btn.getAttribute("data-link") || "";
+        btn.addEventListener("mouseenter", (evt) => {
+            showPartsTooltip(btn, partsData);
+            positionPartsTooltip(evt, btn);
+        });
+        btn.addEventListener("mousemove", (evt) => positionPartsTooltip(evt, btn));
+        btn.addEventListener("mouseleave", hidePartsTooltip);
+        btn.addEventListener("focus", () => showPartsTooltip(btn, partsData));
+        btn.addEventListener("blur", hidePartsTooltip);
+        btn.addEventListener("click", (evt) => {
+            evt.preventDefault();
+            if (linkUrl) {
+                window.location.href = linkUrl;
+            }
+        });
+    });
+    window.addEventListener("scroll", hidePartsTooltip, true);
+    window.addEventListener("resize", hidePartsTooltip);
 
     // Delete (leo-admin only)
     document.querySelectorAll(".wl-delete-btn").forEach(btn => {

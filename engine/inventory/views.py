@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -28,6 +29,7 @@ from django.http import HttpResponseForbidden, Http404
 from django.http import HttpResponse
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
+from django.urls import reverse
 
 from .models import (
     InventoryItem,
@@ -135,6 +137,44 @@ def _compute_schedule_dt(due_date, end_time):
     if sched_dt <= now_kw:
         sched_dt = sched_dt + timedelta(days=1)
     return sched_dt
+
+
+def _format_quantity_str(value):
+    if value is None:
+        return ""
+    if isinstance(value, Decimal):
+        normalized = value.normalize()
+        text = format(normalized, "f")
+    else:
+        text = str(value)
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text or "0"
+
+
+def _build_worklog_parts(entries):
+    parts = []
+    tokens = []
+    seen = set()
+    for entry in entries:
+        if entry.inventory_rack is None:
+            continue
+        loc_display = entry.inventory_location_display
+        if not loc_display:
+            continue
+        token = f"{entry.inventory_rack}|{(entry.inventory_shelf or '').upper()}|{entry.inventory_box or ''}"
+        if token not in seen:
+            seen.add(token)
+            tokens.append(token)
+        parts.append(
+            {
+                "location": loc_display,
+                "description": (entry.part_description or "").strip() or "—",
+                "quantity": _format_quantity_str(entry.quantity),
+                "unit": entry.unit.code if entry.unit else "",
+            }
+        )
+    return parts, tokens
 
 
 def _mark_email_pending(wl, sched_dt):
@@ -372,7 +412,7 @@ def work_log_view(request):
         .prefetch_related(
             Prefetch(
                 "entries",
-                queryset=WorkLogEntry.objects.select_related("vehicle_location", "state"),
+                queryset=WorkLogEntry.objects.select_related("vehicle_location", "state", "unit"),
             )
         )
         .order_by("-created_at")
@@ -392,6 +432,7 @@ def work_log_view(request):
         worklogs_qs = worklogs_qs.filter(due_date__lte=now)
 
     now_dt = timezone.now()
+    inventory_base_url = reverse("home")
     worklogs = []
     # Human-readable edit rules (global for this request)
     rule_parts = []
@@ -429,6 +470,12 @@ def work_log_view(request):
             status_parts.append("Editable (no restrictions).")
         edit_hint = ("Edit allowed. " if can_edit else "Edit blocked. ") + " ".join(status_parts)
         edit_hint += " " + rule_summary
+        parts_summary, location_tokens = _build_worklog_parts(wl.entries.all())
+        parts_link = ""
+        if location_tokens:
+            query = urlencode({"wl_locations": ",".join(location_tokens)})
+            parts_link = f"{inventory_base_url}?{query}"
+        parts_summary_json = json.dumps(parts_summary, ensure_ascii=False)
         worklogs.append(
             {
                 "id": wl.id,
@@ -443,6 +490,9 @@ def work_log_view(request):
                 "email_pending": wl.email_pending,
                 "email_scheduled_at": wl.email_scheduled_at,
                 "email_sent_at": wl.email_sent_at,
+                "parts_summary": parts_summary,
+                "parts_summary_json": parts_summary_json,
+                "parts_link": parts_link,
             }
         )
 
@@ -743,7 +793,7 @@ def work_log_master_view(request):
         .prefetch_related(
             Prefetch(
                 "entries",
-                queryset=WorkLogEntry.objects.select_related("vehicle_location", "state"),
+                queryset=WorkLogEntry.objects.select_related("vehicle_location", "state", "unit"),
             ),
             "author",
         )
@@ -760,9 +810,15 @@ def work_log_master_view(request):
         worklogs_qs = worklogs_qs.filter(author_id=filter_user)
 
     worklogs = []
+    inventory_base_url = reverse("home")
     for wl in worklogs_qs:
         locations = sorted({entry.vehicle_location.name for entry in wl.entries.all()})
         states = sorted({entry.state.short_name for entry in wl.entries.all() if entry.state})
+        parts_summary, location_tokens = _build_worklog_parts(wl.entries.all())
+        parts_link = ""
+        if location_tokens:
+            query = urlencode({"wl_locations": ",".join(location_tokens)})
+            parts_link = f"{inventory_base_url}?{query}"
         worklogs.append(
             {
                 "id": wl.id,
@@ -777,6 +833,9 @@ def work_log_master_view(request):
                 "email_pending": wl.email_pending,
                 "email_scheduled_at": wl.email_scheduled_at,
                 "email_sent_at": wl.email_sent_at,
+                "parts_summary": parts_summary,
+                "parts_summary_json": json.dumps(parts_summary, ensure_ascii=False),
+                "parts_link": parts_link,
             }
         )
 
@@ -1365,6 +1424,28 @@ def home_view(request):
         except ValueError:
             group_filter_int = None
 
+    wl_locations_param = (request.GET.get("wl_locations") or "").strip()
+    wl_location_filters = []
+    wl_locations_display = []
+    if wl_locations_param:
+        for token in wl_locations_param.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            parts = token.split("|")
+            if not parts:
+                continue
+            rack_part = parts[0].strip() if len(parts) > 0 else ""
+            try:
+                rack_val = int(rack_part)
+            except (TypeError, ValueError):
+                continue
+            shelf_val = (parts[1].strip().upper() if len(parts) > 1 else "")
+            box_val = (parts[2].strip() if len(parts) > 2 else "")
+            wl_location_filters.append((rack_val, shelf_val, box_val))
+            display = f"{rack_val}-{shelf_val or '---'}-{box_val or '---'}"
+            wl_locations_display.append(display)
+
     # --- SEARCH (simple text, AND with filters) ---
     search_query = (request.GET.get("search") or "").strip()
 
@@ -1564,6 +1645,18 @@ def home_view(request):
     elif reorder_filter == "no":
         base_qs = base_qs.filter(for_reorder_ann=0)
         filters_applied = True
+    if wl_location_filters:
+        location_q = Q()
+        for rack_val, shelf_val, box_val in wl_location_filters:
+            cond = Q(rack=rack_val)
+            if shelf_val:
+                cond &= Q(shelf__iexact=shelf_val)
+            if box_val:
+                cond &= Q(box__iexact=box_val)
+            location_q |= cond
+        if location_q:
+            base_qs = base_qs.filter(location_q)
+            filters_applied = True
     if search_query:
         fields_to_search = selected_search_fields
         search_q = Q()
@@ -1906,6 +1999,7 @@ def home_view(request):
         "reorder_filter": reorder_filter,
         "selected_rack_count": selected_rack_count,
         "item_count": item_count,
+        "wl_location_filters_display": wl_locations_display,
 
         # Column settings from admin
         "columns": columns,                      # field_name → InventoryColumn

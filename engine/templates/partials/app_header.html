@@ -103,7 +103,19 @@
                         Edit user data
                     </a>
                     {% endif %}
-                    <a href="{% url logout_view %}" class="sb-dropdown-item">Logout</a>
+                    {% if admin_header %}
+                        <form method="post" action="{% url logout_view %}" class="sb-dropdown-form">
+                            {% csrf_token %}
+                            {% if logout_view == 'admin:logout' %}
+                                <input type="hidden" name="next" value="{% url 'login' %}">
+                            {% endif %}
+                            <button type="submit" class="sb-dropdown-item sb-dropdown-btn-link">
+                                Logout
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url logout_view %}" class="sb-dropdown-item">Logout</a>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}

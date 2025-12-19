@@ -211,6 +211,16 @@
     <!--                TABLE                  -->
     <!-- ===================================== -->
 
+    {% if wl_location_filters_display %}
+        <div class="wl-location-banner">
+            <div class="wl-location-banner__text">
+                Filtered by work log locations:
+                <strong>{{ wl_location_filters_display|join:", " }}</strong>
+            </div>
+            <a href="{% url 'home' %}" class="wl-location-banner__clear">Clear</a>
+        </div>
+    {% endif %}
+
     <div class="sb-table-wrapper">
         <div class="sb-progress">
             <div class="sb-progress-bar"></div>
