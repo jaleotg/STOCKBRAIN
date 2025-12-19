@@ -2944,7 +2944,6 @@
                 popup.innerHTML = `
                     <div class="sb-gtfo-title">${data.type || typeName}</div>
                     <div>${safeText}</div>
-                    ${safeAuthor ? `<div class="sb-gtfo-author">— ${safeAuthor}</div>` : ""}
                 `;
             })
             .catch(() => {
