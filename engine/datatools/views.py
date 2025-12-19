@@ -5,9 +5,9 @@ from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
-from django.contrib import admin
-from django.contrib import messages
+from django.contrib import admin, messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db import connections
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -87,6 +87,44 @@ def _import_sql_file(path):
     return subprocess.run(cmd, capture_output=True, text=True, env=_pg_env())
 
 
+def _sanitize_dump(path):
+    """
+    Older PostgreSQL releases (<=13) do not understand SET transaction_timeout.
+    Remove such lines so restore works regardless of server version.
+    """
+    needs_sanitize = False
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+            for line in handle:
+                if "SET transaction_timeout" in line:
+                    needs_sanitize = True
+                    break
+    except OSError:
+        return path, None
+
+    if not needs_sanitize:
+        return path, None
+
+    sanitized_path = None
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as src, tempfile.NamedTemporaryFile(
+            suffix=".sql", delete=False, mode="w", encoding="utf-8"
+        ) as dst:
+            for line in src:
+                if "SET transaction_timeout" in line:
+                    continue
+                dst.write(line)
+            sanitized_path = dst.name
+    except OSError:
+        if sanitized_path:
+            try:
+                os.remove(sanitized_path)
+            except OSError:
+                pass
+        return path, None
+    return sanitized_path, path
+
+
 def _default_export_path():
     timestamp = datetime.now(tz=KUWAIT_TZ).strftime("%Y%m%d-%H%M")
     filename = f"DesertBrain-DB-{timestamp}.sql"
@@ -137,22 +175,35 @@ def db_tools(request):
                     tmp.write(chunk)
                 tmp_path = tmp.name
 
+            sanitized_path, extra_cleanup = _sanitize_dump(tmp_path)
+
             try:
                 reset = _drop_and_recreate_schema()
                 if reset.returncode != 0:
                     raise RuntimeError(reset.stderr or reset.stdout)
-                restore = _import_sql_file(tmp_path)
+                restore = _import_sql_file(sanitized_path)
                 if restore.returncode != 0:
                     raise RuntimeError(restore.stderr or restore.stdout)
+                connections.close_all()
                 messages.success(request, "Database restored from uploaded file.")
+                return redirect(f"{reverse('db_tools')}?section=restore")
             except Exception as exc:  # pylint: disable=broad-except
-                messages.error(request, f"Import failed: {exc}")
+                connections.close_all()
+                warning = (
+                    "<h2>Database import failed</h2>"
+                    "<p>The schema was dropped but could not be restored from the uploaded SQL.</p>"
+                    "<p>Please restore manually from shell using:</p>"
+                    "<pre>psql -d {db} -f /path/to/backup.sql</pre>"
+                    "<p>Error details:</p>"
+                    "<pre>{error}</pre>"
+                ).format(db=settings.DATABASES["default"]["NAME"], error=str(exc))
+                return HttpResponse(warning, status=500)
             finally:
-                try:
-                    os.remove(tmp_path)
-                except OSError:
-                    pass
-            return redirect(f"{reverse('db_tools')}?section=restore")
+                for cleanup_path in filter(None, [tmp_path, extra_cleanup]):
+                    try:
+                        os.remove(cleanup_path)
+                    except OSError:
+                        pass
 
         if action == "delete_all":
             delete_password = request.POST.get("delete_password", "")
@@ -168,6 +219,7 @@ def db_tools(request):
             if result.returncode != 0:
                 messages.error(request, f"Delete failed: {result.stderr or result.stdout}")
                 return redirect(f"{reverse('db_tools')}?section=delete")
+            connections.close_all()
             warning = (
                 "<h2>Database deleted</h2>"
                 "<p>The entire database has been dropped. "

@@ -7,6 +7,9 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+# Instrukcja crona (przykład, wstaw w `crontab -e`):
+# 30 2 * * * /home/leo/STOCKBRAIN/venv/bin/python /home/leo/STOCKBRAIN/engine/manage.py cron_db_backup >> /home/leo/STOCKBRAIN/db-backups/cron-backup.log 2>&1
+# (powiedz serwerowi w jaki czas: powyżej 02:30 czasu lokalnego)
 
 KUWAIT_TZ = ZoneInfo("Asia/Kuwait")
 BACKUP_DIR = Path(settings.BASE_DIR).parent / "db-backups"
