@@ -7,6 +7,7 @@
     const HIGHLIGHT_KEY = "sb_new_item_highlight";
     const UPPERCASE_KEY = "sb_uppercase_mode";
     let progressTimer = null;
+    let pageLoadProgressRaf = null;
     let progressStartedAt = 0;
 
     const CELL_STATE_CLASSES = {
@@ -889,7 +890,7 @@
         return { container, bar };
     }
 
-    function sbProgressStart() {
+    function sbProgressStart(opts = {}) {
         const { container, bar } = getProgressEls();
         if (!container || !bar) return;
         if (progressTimer) {
@@ -904,16 +905,76 @@
         // force reflow
         void bar.offsetWidth;
         // restore transition
-        bar.style.transition = "width 0.15s ease";
-        // show a visible chunk immediately
+        bar.style.transition = "width 0.12s ease";
+        if (opts && opts.mode === "manual") {
+            return;
+        }
+        // smoother, higher-resolution progress
         requestAnimationFrame(() => {
-            bar.style.width = "30%";
-            let current = 30;
+            bar.style.width = "8%";
+            let current = 8;
             progressTimer = setInterval(() => {
-                current = Math.min(current + Math.random() * 12, 90);
+                const step = Math.max(1, Math.round(Math.random() * 5));
+                current = Math.min(current + step, 93);
                 bar.style.width = `${current}%`;
             }, 120);
         });
+    }
+
+    function sbProgressSet(percent) {
+        const { container, bar } = getProgressEls();
+        if (!container || !bar) return;
+        container.style.display = "block";
+        const safe = Math.max(0, Math.min(99, Math.round(percent)));
+        bar.style.width = `${safe}%`;
+    }
+
+    function sbProgressTrackPageLoad() {
+        sbProgressStart({ mode: "manual" });
+        const start = performance.now();
+        const card = document.querySelector(".sb-card");
+        const totalCount = parseInt(card?.dataset.totalCount || "0", 10) || 0;
+        const pageSizeSel = document.getElementById("page-size-select");
+        let maxScrollHeight = 0;
+
+        function getExpectedRows() {
+            if (!totalCount) return 0;
+            if (pageSizeSel && pageSizeSel.value && pageSizeSel.value !== "all") {
+                const parsed = parseInt(pageSizeSel.value, 10);
+                if (!Number.isNaN(parsed)) {
+                    return Math.min(totalCount, parsed);
+                }
+            }
+            return totalCount;
+        }
+
+        function step() {
+            const tbody = document.querySelector(".sb-table tbody");
+            const rowCount = tbody ? tbody.querySelectorAll("tr").length : 0;
+            const expectedRows = getExpectedRows();
+            const rowRatio = expectedRows ? Math.min(1, rowCount / expectedRows) : 0;
+
+            const scrollHeight = document.documentElement.scrollHeight || 0;
+            maxScrollHeight = Math.max(maxScrollHeight, scrollHeight);
+            const heightRatio = maxScrollHeight ? Math.min(1, scrollHeight / maxScrollHeight) : 0;
+
+            const timeRatio = Math.min(1, (performance.now() - start) / 2000);
+            let stateRatio = 0;
+            if (document.readyState === "interactive") stateRatio = 0.35;
+            if (document.readyState === "complete") stateRatio = 0.6;
+
+            const progress = Math.min(
+                95,
+                Math.round((rowRatio * 0.45 + heightRatio * 0.15 + timeRatio * 0.25 + stateRatio * 0.15) * 100)
+            );
+            sbProgressSet(progress);
+
+            if (document.readyState !== "complete") {
+                pageLoadProgressRaf = requestAnimationFrame(step);
+            }
+        }
+
+        pageLoadProgressRaf = requestAnimationFrame(step);
     }
 
     function sbProgressFinish() {
@@ -922,6 +983,10 @@
         if (progressTimer) {
             clearInterval(progressTimer);
             progressTimer = null;
+        }
+        if (pageLoadProgressRaf) {
+            cancelAnimationFrame(pageLoadProgressRaf);
+            pageLoadProgressRaf = null;
         }
         const finalize = () => {
             bar.style.width = "100%";
@@ -2515,7 +2580,7 @@
             ? { left: oldWrapper.scrollLeft, top: oldWrapper.scrollTop }
             : { left: 0, top: 0 };
 
-        sbProgressStart();
+        sbProgressStart({ mode: "manual" });
 
         fetch(url, {
             method: "GET",
@@ -2523,7 +2588,37 @@
                 "X-Requested-With": "XMLHttpRequest",
             },
         })
-            .then(resp => resp.text())
+            .then(resp => {
+                const total = parseInt(resp.headers.get("Content-Length") || "0", 10);
+                if (!resp.body) {
+                    return resp.text();
+                }
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let received = 0;
+                let text = "";
+                let fallbackProgress = 8;
+
+                const readChunk = () => reader.read().then(({ done, value }) => {
+                    if (done) {
+                        text += decoder.decode();
+                        return text;
+                    }
+                    received += value.length;
+                    if (total > 0) {
+                        const pct = Math.min(95, (received / total) * 100);
+                        sbProgressSet(pct);
+                    } else {
+                        const step = Math.max(1, Math.round(value.length / 50000));
+                        fallbackProgress = Math.min(95, fallbackProgress + step);
+                        sbProgressSet(fallbackProgress);
+                    }
+                    text += decoder.decode(value, { stream: true });
+                    return readChunk();
+                });
+
+                return readChunk();
+            })
             .then(html => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, "text/html");
@@ -3086,7 +3181,7 @@
        INIT
     ================================================= */
     document.addEventListener("DOMContentLoaded", function () {
-        sbProgressStart();
+        sbProgressTrackPageLoad();
         syncBodyDarkClass();
         markClampedCells();
         sbInitCellFocusTracking();

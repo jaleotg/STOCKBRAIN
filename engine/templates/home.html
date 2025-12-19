@@ -49,7 +49,7 @@
                         {% if opt == "all" %}
                             <option value="all"
                                     {% if page_size == "all" %}selected{% endif %}>
-                                All
+                                {{ item_count|default:"0" }}
                             </option>
                         {% else %}
                             <option value="{{ opt }}"

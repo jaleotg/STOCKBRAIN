@@ -12,12 +12,7 @@
 <header class="sb-header">
     <div class="sb-header-left">
         <div class="sb-header-title">
-            DesertBrain
-            {% if request.user.is_authenticated %}
-            <span class="sb-header-count">
-                {{ item_count|default:"0" }} items in base
-            </span>
-            {% endif %}
+            DesertBrain<span class="sb-header-mark">&reg;</span>
         </div>
         {% if request.user.is_authenticated %}
             <nav class="sb-header-nav">
