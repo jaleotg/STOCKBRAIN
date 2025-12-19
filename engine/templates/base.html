@@ -92,20 +92,6 @@
                 <div class="sb-modal-body">
                     <div class="sb-inline-fields">
                         <div class="sb-add-field">
-                            <label>Username</label>
-                            <input type="text" id="sb-user-username" readonly>
-                        </div>
-                        <div class="sb-add-field">
-                            <label for="sb-user-preferred">Preferred (how you want to be called)</label>
-                            <input type="text" id="sb-user-preferred" name="preferred_name">
-                        </div>
-                    </div>
-                    <div class="sb-add-field">
-                        <label>E-mail</label>
-                        <input type="email" id="sb-user-email" name="email" required>
-                    </div>
-                    <div class="sb-inline-fields">
-                        <div class="sb-add-field">
                             <label>First name</label>
                             <input type="text" id="sb-user-first" readonly>
                         </div>
@@ -113,6 +99,19 @@
                             <label>Last name</label>
                             <input type="text" id="sb-user-last" readonly>
                         </div>
+                    </div>
+                    <div class="sb-add-field">
+                        <label for="sb-user-preferred">Preferred name</label>
+                        <input type="text" id="sb-user-preferred" name="preferred_name">
+                    </div>
+                    <div class="sb-add-field">
+                        <label>Groups</label>
+                        <input type="text" id="sb-user-groups" readonly>
+                    </div>
+                    <div class="sb-add-field">
+                        <label for="sb-user-email">E-mail</label>
+                        <input type="email" id="sb-user-email" name="email" required>
+                        <div class="sb-field-hint">Email changes require confirmation in the new address.</div>
                     </div>
                     <hr class="sb-user-divider">
                     <div class="sb-inline-fields">
@@ -139,6 +138,16 @@
                                    name="new_password_confirm"
                                    placeholder="Repeat new password"
                                    autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="sb-inline-fields">
+                        <div class="sb-add-field">
+                            <label>Last login (previous)</label>
+                            <input type="text" id="sb-user-last-login" readonly>
+                        </div>
+                        <div class="sb-add-field">
+                            <label>Current login</label>
+                            <input type="text" id="sb-user-current-login" readonly>
                         </div>
                     </div>
                     <div id="sb-user-error" class="sb-validation" style="display:none;"></div>

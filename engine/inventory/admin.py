@@ -129,6 +129,7 @@ class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
     extra = 0
+    template = "admin/edit_inline/userprofile_stacked.html"
     fields = ("preferred_name",)
     verbose_name = "Preferred name"
     verbose_name_plural = "Preferred name"

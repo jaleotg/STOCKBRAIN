@@ -204,6 +204,10 @@ def login_view(request):
         password = request.POST.get("password", "")
         user = authenticate(request, username=username, password=password)
         if user:
+            profile = get_user_profile(user)
+            if profile:
+                profile.previous_login = user.last_login
+                profile.save(update_fields=["previous_login"])
             login(request, user)
             return redirect("home")
         else:
@@ -227,6 +231,12 @@ def user_profile(request):
     profile = get_user_profile(request.user)
 
     if request.method == "GET":
+        prev_login_display = None
+        if profile and profile.previous_login:
+            prev_login_display = timezone.localtime(profile.previous_login).strftime("%Y-%m-%d %H:%M")
+        current_login_display = None
+        if request.user.last_login:
+            current_login_display = timezone.localtime(request.user.last_login).strftime("%Y-%m-%d %H:%M")
         data = {
             "ok": True,
             "user": {
@@ -235,6 +245,10 @@ def user_profile(request):
                 "last_name": request.user.last_name,
                 "email": request.user.email,
                 "preferred_name": profile.preferred_name if profile else "",
+                "groups": list(request.user.groups.values_list("name", flat=True)),
+                "previous_login": profile.previous_login.isoformat() if profile and profile.previous_login else None,
+                "previous_login_display": prev_login_display,
+                "current_login_display": current_login_display,
             },
         }
         return JsonResponse(data)
@@ -245,13 +259,11 @@ def user_profile(request):
         old_pw = (request.POST.get("old_password") or "").strip()
         new_pw = (request.POST.get("new_password") or "").strip()
         new_pw_confirm = (request.POST.get("new_password_confirm") or "").strip()
-        if email:
-            try:
-                validate_email(email)
-            except ValidationError:
-                return JsonResponse({"ok": False, "error": "Invalid e-mail address."}, status=400)
-        request.user.email = email
-        request.user.save(update_fields=["email"])
+        if email != request.user.email:
+            return JsonResponse(
+                {"ok": False, "error": "Email changes require confirmation and are currently disabled."},
+                status=400,
+            )
         if profile:
             profile.preferred_name = preferred
             profile.save(update_fields=["preferred_name"])

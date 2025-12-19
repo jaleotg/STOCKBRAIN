@@ -320,6 +320,10 @@
     background: #e9cd50;
 }
 
+.sb-dark .sb-field-hint {
+    color: #aaa;
+}
+
 .sb-dark .sb-notice {
     --sb-notice-bg: #1f2933;
     --sb-notice-border: #374151;

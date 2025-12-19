@@ -225,6 +225,7 @@ class UserProfile(models.Model):
         related_name="profile",
     )
     preferred_name = models.CharField(max_length=255, blank=True, default="")
+    previous_login = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "User Profile"

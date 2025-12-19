@@ -96,13 +96,11 @@
                     {{ request.user.username }}
                 </a>
                 <div class="sb-dropdown-menu" style="right:0; left:auto;">
-                    {% if show_user_edit %}
                     <a href="#"
                        id="sb-user-edit-trigger"
                        class="sb-dropdown-item">
-                        Edit user data
+                        User account
                     </a>
-                    {% endif %}
                     {% if admin_header %}
                         <form method="post" action="{% url logout_view %}" class="sb-dropdown-form">
                             {% csrf_token %}

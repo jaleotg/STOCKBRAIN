@@ -1140,14 +1140,18 @@
         const form = modal.querySelector("#sb-user-form");
         const errBox = modal.querySelector("#sb-user-error");
 
-        const usernameEl = modal.querySelector("#sb-user-username");
         const firstEl = modal.querySelector("#sb-user-first");
         const lastEl = modal.querySelector("#sb-user-last");
+        const groupsEl = modal.querySelector("#sb-user-groups");
         const emailEl = modal.querySelector("#sb-user-email");
         const prefEl = modal.querySelector("#sb-user-preferred");
         const oldPwEl = modal.querySelector("#sb-user-oldpw");
         const newPwEl = modal.querySelector("#sb-user-newpw");
         const newPw2El = modal.querySelector("#sb-user-newpw2");
+        const lastLoginEl = modal.querySelector("#sb-user-last-login");
+        const currentLoginEl = modal.querySelector("#sb-user-current-login");
+
+        let initialEmail = "";
 
         let isOpen = false;
 
@@ -1157,13 +1161,33 @@
             errBox.style.display = msg ? "block" : "none";
         }
 
+        function formatLoginValue(value, displayValue) {
+            if (displayValue) return displayValue;
+            if (!value) return "None";
+            const parsed = new Date(value);
+            if (!Number.isNaN(parsed.getTime())) {
+                return parsed.toLocaleString();
+            }
+            return value;
+        }
+
         function fillUser(data) {
             const u = (data && data.user) || {};
-            if (usernameEl) usernameEl.value = u.username || "";
             if (firstEl) firstEl.value = u.first_name || "";
             if (lastEl) lastEl.value = u.last_name || "";
             if (emailEl) emailEl.value = u.email || "";
             if (prefEl) prefEl.value = u.preferred_name || "";
+            if (groupsEl) {
+                const groups = Array.isArray(u.groups) ? u.groups : [];
+                groupsEl.value = groups.length ? groups.join(", ") : "None";
+            }
+            if (lastLoginEl) {
+                lastLoginEl.value = formatLoginValue(u.previous_login, u.previous_login_display);
+            }
+            if (currentLoginEl) {
+                currentLoginEl.value = formatLoginValue(null, u.current_login_display);
+            }
+            initialEmail = emailEl ? (emailEl.value || "") : "";
             if (emailEl) emailEl.focus();
         }
 
@@ -1225,7 +1249,12 @@
                 e.preventDefault();
                 showError("");
                 const fd = new URLSearchParams();
-                fd.append("email", emailEl ? (emailEl.value || "").trim() : "");
+                const nextEmail = emailEl ? (emailEl.value || "").trim() : "";
+                if (emailEl && nextEmail !== (initialEmail || "")) {
+                    showError("Email changes require confirmation and are currently disabled.");
+                    return;
+                }
+                fd.append("email", nextEmail);
                 fd.append("preferred_name", prefEl ? (prefEl.value || "").trim() : "");
                 const newPw = newPwEl ? (newPwEl.value || "").trim() : "";
                 const oldPw = oldPwEl ? (oldPwEl.value || "").trim() : "";
