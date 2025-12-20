@@ -16,6 +16,21 @@
     text-shadow: 5px 4px 0 rgba(0, 0, 0, 1);
 }
 
+.sb-dark .sb-mobile-menu-panel {
+    background: #1f2429;
+    color: #e2e8ef;
+}
+
+.sb-dark .sb-mobile-menu-link,
+.sb-dark .sb-mobile-menu-item {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sb-dark .sb-mobile-menu-divider {
+    background: rgba(255, 255, 255, 0.15);
+}
+
 /* Global links in dark mode */
 .sb-dark .sb-link {
     color: #9cd2f5;

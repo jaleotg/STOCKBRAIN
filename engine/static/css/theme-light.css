@@ -58,6 +58,20 @@
     border-color: rgba(0, 0, 0, 0.22);
 }
 
+.sb-light .sb-mobile-menu-panel {
+    background: #f7fbfd;
+    color: #1f3c4a;
+}
+
+.sb-light .sb-mobile-menu-link,
+.sb-light .sb-mobile-menu-item {
+    border-color: rgba(65, 118, 144, 0.25);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.sb-light .sb-mobile-menu-divider {
+    background: rgba(65, 118, 144, 0.25);
+}
 .sb-light .sb-dropdown-menu {
     background-color: #f0f6f9;
     border: 1px solid rgba(65, 118, 144, 0.25);

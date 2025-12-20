@@ -85,6 +85,35 @@
         syncHeaderTheme();
         updateEndCountdown();
         setInterval(updateEndCountdown, 30000);
+        const btn = document.getElementById("sb-mobile-menu-btn");
+        const menu = document.getElementById("sb-mobile-menu");
+        const closeBtn = document.getElementById("sb-mobile-menu-close");
+        if (btn && menu) {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                menu.classList.add("is-open");
+                menu.setAttribute("aria-hidden", "false");
+            });
+            if (closeBtn) {
+                closeBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    menu.classList.remove("is-open");
+                    menu.setAttribute("aria-hidden", "true");
+                });
+            }
+            menu.addEventListener("click", (e) => {
+                if (e.target === menu) {
+                    menu.classList.remove("is-open");
+                    menu.setAttribute("aria-hidden", "true");
+                }
+            });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    menu.classList.remove("is-open");
+                    menu.setAttribute("aria-hidden", "true");
+                }
+            });
+        }
     });
 
     window.addEventListener("storage", () => {

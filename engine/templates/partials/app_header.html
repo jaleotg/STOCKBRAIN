@@ -106,6 +106,9 @@
         </button>
 
         {% if request.user.is_authenticated %}
+            <button type="button" class="sb-mobile-menu-btn" id="sb-mobile-menu-btn" aria-label="Open menu">
+                ☰
+            </button>
             <div class="sb-dropdown">
                 <a href="#"
                    class="sb-drop-trigger">
@@ -140,6 +143,40 @@
         {% endif %}
     </div>
 </header>
+{% if request.user.is_authenticated %}
+<div class="sb-mobile-menu" id="sb-mobile-menu" aria-hidden="true">
+    <div class="sb-mobile-menu-panel">
+        <button type="button" class="sb-mobile-menu-close" id="sb-mobile-menu-close" aria-label="Close menu">✕</button>
+        <nav class="sb-mobile-menu-list">
+            <a href="{{ home_url }}" class="sb-mobile-menu-link">Inventory</a>
+            <a href="{{ work_log_url }}" class="sb-mobile-menu-link">Works</a>
+            <a href="{{ wl_locations_url }}" class="sb-mobile-menu-link">Issues</a>
+            {% if has_work_log_master %}
+                <a href="{{ wl_master_url }}" class="sb-mobile-menu-link">Master</a>
+            {% endif %}
+            {% if request.user.is_staff %}
+                <a href="{{ admin_index_url }}" class="sb-mobile-menu-link">Backend</a>
+            {% endif %}
+        </nav>
+        <div class="sb-mobile-menu-divider"></div>
+        <div class="sb-mobile-menu-list">
+            <button type="button" class="sb-mobile-menu-item" id="sb-mobile-user-trigger">User account</button>
+            <button type="button" class="sb-mobile-menu-item" id="sb-mobile-settings-trigger">Settings</button>
+            {% if admin_header %}
+                <form method="post" action="{% url logout_view %}" class="sb-mobile-menu-form">
+                    {% csrf_token %}
+                    {% if logout_view == 'admin:logout' %}
+                        <input type="hidden" name="next" value="{% url 'login' %}">
+                    {% endif %}
+                    <button type="submit" class="sb-mobile-menu-item sb-mobile-menu-logout">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url logout_view %}" class="sb-mobile-menu-link sb-mobile-menu-logout">Logout</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endwith %}
 {% endwith %}
 {% endwith %}

@@ -281,6 +281,22 @@
     text-shadow: 5px 4px 0 rgba(0, 0, 0, 1);
 }
 
+.sb-admin-header-wrapper .sb-mobile-menu-panel {
+    background: var(--sb-header-bg, #2a2a2a);
+    color: var(--sb-text, #fff);
+}
+
+.sb-admin-header-wrapper .sb-mobile-menu-link,
+.sb-admin-header-wrapper .sb-mobile-menu-item {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--sb-text, #fff);
+}
+
+.sb-admin-header-wrapper .sb-mobile-menu-divider {
+    background: rgba(255, 255, 255, 0.18);
+}
+
 .sb-admin-header-wrapper.sb-dark .sb-header-count {
     color: #dcdcdc;
 }

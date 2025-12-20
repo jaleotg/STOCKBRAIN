@@ -1529,6 +1529,69 @@
         }
     }
 
+    function sbInitMobileMenu() {
+        const btn = document.getElementById("sb-mobile-menu-btn");
+        const menu = document.getElementById("sb-mobile-menu");
+        const closeBtn = document.getElementById("sb-mobile-menu-close");
+        const userTrigger = document.getElementById("sb-mobile-user-trigger");
+        const settingsTrigger = document.getElementById("sb-mobile-settings-trigger");
+        if (!btn || !menu) return;
+        if (btn.dataset.sbBound === "1") return;
+        btn.dataset.sbBound = "1";
+
+        function openMenu() {
+            menu.classList.add("is-open");
+            menu.setAttribute("aria-hidden", "false");
+        }
+
+        function closeMenu() {
+            menu.classList.remove("is-open");
+            menu.setAttribute("aria-hidden", "true");
+        }
+
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            openMenu();
+        });
+
+        if (closeBtn) {
+            closeBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                closeMenu();
+            });
+        }
+
+        menu.addEventListener("click", (e) => {
+            if (e.target === menu) {
+                closeMenu();
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                closeMenu();
+            }
+        });
+
+        if (userTrigger) {
+            userTrigger.addEventListener("click", (e) => {
+                e.preventDefault();
+                const original = document.getElementById("sb-user-edit-trigger");
+                if (original) original.click();
+                closeMenu();
+            });
+        }
+
+        if (settingsTrigger) {
+            settingsTrigger.addEventListener("click", (e) => {
+                e.preventDefault();
+                const original = document.getElementById("sb-user-settings-trigger");
+                if (original) original.click();
+                closeMenu();
+            });
+        }
+    }
+
     /* ================================================
        ADD ITEM MODAL (Editor / Purchase Manager)
     ================================================= */
@@ -3214,6 +3277,7 @@
         sbInitDeleteModal();
         sbInitUserProfileModal();
         sbInitUserSettingsModal();
+        sbInitMobileMenu();
         sbInitUppercaseToggle();
         applyPendingHighlight();
         sbSyncUrlWithState();
