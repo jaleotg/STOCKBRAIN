@@ -2768,7 +2768,7 @@ def create_item(request):
     reorder_level = get_int("reorder_level", allow_none=True)
     reorder_time_days = get_int("reorder_time_days", allow_none=True)
     quantity_in_reorder = get_int("quantity_in_reorder", allow_none=True)
-    condition_status = data.get("condition_status") or ""
+    condition_status = (data.get("condition_status") or "").strip()
     discontinued = data.get("discontinued") == "1"
     verify = data.get("verify") == "1"
 
@@ -2779,6 +2779,8 @@ def create_item(request):
     for f in required_fields:
         if not data.get(f):
             errors.append(f"Missing required field: {f}")
+    if not condition_status:
+        errors.append("Missing required field: condition status")
 
     if errors:
         return JsonResponse({"ok": False, "error": "; ".join(errors)}, status=400)

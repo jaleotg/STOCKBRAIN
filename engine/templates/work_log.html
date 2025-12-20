@@ -717,6 +717,31 @@
         return sel;
     }
 
+    function syncRsbRequired(rackEl, shelfEl, boxEl) {
+        const hasAny = !!(
+            (rackEl && rackEl.value) ||
+            (shelfEl && shelfEl.value) ||
+            (boxEl && boxEl.value && boxEl.value.trim())
+        );
+        const required = hasAny;
+        const message = "Rack, Shelf, and Box must all be filled once any of them is set.";
+
+        function apply(el) {
+            if (!el) return;
+            el.required = required;
+            const empty = !el.value || (el.type === "text" && !el.value.trim());
+            if (required && empty) {
+                el.setCustomValidity(message);
+            } else {
+                el.setCustomValidity("");
+            }
+        }
+
+        apply(rackEl);
+        apply(shelfEl);
+        apply(boxEl);
+    }
+
     function addEntryRow(prefill=null) {
         const tr = document.createElement("tr");
 
@@ -804,6 +829,14 @@
         }
         tdBox.appendChild(boxInput);
         tr.appendChild(tdBox);
+
+        const updateRequired = () => syncRsbRequired(rackSel, shelfSel, boxInput);
+        ["change", "input"].forEach(evt => {
+            rackSel.addEventListener(evt, updateRequired);
+            shelfSel.addEventListener(evt, updateRequired);
+            boxInput.addEventListener(evt, updateRequired);
+        });
+        updateRequired();
 
         // Part description
         const tdPartDesc = document.createElement("td");

@@ -220,7 +220,7 @@
 }
 
 .sb-light .sb-table thead th {
-    background-color: #f5f5f5;
+    background-color: #ededed;
     color: #333;
     border-left: 1px solid #ddd;
     border-right: 1px solid #ddd;
@@ -234,7 +234,7 @@
 }
 
 .sb-light .sb-table td.col-location {
-    background-color: #f5f5f5;
+    background-color: #ececec;
 }
 
 .sb-light .sb-table th,
@@ -313,10 +313,18 @@
     background-color: #fafafa;
 }
 
+.sb-light .sb-table tbody tr:nth-child(even) td.col-location {
+    background-color: #f0f0f0;
+}
+
 .sb-light .sb-table tbody tr:hover td.col-rck,
 .sb-light .sb-table tbody tr:hover td.col-sh,
 .sb-light .sb-table tbody tr:hover td.col-box {
     background-color: #e9f1f5;
+}
+
+.sb-light .sb-table tbody tr:hover td.col-location {
+    background-color: #dfe8ec;
 }
 
 /* Inline / modal description button */
@@ -334,6 +342,10 @@
     color: #333;
     border-color: #ccc;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpolygon points='2,2 10,2 6,7' fill='%233b5663'/%3E%3C/svg%3E");
+}
+
+.sb-light .sb-add-field select:required:invalid {
+    border-color: #d9534f;
 }
 
 /* Note button */
@@ -389,6 +401,7 @@
     --sb-popup-border: rgba(65, 118, 144, 0.25);
     --sb-popup-text: #1f3c4a;
     --sb-popup-shadow: rgba(18, 50, 65, 0.18);
+    --sb-wl-divider: rgba(65, 118, 144, 0.35);
 }
 
 .sb-light .sb-modal-save {

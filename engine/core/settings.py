@@ -16,6 +16,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "100.120.14.89", #tailscale kmoid
     "100.120.120.120", #tailscale raspberry
+    "192.168.0.134", #lokal LAN Raspberry
 ]
 
 # ------------------------------------------

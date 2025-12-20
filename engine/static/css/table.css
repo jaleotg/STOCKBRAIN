@@ -173,7 +173,7 @@
 }
 
 .sb-table thead tr.sb-header-filter-row + tr th {
-    top: 34px; /* dopasowane do wysokości filtra */
+    top: 32px; /* dopasowane do wysokości filtra */
 }
 
 .sb-add-item-btn {
@@ -1499,22 +1499,36 @@
 .sb-wl-entries-table td:nth-child(3) select {
     max-width: 140px;
 }
-.sb-wl-entries-table th:nth-child(4),
-.sb-wl-entries-table td:nth-child(4) {
-    border-right: 2px solid rgba(0, 0, 0, 0.12);
+.sb-wl-entries-table th:nth-child(4) {
+    border-right: 2px solid var(--sb-wl-divider, rgba(0, 0, 0, 0.18));
+}
+
+.sb-wl-entries-table td.col-time {
+    position: relative;
 }
 .sb-wl-entries-table .wl-rack select,
 .sb-wl-entries-table .wl-shelf select {
-    width: 5ch;
-    min-width: 5ch;
+    width: 7ch;
+    min-width: 7ch;
 }
 .sb-wl-entries-table .wl-box {
-    min-width: 140px;
+    min-width: 10ch;
 }
 .sb-wl-entries-table .col-time {
     width: 6ch;
     max-width: 6ch;
     white-space: nowrap;
+}
+
+.sb-wl-entries-table td.col-time::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    right: 0;
+    width: 2px;
+    background: var(--sb-wl-divider, rgba(0, 0, 0, 0.18));
+    pointer-events: none;
 }
 .sb-wl-entries-table .col-time input {
     width: 6ch;

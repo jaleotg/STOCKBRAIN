@@ -1332,9 +1332,9 @@
 
                 {% with col=columns.condition_status %}
                     {% if is_purchase_admin or 'condition_status' not in restricted_fields %}
-                        <div class="sb-add-field">
-                            <label>{{ col.full_label|default:col.field_name|default:"Condition" }}</label>
-                            <select name="condition_status">
+                        <div class="sb-add-field sb-mandatory">
+                            <label>{{ col.full_label|default:col.field_name|default:"Condition" }} <span class="sb-mandatory-badge">mandatory</span></label>
+                            <select name="condition_status" required>
                                 <option value="">---</option>
                                 {% for value, label in condition_choices %}
                                     <option value="{{ value }}">{{ label }}</option>

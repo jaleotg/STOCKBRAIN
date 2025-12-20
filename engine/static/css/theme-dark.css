@@ -3,7 +3,7 @@
 ========================================= */
 
 .sb-dark {
-    background-color: #1d1d1d;
+    background-color: #000000;
     color: #ddd;
 }
 
@@ -29,6 +29,28 @@
 
 .sb-dark .sb-mobile-menu-divider {
     background: rgba(255, 255, 255, 0.15);
+}
+
+.sb-dark .sb-wl-entries-table input,
+.sb-dark .sb-wl-entries-table select,
+.sb-dark .sb-wl-entries-table textarea {
+    background-color: #2b3238;
+    border: 1px solid #4a565f;
+    color: #e2e8ef;
+}
+
+.sb-dark .sb-wl-entries-table input:focus,
+.sb-dark .sb-wl-entries-table select:focus,
+.sb-dark .sb-wl-entries-table textarea:focus {
+    border-color: #79aec8;
+    box-shadow: 0 0 0 2px rgba(121, 174, 200, 0.35);
+    outline: none;
+}
+
+.sb-dark .sb-wl-entries-table .col-time input {
+    background-color: #2b3238;
+    border-color: #4a565f;
+    color: #e2e8ef;
 }
 
 /* Global links in dark mode */
@@ -303,7 +325,7 @@
 
 /* Frozen R/S/B columns in dark */
 .sb-dark .sb-table td.col-location {
-    background-color: #2a2a2a;
+    background-color: #4a4a4a;
 }
 .sb-dark .sb-table td.col-rck,
 .sb-dark .sb-table td.col-sh,
@@ -325,14 +347,14 @@
 .sb-dark .sb-table tbody tr:nth-child(even) td.col-rck,
 .sb-dark .sb-table tbody tr:nth-child(even) td.col-sh,
 .sb-dark .sb-table tbody tr:nth-child(even) td.col-box {
-    background-color: #242424;
+    background-color: #3a3a3a;
 }
 
 .sb-dark .sb-table tbody tr:hover td.col-location,
 .sb-dark .sb-table tbody tr:hover td.col-rck,
 .sb-dark .sb-table tbody tr:hover td.col-sh,
 .sb-dark .sb-table tbody tr:hover td.col-box {
-    background-color: #333;
+    background-color: #505050;
 }
 
 /* Selects (unit / group / condition) */
@@ -368,6 +390,10 @@
     color: #eee;
     border-color: #555;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpolygon points='2,2 10,2 6,7' fill='%23c7d3db'/%3E%3C/svg%3E");
+}
+
+.sb-dark .sb-add-field select:required:invalid {
+    border-color: #d9534f;
 }
 .sb-dark .sb-add-field input,
 .sb-dark .sb-add-field textarea {
@@ -460,6 +486,7 @@
     --sb-popup-border: rgba(255, 255, 255, 0.1);
     --sb-popup-text: #dce6ee;
     --sb-popup-shadow: rgba(0, 0, 0, 0.55);
+    --sb-wl-divider: rgba(255, 255, 255, 0.25);
 }
 
 .sb-dark .sb-modal-save {

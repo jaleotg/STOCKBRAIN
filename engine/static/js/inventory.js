@@ -831,6 +831,7 @@
         const btn = document.getElementById("sb-uppercase-toggle");
         if (btn) {
             btn.classList.toggle("is-active", isOn);
+            btn.classList.toggle("is-inactive", !isOn);
             btn.setAttribute("aria-pressed", isOn ? "true" : "false");
         }
     }
