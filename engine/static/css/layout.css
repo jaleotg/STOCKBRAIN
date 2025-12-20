@@ -244,12 +244,14 @@ body {
 
 @keyframes sb-worklog-pulse {
     0%, 100% {
-        background: #4aa3ff;
-        box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+        background: #3a8cff;
+        box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+        transform: translateY(0);
     }
     50% {
-        background: #69b4ff;
-        box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+        background: #7fc3ff;
+        box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.45);
+        transform: translateY(-1px);
     }
 }
 
