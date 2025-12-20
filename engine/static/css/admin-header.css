@@ -36,16 +36,24 @@
 }
 
 .sb-header-title {
-    letter-spacing: 0.04em;
-    line-height: 1.2;
+    letter-spacing: -0.03em;
+    line-height: 1;
     color: #f5dd5d;
+    font-size: 34px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    text-shadow: 5px 4px 0 rgba(0, 0, 0, 0.35);
 }
 
-.sb-header-count {
-    display: block;
-    font-size: 8px;
-    font-weight: 500;
-    color: #555;
+.sb-header-mark {
+    font-size: 13px;
+    line-height: 1;
+    margin-left: 0;
+    opacity: 0.85;
+    align-self: flex-start;
+    transform: translateY(-6px);
 }
 
 .sb-countdown {
@@ -77,11 +85,13 @@
     font-weight: 500;
     padding: 6px 10px;
     border-radius: 6px;
-    text-decoration: none;
+    text-decoration: none !important;
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .sb-header .sb-link:hover {
-    text-decoration: none;
+    text-decoration: none !important;
     background: var(--sb-table-row-hover, #eef2f3);
 }
 
@@ -94,13 +104,16 @@
     align-items: center;
     padding: 6px 10px;
     border-radius: 6px;
-    text-decoration: none;
+    text-decoration: none !important;
     color: inherit;
     transition: background 0.15s;
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .sb-drop-trigger:hover {
     background: var(--sb-table-row-hover, #eef2f3);
+    text-decoration: none !important;
 }
 
 .sb-dropdown-menu {
@@ -211,6 +224,17 @@
     font-weight: 700;
 }
 
+.sb-header .sb-link-active {
+    color: #28a745;
+    font-weight: 700;
+    background: var(--sb-table-row-hover, #eef2f3);
+}
+
+.sb-header .sb-link:active,
+.sb-drop-trigger:active {
+    box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+
 .sb-theme-btn {
     background: transparent;
     border: none;
@@ -236,7 +260,7 @@
 
 .sb-admin-header-wrapper.sb-light .sb-header .sb-link:hover {
     color: #e2f0f7;
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 .sb-admin-header-wrapper.sb-dark .sb-header {
@@ -250,7 +274,11 @@
 
 .sb-admin-header-wrapper.sb-dark .sb-header .sb-link:hover {
     color: #c0e4ff;
-    text-decoration: underline;
+    text-decoration: none;
+}
+
+.sb-admin-header-wrapper.sb-dark .sb-header-title {
+    text-shadow: 5px 4px 0 rgba(0, 0, 0, 1);
 }
 
 .sb-admin-header-wrapper.sb-dark .sb-header-count {
