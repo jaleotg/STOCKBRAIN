@@ -12,6 +12,10 @@
     background-color: #2a2a2a;
 }
 
+.sb-dark .sb-header-title {
+    text-shadow: 5px 4px 0 rgba(0, 0, 0, 1);
+}
+
 /* Global links in dark mode */
 .sb-dark .sb-link {
     color: #9cd2f5;
