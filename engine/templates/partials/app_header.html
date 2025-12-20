@@ -89,6 +89,7 @@
                     <option value="Tea Time">Tea Time</option>
                     <option value="Lunch Time">Lunch Time</option>
                     <option value="Work Time">Work Time</option>
+                    <option value="Work Log Time">Work Log Time</option>
                     {% for type_name in sb_poetry_types %}
                         <option value="{{ type_name|title }}">{{ type_name|title }}</option>
                     {% endfor %}
@@ -96,15 +97,6 @@
             {% endif %}
         </div>
         {% endif %}
-        <button
-            type="button"
-            class="sb-theme-btn"
-            onclick="window.sbToggleTheme && window.sbToggleTheme()"
-            title="Toggle dark mode"
-        >
-            🌙
-        </button>
-
         {% if request.user.is_authenticated %}
             <button type="button" class="sb-mobile-menu-btn" id="sb-mobile-menu-btn" aria-label="Open menu">
                 ☰

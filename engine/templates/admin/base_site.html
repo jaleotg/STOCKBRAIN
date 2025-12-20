@@ -39,13 +39,25 @@
 
 {% block extrahead %}
 {{ block.super }}
+<script>
+    (function () {
+        var pref = "{{ sb_prefer_dark_theme|yesno:'dark,light,' }}";
+        if (!pref) pref = "dark";
+        document.documentElement.dataset.theme = pref;
+    })();
+</script>
 <script defer src="{% static 'js/admin-header.js' %}"></script>
 {% endblock %}
 
 {% block header %}
-<header id="header" class="sb-admin-header-wrapper sb-dark">
+<header id="header" class="sb-admin-header-wrapper {% if sb_prefer_dark_theme is False %}sb-light{% else %}sb-dark{% endif %}">
     {% include "partials/app_header.html" with admin_header=True sb_header_logout_view="admin:logout" sb_header_show_user_edit=True %}
 </header>
 {% endblock %}
 
 {% block nav-breadcrumbs %}{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+{% include "partials/user_modals.html" %}
+{% endblock %}

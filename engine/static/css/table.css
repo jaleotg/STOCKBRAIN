@@ -355,6 +355,10 @@
     height: calc(var(--sb-control-height, 28px) - 6px);
     fill: #000;
 }
+.sb-page-size-select option[value="all"] {
+    color: #b00000;
+    font-weight: 700;
+}
 .sb-focus-toggle.is-inactive .focus-frame {
     stroke: #777;
 }

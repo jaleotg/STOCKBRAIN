@@ -1203,6 +1203,7 @@
                 body.classList.add("sb-dark");
                 body.classList.remove("sb-light");
             }
+            root.dataset.theme = "dark";
         } else {
             root.classList.remove("sb-dark");
             root.classList.add("sb-light");
@@ -1210,9 +1211,11 @@
                 body.classList.remove("sb-dark");
                 body.classList.add("sb-light");
             }
+            root.dataset.theme = "light";
         }
         try {
             localStorage.setItem(KEY, preferDark ? "dark" : "light");
+            localStorage.setItem("theme", preferDark ? "dark" : "light");
         } catch (e) {}
         updateThemeIcon();
     }
@@ -3018,7 +3021,8 @@
 
         if (labelEl) labelEl.style.display = "";
         el.classList.remove("sb-countdown--icons");
-        let diffMinutes = endMinutes - nowMinutes;
+        const rawDiffMinutes = endMinutes - nowMinutes;
+        let diffMinutes = rawDiffMinutes;
         if (diffMinutes < 0) {
             diffMinutes = displayOverride ? diffMinutes + 24 * 60 : 0;
         }
@@ -3026,9 +3030,13 @@
         const minutes = diffMinutes % 60;
         el.textContent = `${hours}:${minutes.toString().padStart(2, "0")}`;
 
-        const worklogStart = Math.max(0, endMinutes - 10);
-        const isWorklogTime = isWorkDay && inHours && nowMinutes >= worklogStart && nowMinutes <= endMinutes;
-        const showWorklog = isWorklogTime && displayOverride !== "Personal Time";
+        const isWorklogOverride = displayOverride === "Work Log Time";
+        const isWorklogWindow = rawDiffMinutes >= 0 && rawDiffMinutes <= 10;
+        const allowWorklogOverride = !displayOverride || displayOverride === "Work Time" || isWorklogOverride;
+        const isWorklogTime = allowWorklogOverride
+            && isWorklogWindow
+            && (displayOverride === "Work Time" ? true : (isWorkDay && inHours));
+        const showWorklog = (isWorklogOverride || isWorklogTime) && displayOverride !== "Personal Time";
         if (worklogIcon) {
             worklogIcon.classList.toggle("is-active", showWorklog);
         }
@@ -3076,6 +3084,9 @@
         if (!overrideType) return "";
         if (overrideType.toLowerCase() === "personal time") {
             return "Personal Time";
+        }
+        if (overrideType.toLowerCase() === "work log time") {
+            return "Work Log Time";
         }
         return overrideType;
     }

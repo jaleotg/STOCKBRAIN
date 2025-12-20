@@ -224,6 +224,7 @@ body {
 
 .sb-worklog-pc.is-active {
     display: inline-block;
+    animation: sb-pc-bob 1.4s ease-in-out infinite;
 }
 
 .sb-worklog-pc::after {
@@ -247,6 +248,15 @@ body {
     50% {
         opacity: 0.95;
         transform: scaleX(1);
+    }
+}
+
+@keyframes sb-pc-bob {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-2px);
     }
 }
 
