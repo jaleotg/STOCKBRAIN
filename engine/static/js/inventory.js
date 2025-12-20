@@ -2944,7 +2944,7 @@
         const teaIcon = document.querySelector(".sb-tea-steam");
         const lunchIcon = document.querySelector(".sb-lunch-steam");
         const workIcon = document.querySelector(".sb-work-gears");
-        const worklogIcon = document.querySelector(".sb-worklog-pc");
+        const worklogIcon = document.querySelector(".sb-worklog-cta");
         const overrideType = getGtfoOverrideType();
         const displayOverride = getGtfoDisplayOverride(overrideType);
         if (!endStr) {
