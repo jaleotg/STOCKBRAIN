@@ -15,6 +15,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "100.120.14.89" #tailscale
+    "desertbrain.cloud",
 ]
 
 

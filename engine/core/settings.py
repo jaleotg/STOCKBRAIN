@@ -17,6 +17,7 @@ ALLOWED_HOSTS = [
     "100.120.14.89", #tailscale kmoid
     "100.120.120.120", #tailscale raspberry
     "192.168.0.134", #lokal LAN Raspberry
+    "desertbrain.cloud", #cloudflare tunnel
 ]
 
 # ------------------------------------------
@@ -33,6 +34,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://100.120.14.89",
     "http://100.120.14.89:8000",
     "https://100.120.14.89",
+    "https://desertbrain.cloud",
 ]
 
 # ------------------------------------------
